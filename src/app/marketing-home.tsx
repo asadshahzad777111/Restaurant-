@@ -35,20 +35,20 @@ const PLANS = [
   {
     id: "starter",
     name: "Starter",
-    price: "₨4,999",
+    price: "₨2,500",
     blurb: "One branch · QR + kitchen",
   },
   {
     id: "pro",
     name: "Pro",
-    price: "₨9,999",
+    price: "₨6,000",
     blurb: "Deals, reviews, staff roles",
     featured: true,
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    price: "₨24,999",
+    price: "₨15,000",
     blurb: "Groups · printers · support",
   },
 ] as const;

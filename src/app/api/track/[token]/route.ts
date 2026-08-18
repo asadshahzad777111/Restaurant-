@@ -17,6 +17,7 @@ export async function GET(
     const review = tenant.reviews.find((r) => r.trackToken === token);
     return NextResponse.json({
       branding: tenant.branding,
+      code: tenant.code,
       shop: {
         phone: tenant.shop.phone,
         whatsapp: tenant.shop.whatsapp,

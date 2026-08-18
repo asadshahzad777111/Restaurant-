@@ -43,6 +43,7 @@ export interface MenuItem {
   dealLabel?: string;
   compareAtPrice?: number;
   imageEmoji?: string;
+  imageUrl?: string;
 }
 
 export interface StockItem {

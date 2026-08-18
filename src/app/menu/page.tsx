@@ -12,10 +12,11 @@ export default function MenuPage() {
     name: "",
     description: "",
     price: "",
-    category: "Mains",
+    category: "Burgers",
     isDeal: false,
     dealLabel: "",
     compareAtPrice: "",
+    imageUrl: "",
   });
   const [msg, setMsg] = useState("");
 
@@ -46,6 +47,7 @@ export default function MenuPage() {
       isDeal: draft.isDeal,
       dealLabel: draft.dealLabel || undefined,
       compareAtPrice: draft.compareAtPrice ? Number(draft.compareAtPrice) : undefined,
+      imageUrl: draft.imageUrl || undefined,
       imageEmoji: draft.isDeal ? "🔥" : "🍽️",
     };
     await saveMenu([item, ...tenant.menu]);
@@ -53,10 +55,11 @@ export default function MenuPage() {
       name: "",
       description: "",
       price: "",
-      category: "Mains",
+      category: "Burgers",
       isDeal: false,
       dealLabel: "",
       compareAtPrice: "",
+      imageUrl: "",
     });
   }
 
@@ -89,6 +92,11 @@ export default function MenuPage() {
             placeholder="Price"
             value={draft.price}
             onChange={(e) => setDraft({ ...draft, price: e.target.value })}
+          />
+          <input
+            placeholder="Image URL (https://...)"
+            value={draft.imageUrl}
+            onChange={(e) => setDraft({ ...draft, imageUrl: e.target.value })}
           />
           <label>
             <input

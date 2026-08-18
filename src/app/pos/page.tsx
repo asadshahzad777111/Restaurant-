@@ -85,6 +85,20 @@ export default function PosPage() {
             .filter((m) => m.available)
             .map((m) => (
               <button key={m.id} type="button" className={styles.item} onClick={() => add(m)}>
+                {m.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={m.imageUrl}
+                    alt=""
+                    style={{
+                      width: "100%",
+                      height: 72,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      marginBottom: 6,
+                    }}
+                  />
+                ) : null}
                 <strong>{m.name}</strong>
                 <span className={styles.muted}>
                   {tenant?.shop.currency} {m.price}
