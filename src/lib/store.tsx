@@ -20,6 +20,7 @@ export interface AuthUser {
   role: "admin" | "staff";
   roleLabel: string;
   permissions: Permission[];
+  mustChangePassword?: boolean;
 }
 
 export interface AuthState {

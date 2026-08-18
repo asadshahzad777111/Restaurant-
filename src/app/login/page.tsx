@@ -108,6 +108,8 @@ export default function LoginPage() {
         </button>
         <p className={styles.hint}>
           Demo: code <strong>DEMO</strong> · admin/admin123 · or Super super/super123
+          <br />
+          Lab demos only — production pe passwords change karein (Settings).
         </p>
       </form>
     </div>

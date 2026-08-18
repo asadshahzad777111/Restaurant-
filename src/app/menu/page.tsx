@@ -34,6 +34,14 @@ export default function MenuPage() {
     await refresh();
   }
 
+  async function toggle86(itemId: string) {
+    await api("/api/admin", {
+      method: "PUT",
+      body: JSON.stringify({ action: "toggle86", itemId }),
+    });
+    await refresh();
+  }
+
   async function addItem(e: React.FormEvent) {
     e.preventDefault();
     if (!tenant) return;
@@ -49,6 +57,7 @@ export default function MenuPage() {
       compareAtPrice: draft.compareAtPrice ? Number(draft.compareAtPrice) : undefined,
       imageUrl: draft.imageUrl || undefined,
       imageEmoji: draft.isDeal ? "🔥" : "🍽️",
+      modifiers: [],
     };
     await saveMenu([item, ...tenant.menu]);
     setDraft({
@@ -61,13 +70,6 @@ export default function MenuPage() {
       compareAtPrice: "",
       imageUrl: "",
     });
-  }
-
-  async function toggle(item: MenuItem) {
-    if (!tenant) return;
-    await saveMenu(
-      tenant.menu.map((m) => (m.id === item.id ? { ...m, available: !m.available } : m)),
-    );
   }
 
   return (
@@ -139,7 +141,7 @@ export default function MenuPage() {
               <th>Name</th>
               <th>Category</th>
               <th>Price</th>
-              <th>Available</th>
+              <th>86 / Available</th>
             </tr>
           </thead>
           <tbody>
@@ -148,12 +150,17 @@ export default function MenuPage() {
                 <td>
                   {m.name}
                   {m.isDeal ? " · deal" : ""}
+                  {(m.modifiers?.length || 0) > 0 ? " · mods" : ""}
                 </td>
                 <td>{m.category}</td>
                 <td>{m.price}</td>
                 <td>
-                  <button type="button" className={styles.btnGhost} onClick={() => void toggle(m)}>
-                    {m.available ? "On" : "Off"}
+                  <button
+                    type="button"
+                    className={m.available ? styles.btnGhost : styles.btn}
+                    onClick={() => void toggle86(m.id)}
+                  >
+                    {m.available ? "Available · tap 86" : "86 · tap to restore"}
                   </button>
                 </td>
               </tr>

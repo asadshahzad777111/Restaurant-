@@ -35,6 +35,8 @@ export async function GET(
         total: order.total,
         tableNumber: order.tableNumber,
         createdAt: order.createdAt,
+        cancelReason: order.cancelReason,
+        fees: order.fees,
       },
       review: review ?? null,
       canReview: order.status === "completed" && !review,

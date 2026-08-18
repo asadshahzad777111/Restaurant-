@@ -1,36 +1,27 @@
-# APK / installable app path
+# APK shell prep (localhost → later store)
 
-ORDO is a Next.js web app. After the website look is set, ship phones like this:
+ORDO stays a Next.js web app. APK is a thin shell later — do not block localhost work.
 
-## Phase 1 — PWA (already wired)
-1. Open the site on a phone (Chrome / Safari).
-2. **Add to Home Screen** — uses `public/manifest.webmanifest` + icon.
-3. Guests, staff, and Super can each bookmark their entry:
-   - Guest: `/order?tenant=CODE`
-   - Staff: `/login`
-   - Super: `/super`
+## Ready now
+- PWA: `public/manifest.webmanifest` + `/ordo-icon.svg`
+- `/pos` staff counter route works on mobile browsers
+- Version placeholder: see `public/app-version.json`
 
-## Phase 2 — Android APK (Capacitor)
-When you are ready for a real Play Store / sideload APK:
+## Capacitor stub (when Android SDK available)
 
 ```bash
 npm i -D @capacitor/core @capacitor/cli @capacitor/android
-npx cap init ORDO com.ordo.restaurant --web-dir out
+npx cap init ORDO com.ordo.restaurant
 ```
 
-Then:
-1. Set Next.js `output: "export"` **or** point Capacitor at your hosted URL (recommended for multi-tenant SaaS).
-2. `npx cap add android`
-3. `npx cap open android` → Build APK/AAB in Android Studio.
+Recommended SaaS pattern: WebView loads your hosted URL (or localhost via tunnel for demos). One APK → many tenants via restaurant code login.
 
-**Recommended for SaaS:** keep one APK that loads your live domain (WebView shell). Each restaurant still logs in with their code — same Super / Rest Admin model.
+```bash
+npx cap add android
+npx cap open android
+```
 
-## Roles to sell
-| Role | Entry | Purpose |
-|---|---|---|
-| Super | `/super` | You — create restaurants, plans, leads |
-| Rest Admin | `/login` + restaurant code | Sold to each restaurant owner |
-| Staff | same login, limited permissions | Cashiers / kitchen |
-| Guest | QR → `/order?tenant=CODE` | Diners |
-
-Native ESC/POS printer APK hooks come after the web UX is locked.
+## Deferred
+- Play Store listing / signing
+- Native ESC/POS USB/Bluetooth (browser print templates exist first)
+- Background print-job queue (structure left open via HTML receipt helpers in `src/lib/print.ts`)

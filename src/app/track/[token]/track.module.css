@@ -59,6 +59,11 @@
   animation: soft 0.45s ease;
 }
 
+.banner[data-cancelled="1"] {
+  background: #fdecea;
+  color: #b71c1c;
+}
+
 .banner em {
   font-style: normal;
   background: var(--g-accent);

@@ -6,7 +6,7 @@ import type { Permission } from "./types";
 
 const DATA_ROOT = path.join(process.cwd(), ".data");
 const PLATFORM_PATH = path.join(DATA_ROOT, "platform.json");
-const DATA_VERSION = 2;
+const DATA_VERSION = 3;
 const VERSION_PATH = path.join(DATA_ROOT, "version.json");
 
 const ALL_PERMS: Permission[] = [
@@ -34,8 +34,11 @@ function demoTenant(): TenantState {
       phone: "+92 300 0000000",
       whatsapp: "+923000000000",
       currency: "PKR",
-      taxRate: 0,
+      taxRate: 5,
       openHours: "11:00 – 23:00",
+      deliveryFee: 150,
+      packingFee: 40,
+      serviceChargePercent: 0,
     },
     users: [
       {
@@ -46,6 +49,7 @@ function demoTenant(): TenantState {
         roleLabel: "Owner",
         permissions: ALL_PERMS,
         active: true,
+        mustChangePassword: true,
       },
       {
         id: "user_cashier",
@@ -76,6 +80,38 @@ function demoTenant(): TenantState {
         available: true,
         imageUrl:
           "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80",
+        modifiers: [
+          {
+            id: "mg_size",
+            name: "Size",
+            required: true,
+            multi: false,
+            options: [
+              { id: "reg", name: "Regular", priceDelta: 0 },
+              { id: "large", name: "Large", priceDelta: 120 },
+            ],
+          },
+          {
+            id: "mg_spice",
+            name: "Spice",
+            required: false,
+            multi: false,
+            options: [
+              { id: "mild", name: "Mild", priceDelta: 0 },
+              { id: "spicy", name: "Spicy", priceDelta: 0 },
+            ],
+          },
+          {
+            id: "mg_add",
+            name: "Add-ons",
+            required: false,
+            multi: true,
+            options: [
+              { id: "cheese", name: "Extra cheese", priceDelta: 80 },
+              { id: "egg", name: "Fried egg", priceDelta: 60 },
+            ],
+          },
+        ],
       },
       {
         id: "m2",
@@ -159,6 +195,17 @@ function demoTenant(): TenantState {
     ],
     orders: [],
     reviews: [],
+    tables: [
+      { id: "t1", label: "1", seats: 2, status: "empty" },
+      { id: "t2", label: "2", seats: 2, status: "empty" },
+      { id: "t3", label: "3", seats: 4, status: "empty" },
+      { id: "t4", label: "4", seats: 4, status: "empty" },
+      { id: "t5", label: "5", seats: 6, status: "empty" },
+      { id: "t6", label: "6", seats: 6, status: "empty" },
+      { id: "t7", label: "7", seats: 4, status: "empty" },
+      { id: "t8", label: "8", seats: 2, status: "empty" },
+    ],
+    dayCloses: [],
     nextOrderNumber: 1001,
   };
 }
@@ -270,10 +317,13 @@ export function createEmptyTenant(input: {
         roleLabel: "Owner",
         permissions: ALL_PERMS,
         active: true,
+        mustChangePassword: true,
       },
     ],
     orders: [],
     reviews: [],
+    tables: base.tables.map((tb) => ({ ...tb, status: "empty" as const, currentOrderId: undefined })),
+    dayCloses: [],
     nextOrderNumber: 1001,
   };
   fs.mkdirSync(path.join(DATA_ROOT, "tenants", input.id), { recursive: true });

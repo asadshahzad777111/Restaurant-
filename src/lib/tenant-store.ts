@@ -1,6 +1,15 @@
 import fs from "fs";
 import path from "path";
-import type { TenantState, Order, MenuItem, StockItem, TenantUser, Review } from "./tenant-types";
+import type {
+  TenantState,
+  Order,
+  MenuItem,
+  StockItem,
+  TenantUser,
+  Review,
+  DiningTable,
+  DayCloseSummary,
+} from "./tenant-types";
 import { ensureBootstrap } from "./bootstrap";
 
 const DATA_ROOT = path.join(process.cwd(), ".data");
@@ -13,14 +22,40 @@ function tenantPath(tenantId: string) {
   return path.join(tenantDir(tenantId), "tenant.json");
 }
 
+function normalizeTenant(raw: TenantState): TenantState {
+  return {
+    ...raw,
+    shop: {
+      ...raw.shop,
+      deliveryFee: raw.shop?.deliveryFee ?? 0,
+      packingFee: raw.shop?.packingFee ?? 0,
+      serviceChargePercent: raw.shop?.serviceChargePercent ?? 0,
+      taxRate: raw.shop?.taxRate ?? 0,
+    },
+    tables: raw.tables ?? [],
+    dayCloses: raw.dayCloses ?? [],
+    menu: (raw.menu ?? []).map((m) => ({ ...m, modifiers: m.modifiers ?? [] })),
+    orders: (raw.orders ?? []).map((o) => ({
+      ...o,
+      fees: o.fees ?? {
+        subtotal: o.subtotal ?? o.total ?? 0,
+        deliveryFee: 0,
+        packingFee: 0,
+        serviceCharge: 0,
+        tax: 0,
+      },
+      lines: (o.lines ?? []).map((l) => ({ ...l, modifiers: l.modifiers ?? [] })),
+    })),
+  };
+}
+
 export function readTenant(tenantId: string): TenantState {
   ensureBootstrap();
   const file = tenantPath(tenantId);
   if (!fs.existsSync(file)) throw new Error("Tenant not found");
-  return JSON.parse(fs.readFileSync(file, "utf8")) as TenantState;
+  return normalizeTenant(JSON.parse(fs.readFileSync(file, "utf8")) as TenantState);
 }
 
-/** Full tenant state for authenticated staff — strip passwords from users. */
 export function readTenantSafe(tenantId: string): TenantState {
   const t = readTenant(tenantId);
   return {
@@ -52,7 +87,17 @@ export function getPublicMenu(tenantId: string) {
       whatsapp: t.shop.whatsapp,
       currency: t.shop.currency,
       openHours: t.shop.openHours,
+      taxRate: t.shop.taxRate,
+      deliveryFee: t.shop.deliveryFee,
+      packingFee: t.shop.packingFee,
+      serviceChargePercent: t.shop.serviceChargePercent,
     },
+    tables: t.tables.map((tb) => ({
+      id: tb.id,
+      label: tb.label,
+      seats: tb.seats,
+      status: tb.status,
+    })),
     menu: t.menu.filter((m) => m.available),
   };
 }
@@ -84,6 +129,13 @@ export function updateUsers(tenantId: string, users: TenantUser[]) {
   return t;
 }
 
+export function updateTables(tenantId: string, tables: DiningTable[]) {
+  const t = readTenant(tenantId);
+  t.tables = tables;
+  writeTenant(t);
+  return t;
+}
+
 export function updateBranding(
   tenantId: string,
   branding: Partial<TenantState["branding"]>,
@@ -94,6 +146,37 @@ export function updateBranding(
   if (shop) t.shop = { ...t.shop, ...shop };
   writeTenant(t);
   return t;
+}
+
+function syncTableForOrder(t: TenantState, order: Order, prev?: Order) {
+  if (!t.tables?.length) return;
+  const label = order.tableNumber;
+  if (!label && !order.tableId) return;
+  const table = t.tables.find(
+    (tb) => tb.id === order.tableId || tb.label === label || tb.label === `T${label}`,
+  );
+  if (!table) return;
+
+  if (order.status === "completed" || order.status === "cancelled") {
+    if (table.currentOrderId === order.id || !table.currentOrderId) {
+      table.status = "empty";
+      table.currentOrderId = undefined;
+    }
+    return;
+  }
+  if (order.status === "ready" || order.paymentStatus === "unpaid") {
+    table.status = order.status === "ready" ? "bill" : "occupied";
+  } else {
+    table.status = "occupied";
+  }
+  table.currentOrderId = order.id;
+  if (prev?.tableId && prev.tableId !== table.id) {
+    const old = t.tables.find((tb) => tb.id === prev.tableId);
+    if (old && old.currentOrderId === order.id) {
+      old.status = "empty";
+      old.currentOrderId = undefined;
+    }
+  }
 }
 
 export function addOrder(tenantId: string, order: Omit<Order, "id" | "number" | "createdAt" | "updatedAt">) {
@@ -108,6 +191,7 @@ export function addOrder(tenantId: string, order: Omit<Order, "id" | "number" | 
   };
   t.nextOrderNumber += 1;
   t.orders.unshift(full);
+  if (full.serviceType === "table") syncTableForOrder(t, full);
   writeTenant(t);
   return full;
 }
@@ -121,12 +205,25 @@ export function patchOrder(tenantId: string, orderId: string, patch: Partial<Ord
   if (patch.status && patch.status !== prev.status) {
     next.statusHistory = [
       ...prev.statusHistory,
-      { status: patch.status, at: next.updatedAt, note: patch.note },
+      {
+        status: patch.status,
+        at: next.updatedAt,
+        note: patch.cancelReason || patch.note || undefined,
+      },
     ];
   }
   t.orders[idx] = next;
+  if (next.serviceType === "table") syncTableForOrder(t, next, prev);
   writeTenant(t);
   return next;
+}
+
+export function addDayClose(tenantId: string, summary: Omit<DayCloseSummary, "id">) {
+  const t = readTenant(tenantId);
+  const full: DayCloseSummary = { ...summary, id: `close_${Date.now()}` };
+  t.dayCloses = [full, ...(t.dayCloses || [])];
+  writeTenant(t);
+  return full;
 }
 
 export function findOrderByTrackToken(token: string): { tenant: TenantState; order: Order } | null {
@@ -136,7 +233,7 @@ export function findOrderByTrackToken(token: string): { tenant: TenantState; ord
   for (const id of fs.readdirSync(tenantsRoot)) {
     const file = tenantPath(id);
     if (!fs.existsSync(file)) continue;
-    const t = JSON.parse(fs.readFileSync(file, "utf8")) as TenantState;
+    const t = normalizeTenant(JSON.parse(fs.readFileSync(file, "utf8")) as TenantState);
     const order = t.orders.find((o) => o.trackToken === token);
     if (order) return { tenant: t, order };
   }

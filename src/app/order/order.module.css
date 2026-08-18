@@ -15,6 +15,29 @@
   margin: 0 auto;
 }
 
+.langRow {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.lang,
+.langOn {
+  border-radius: 999px;
+  border: 1px solid var(--g-line);
+  background: #fff;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.langOn {
+  background: var(--g-accent);
+  border-color: var(--g-accent);
+  color: #fff;
+}
+
 .header {
   margin-bottom: 1rem;
 }

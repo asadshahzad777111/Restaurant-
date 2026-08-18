@@ -12,13 +12,21 @@ interface TrackData {
   order: {
     number: number;
     status: string;
-    statusHistory: { status: string; at: string }[];
+    statusHistory: { status: string; at: string; note?: string }[];
     serviceType: string;
     paymentMethod: string;
     paymentStatus: string;
-    lines: { name: string; qty: number; unitPrice: number }[];
+    lines: { name: string; qty: number; unitPrice: number; modifiers?: { optionName: string }[] }[];
     total: number;
     tableNumber?: string;
+    cancelReason?: string;
+    fees?: {
+      subtotal: number;
+      deliveryFee: number;
+      packingFee: number;
+      serviceCharge: number;
+      tax: number;
+    };
   };
   review: { rating: number; comment: string } | null;
   canReview: boolean;
@@ -139,8 +147,12 @@ export default function TrackPage() {
           {data.order.paymentMethod.replaceAll("_", " ")}
         </p>
 
-        <div className={styles.banner}>
-          <span>{banner.text}</span>
+            <div className={styles.banner} data-cancelled={data.order.status === "cancelled" ? "1" : "0"}>
+          <span>
+            {data.order.status === "cancelled"
+              ? `Cancelled / void${data.order.cancelReason ? `: ${data.order.cancelReason}` : ""}`
+              : banner.text}
+          </span>
           <em>{banner.tag}</em>
         </div>
 
@@ -179,10 +191,37 @@ export default function TrackPage() {
             <div key={i} className={styles.line}>
               <span>
                 {l.qty}x {l.name}
+                {(l.modifiers || []).map((m) => (
+                  <small key={m.optionName} style={{ display: "block", color: "#8a8790" }}>
+                    + {m.optionName}
+                  </small>
+                ))}
               </span>
               <span>{money(data.shop.currency, l.unitPrice * l.qty)}</span>
             </div>
           ))}
+          {data.order.fees && (
+            <>
+              {data.order.fees.packingFee > 0 && (
+                <div className={styles.line}>
+                  <span>Packing</span>
+                  <span>{money(data.shop.currency, data.order.fees.packingFee)}</span>
+                </div>
+              )}
+              {data.order.fees.deliveryFee > 0 && (
+                <div className={styles.line}>
+                  <span>Delivery</span>
+                  <span>{money(data.shop.currency, data.order.fees.deliveryFee)}</span>
+                </div>
+              )}
+              {data.order.fees.tax > 0 && (
+                <div className={styles.line}>
+                  <span>GST/Tax</span>
+                  <span>{money(data.shop.currency, data.order.fees.tax)}</span>
+                </div>
+              )}
+            </>
+          )}
           <div className={styles.total}>
             <strong>Total</strong>
             <strong>{money(data.shop.currency, data.order.total)}</strong>
