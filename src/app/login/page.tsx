@@ -1,21 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { TOKEN_KEY, useStore } from "@/lib/store";
 import { apiUrl } from "@/lib/urls";
 import styles from "./login.module.css";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const search = useSearchParams();
   const { setToken, refresh } = useStore();
-  const [mode, setMode] = useState<"tenant" | "super">("tenant");
+  const ownerOnly =
+    search.get("owner") === "1" ||
+    (typeof window !== "undefined" && window.location.hostname.startsWith("control."));
+
   const [code, setCode] = useState("DEMO");
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("admin123");
+  const [username, setUsername] = useState(ownerOnly ? "super" : "admin");
+  const [password, setPassword] = useState(ownerOnly ? "super123" : "admin123");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (ownerOnly) {
+      setUsername("super");
+      setPassword("super123");
+    }
+  }, [ownerOnly]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,7 +37,7 @@ export default function LoginPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(
-        mode === "super"
+        ownerOnly
           ? { mode: "super", username, password }
           : { mode: "tenant", code, username, password },
       ),
@@ -39,41 +51,22 @@ export default function LoginPage() {
     localStorage.setItem(TOKEN_KEY, data.token);
     setToken(data.token);
     await refresh();
-    router.push(mode === "super" ? "/super" : "/home");
+    router.push(ownerOnly ? "/control" : "/home");
   }
 
   return (
     <div className={styles.page}>
       <form className={styles.card} onSubmit={onSubmit}>
-        <Link href="/" className={styles.brand}>
+        <Link href={ownerOnly ? "/control" : "/"} className={styles.brand}>
           ORDO
         </Link>
-        <h1>Staff login</h1>
-        <div className={styles.modes}>
-          <button
-            type="button"
-            className={mode === "tenant" ? styles.active : ""}
-            onClick={() => {
-              setMode("tenant");
-              setUsername("admin");
-              setPassword("admin123");
-            }}
-          >
-            Restaurant
-          </button>
-          <button
-            type="button"
-            className={mode === "super" ? styles.active : ""}
-            onClick={() => {
-              setMode("super");
-              setUsername("super");
-              setPassword("super123");
-            }}
-          >
-            Super Admin
-          </button>
-        </div>
-        {mode === "tenant" && (
+        <h1>{ownerOnly ? "Owner control" : "Staff login"}</h1>
+        <p className={styles.hint} style={{ marginTop: 0 }}>
+          {ownerOnly
+            ? "Private host — open any restaurant without their password (Open)."
+            : "Restaurant staff only. Owner panel is on a separate host."}
+        </p>
+        {!ownerOnly && (
           <label className={styles.field}>
             Restaurant code
             <input
@@ -107,12 +100,22 @@ export default function LoginPage() {
         <button type="submit" className={styles.submit} disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
         </button>
-        <p className={styles.hint}>
-          Demo: code <strong>DEMO</strong> · admin/admin123 · or Super super/super123
-          <br />
-          Lab demos only — production pe passwords change karein (Settings).
-        </p>
+        {!ownerOnly && (
+          <p className={styles.hint}>
+            Demo: code <strong>DEMO</strong> · admin / admin123
+            <br />
+            Production pe passwords Settings se change karein.
+          </p>
+        )}
       </form>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className={styles.page}>Loading…</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

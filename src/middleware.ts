@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { LIVE_APP_HOST, allowedAppOrigins, isApiHost } from "@/lib/urls";
+import {
+  LIVE_APP_HOST,
+  LIVE_CONTROL_HOST,
+  allowedAppOrigins,
+  isApiHost,
+  isAppHost,
+  isControlHost,
+  isLocalHost,
+} from "@/lib/urls";
 
 const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
@@ -29,9 +37,10 @@ function applyCors(req: NextRequest, res: NextResponse) {
 }
 
 /**
- * Split surface on asfins.com:
- * - api.ordo.asfins.com → backend only (/api/*)
- * - ordo.asfins.com → restaurant OS UI (calls API host via NEXT_PUBLIC_API_URL)
+ * Host split:
+ * - api.ordo.asfins.com     → /api/* only
+ * - control.asfins.com      → owner control plane only (/control, /login)
+ * - ordo.asfins.com         → restaurants; /super and /control blocked
  */
 export function middleware(req: NextRequest) {
   const host = req.headers.get("host") || "";
@@ -46,13 +55,60 @@ export function middleware(req: NextRequest) {
         NextResponse.json(
           {
             error: "API host only",
-            hint: `Open https://${LIVE_APP_HOST} for ORDO Restaurant OS`,
+            hint: `Restaurants → https://${LIVE_APP_HOST} · Owner → https://${LIVE_CONTROL_HOST}`,
           },
           { status: 404 },
         ),
       );
     }
     return applyCors(req, withSecurity(NextResponse.next()));
+  }
+
+  if (isControlHost(host)) {
+    if (pathname === "/" || pathname === "/super") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/control";
+      return withSecurity(NextResponse.redirect(url));
+    }
+    // Owner panel + temporary staff UI after "Open" (help without restaurant password)
+    const allowed =
+      pathname.startsWith("/control") ||
+      pathname.startsWith("/login") ||
+      pathname.startsWith("/home") ||
+      pathname.startsWith("/pos") ||
+      pathname.startsWith("/orders") ||
+      pathname.startsWith("/kitchen") ||
+      pathname.startsWith("/menu") ||
+      pathname.startsWith("/tables") ||
+      pathname.startsWith("/settings") ||
+      pathname.startsWith("/day-close") ||
+      pathname.startsWith("/api/") ||
+      pathname.startsWith("/_next");
+    if (!allowed) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/control";
+      return withSecurity(NextResponse.redirect(url));
+    }
+    return withSecurity(NextResponse.next());
+  }
+
+  // Restaurant app host (and production app): never expose owner panel
+  if (isAppHost(host) && !isLocalHost(host)) {
+    if (pathname.startsWith("/super") || pathname.startsWith("/control")) {
+      return withSecurity(
+        NextResponse.json(
+          { error: "Not available on restaurant host" },
+          { status: 404 },
+        ),
+      );
+    }
+  }
+
+  // Localhost: /super → /control (same panel, no “Super” URL)
+  if (isLocalHost(host) && pathname === "/super") {
+    const url = req.nextUrl.clone();
+    url.pathname = "/control";
+    return withSecurity(NextResponse.redirect(url));
   }
 
   return withSecurity(NextResponse.next());

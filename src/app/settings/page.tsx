@@ -102,6 +102,25 @@ export default function SettingsPage() {
     setMsg(`Exported ${type} (${format})`);
   }
 
+  async function backupToR2() {
+    if (!token) return;
+    setMsg("Uploading backup to R2…");
+    const res = await fetch(apiUrl("/api/backup"), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setMsg(data.error || data.hint || "R2 backup failed");
+      return;
+    }
+    setMsg(`R2 backup OK — ${data.key}`);
+  }
+
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   return (
@@ -208,6 +227,12 @@ export default function SettingsPage() {
           </div>
           <p className={styles.muted} style={{ marginTop: 8 }}>
             LIVE se pehle yahan se backup lein. Mongo switch ke baad bhi export kaam karta hai.
+          </p>
+          <button type="button" className={styles.btn} style={{ marginTop: 12 }} onClick={() => void backupToR2()}>
+            Backup to Cloudflare R2
+          </button>
+          <p className={styles.muted} style={{ marginTop: 8 }}>
+            Needs R2_* env. Snapshot goes to media host under backups/CODE/. Passwords not included.
           </p>
         </div>
 

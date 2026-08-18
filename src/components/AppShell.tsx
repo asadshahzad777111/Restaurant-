@@ -19,7 +19,7 @@ export function AppShell({
 
   useEffect(() => {
     if (!loading && (!token || role === "super")) {
-      if (role === "super") router.replace("/super");
+      if (role === "super") router.replace("/control");
       else router.replace("/login");
     }
   }, [loading, token, role, router]);

@@ -4,10 +4,11 @@ Next.js App Router + TypeScript + CSS Modules.
 
 **Localhost:** file store `.data/` (no Mongo needed) — `/lab` works.  
 **LIVE (asfins.com):**  
-- App UI → `https://ordo.asfins.com`  
-- Backend API → `https://api.ordo.asfins.com`  
-- Media → `https://media.ordo.asfins.com`  
-See `docs/ASFINS-DNS.md` + `docs/LIVE-SETUP.md`.
+- Restaurants → `https://ordo.asfins.com` (no owner panel)  
+- Owner control → `https://control.asfins.com` (Open without restaurant password)  
+- API → `https://api.ordo.asfins.com`  
+- Media/backups → `https://media.ordo.asfins.com` (R2)  
+See `docs/ASFINS-DNS.md`. Vercel Hobby is enough; backups on R2.
 
 ## Quick start (localhost)
 

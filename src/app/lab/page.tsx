@@ -3,8 +3,13 @@ import styles from "./lab.module.css";
 
 const LINKS = [
   { href: "/", label: "Marketing home", note: "ORDO landing" },
-  { href: "/super", label: "Super Admin", note: "super / super123" },
-  { href: "/login", label: "Staff login", note: "DEMO · admin / admin123 (change in prod)" },
+  { href: "/login", label: "Staff login", note: "DEMO · admin / admin123" },
+  {
+    href: "/login?owner=1",
+    label: "Owner control (local)",
+    note: "Private — Open restaurant without their password",
+  },
+  { href: "/control", label: "Control panel", note: "After owner login" },
   { href: "/order?tenant=DEMO", label: "Guest hub", note: "EN/Urdu · fees · modifiers" },
   { href: "/order?tenant=DEMO&table=3", label: "Table 3 QR", note: "Dine-in + table status" },
   { href: "/order?tenant=DEMO&mode=pickup", label: "Pickup", note: "Packing fee applies" },
@@ -16,7 +21,7 @@ const LINKS = [
   { href: "/tables", label: "Tables", note: "empty / occupied / bill" },
   { href: "/menu", label: "Menu admin", note: "One-tap 86" },
   { href: "/day-close", label: "Day close", note: "Shift summary" },
-  { href: "/settings", label: "Settings", note: "Fees · export · password · R2 upload" },
+  { href: "/settings", label: "Settings", note: "Fees · export · R2 backup · password" },
   { href: "/api/health", label: "Health (uptime)", note: "Mongo/file + integrations flags" },
 ];
 
@@ -27,8 +32,8 @@ export default function LabPage() {
         <p className={styles.brand}>ORDO</p>
         <h1>Lab — demo links</h1>
         <p className={styles.sub}>
-          Localhost only. Cancel/void ≠ refund. Review path: guest order → Completed → track stars.
-          Soft drinks stock is low on purpose for alerts.
+          Localhost only. Live: restaurants on ordo.asfins.com · owner on control.asfins.com (no owner
+          button on restaurant login). Cancel/void ≠ refund.
         </p>
       </header>
       <ul className={styles.list}>

@@ -1,80 +1,70 @@
 # asfins.com — ORDO live subdomains
 
-Professional split (UI ≠ backend hostname):
-
 | Role | Hostname | Purpose |
 |------|----------|---------|
-| **App (Restaurant OS)** | `ordo.asfins.com` | Guest order, staff POS, kitchen, super admin UI |
-| **API (Backend)** | `api.ordo.asfins.com` | All `/api/*` only — no pages |
-| **Media (R2)** | `media.ordo.asfins.com` | Logos / menu images (Cloudflare R2) |
+| **Restaurants** | `ordo.asfins.com` | Guest + staff. **No owner panel.** |
+| **Owner control** | `control.asfins.com` | **You only** — create restaurants, Open to help (no restaurant password) |
+| **API** | `api.ordo.asfins.com` | `/api/*` only |
+| **Media + backups** | `media.ordo.asfins.com` | Cloudflare R2 (logos + JSON backups) |
 
-Guest link example: `https://ordo.asfins.com/order?tenant=DEMO`  
+Guest: `https://ordo.asfins.com/order?tenant=DEMO`  
+Owner: `https://control.asfins.com/login` → Control → **Open**  
 Health: `https://api.ordo.asfins.com/api/health`
 
-> Subdomain split + CORS + Bearer auth reduces attack surface. It does **not** make a system “unhackable” — keep secrets in Vercel only, rotate passwords, and never commit `.env`.
+Hosting: Vercel **Hobby (free) is enough** — no Pro upgrade required for this MVP.  
+Data backup: **Cloudflare R2** (Settings → Backup to R2), not a paid Vercel add-on.
 
 ---
 
-## Cloudflare DNS (asfins.com zone)
-
-Proxy status: **DNS only (grey cloud)** for Vercel app/API CNAMEs (avoids double SSL issues).  
-R2 media can be **proxied (orange)** if you prefer.
+## Cloudflare DNS
 
 | Type | Name | Target | Proxy |
 |------|------|--------|-------|
 | CNAME | `ordo` | `cname.vercel-dns.com` | DNS only |
+| CNAME | `control` | `cname.vercel-dns.com` | DNS only |
 | CNAME | `api.ordo` | `cname.vercel-dns.com` | DNS only |
-| CNAME | `media.ordo` | *(R2 custom domain target from Cloudflare R2)* | Orange OK |
-
-Exact Vercel target: after you add domains in Vercel, use the CNAME value Vercel shows if different.
+| CNAME | `media.ordo` | *(R2 custom domain)* | Orange OK |
 
 ---
 
-## Vercel domains
+## Hosting domains (same project)
 
-Project → Settings → Domains → add:
-
-1. `ordo.asfins.com`
-2. `api.ordo.asfins.com`
-
-Same project, same deploy. Middleware enforces API-host = `/api` only.
+Add: `ordo.asfins.com`, `control.asfins.com`, `api.ordo.asfins.com`
 
 ---
 
-## Vercel env (production)
+## Env
 
 ```
 NEXT_PUBLIC_APP_URL=https://ordo.asfins.com
+NEXT_PUBLIC_CONTROL_URL=https://control.asfins.com
 NEXT_PUBLIC_API_URL=https://api.ordo.asfins.com
 NEXT_PUBLIC_APP_HOST=ordo.asfins.com
+NEXT_PUBLIC_CONTROL_HOST=control.asfins.com
 NEXT_PUBLIC_API_HOST=api.ordo.asfins.com
 MONGODB_URI=...
 MONGODB_DB=ordo
 DEMO_SEED=true
-SESSION_SECRET=...long-random...
+SESSION_SECRET=...
 CONTACT_WHATSAPP=92XXXXXXXXXX
+R2_ACCOUNT_ID=...
+R2_ACCESS_KEY_ID=...
+R2_SECRET_ACCESS_KEY=...
+R2_BUCKET=ordo-media
 R2_PUBLIC_BASE_URL=https://media.ordo.asfins.com
 ```
 
-Plus R2 keys / Resend when ready.
+## R2 backup
 
----
-
-## WhatsApp
-
-1. Set `CONTACT_WHATSAPP` on Vercel (digits with country code, e.g. `92300...`).
-2. App uses `wa.me` links for status / marketing (works without Cloud API).
-3. Optional later: WhatsApp Cloud API token + phone number id.
-
-**Agent browser note:** Cloudflare / WhatsApp login on *your* Cursor window is not shared with the cloud agent. DNS records must be created in *your* Cloudflare dashboard (or paste a Cloudflare API token into Cursor secrets later).
-
----
+1. Bucket `ordo-media` + public domain `media.ordo.asfins.com`  
+2. API token with Object Read & Write  
+3. Restaurant Settings → **Backup to Cloudflare R2** → `backups/CODE/...json`  
+4. Rotate keys anytime — no chat/git secrets
 
 ## Checklist
 
-- [ ] Cloudflare DNS rows above
-- [ ] Vercel domains + env
-- [ ] Deploy branch `cursor/live-stack-mongo-98ba`
-- [ ] Open `https://ordo.asfins.com/lab` or `/login`
-- [ ] Hit `https://api.ordo.asfins.com/api/health`
-- [ ] Confirm `api.ordo.asfins.com/` returns API-only 404 (no UI)
+- [ ] DNS rows above  
+- [ ] Domains + env  
+- [ ] Restaurant login has **no** owner button  
+- [ ] `control.asfins.com` → Open restaurant works without their password  
+- [ ] R2 backup button works  

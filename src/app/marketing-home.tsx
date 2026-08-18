@@ -114,8 +114,7 @@ export function MarketingHome() {
           <p className={styles.heroBrand}>ORDO</p>
           <h1 className={styles.heroTitle}>Restaurant OS for every outlet — isolated by design.</h1>
           <p className={styles.heroSub}>
-            Super Admin creates restaurants. Each kitchen gets its own login, menu, stock, staff, and guest QR —
-            never mixed.
+            Each kitchen gets its own login, menu, stock, staff, and guest QR — never mixed across restaurants.
           </p>
           <div className={styles.heroCtas}>
             <a href="#plans" className={styles.primary}>
@@ -138,8 +137,7 @@ export function MarketingHome() {
       <section className={styles.section} id="product">
         <h2>Built like a restaurant, not a spreadsheet</h2>
         <p className={styles.lead}>
-          WordPress-simple backends for Super and restaurant admins. Staff app for the floor. Guest app for the
-          table.
+          WordPress-simple admin for restaurant owners. Staff app for the floor. Guest app for the table.
         </p>
         <div className={styles.tabs}>
           {TABS.map((t) => (
@@ -163,10 +161,10 @@ export function MarketingHome() {
         <h2>Multi-tenant by default</h2>
         <p className={styles.lead}>
           Tenant A’s logo prints on Tenant A’s receipts. Tenant B’s stock never appears in Tenant A’s Settings.
-          Super Admin can Open a restaurant to help — with a clear impersonation badge.
+          Platform owner can open a restaurant to help — with a clear support badge, no restaurant password.
         </p>
         <ol className={styles.flow}>
-          <li>Create restaurant + admin in Super</li>
+          <li>Create restaurant + admin from owner control</li>
           <li>Brand menu, stock, staff, QR</li>
           <li>Guests order · staff run · reviews land</li>
         </ol>
@@ -215,14 +213,17 @@ export function MarketingHome() {
           <p>Scan a table QR or open `/order?tenant=CODE` for pickup and delivery with the right payment choices.</p>
         </details>
         <details className={styles.faq}>
-          <summary>Who is Super Admin?</summary>
-          <p>You. Create, suspend, and Open restaurants from `/super`.</p>
+          <summary>Who runs the platform?</summary>
+          <p>
+            The platform owner uses a private control host (not on the restaurant site) to create restaurants and
+            open them for support — without needing the restaurant password.
+          </p>
         </details>
       </section>
 
       <section className={styles.sectionAlt} id="contact">
         <h2>Talk to ORDO</h2>
-        <p className={styles.lead}>Plans and contact requests land in Super → Leads.</p>
+        <p className={styles.lead}>Plans and contact requests land in owner control → Leads.</p>
         {sent ? (
           <p className={styles.success}>Thanks — we received your request.</p>
         ) : (
@@ -282,8 +283,7 @@ export function MarketingHome() {
       <footer className={styles.footer}>
         <strong>ORDO</strong>
         <span>Multi-tenant restaurant OS</span>
-        <Link href="/super">Super</Link>
-        <Link href="/login">Login</Link>
+        <Link href="/login">Staff login</Link>
       </footer>
     </div>
   );
