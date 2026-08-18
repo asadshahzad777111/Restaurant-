@@ -3,7 +3,11 @@
 Next.js App Router + TypeScript + CSS Modules.
 
 **Localhost:** file store `.data/` (no Mongo needed) — `/lab` works.  
-**LIVE:** GitHub → Vercel + MongoDB Atlas + Cloudflare DNS/R2 + Resend — see `docs/LIVE-SETUP.md`.
+**LIVE (asfins.com):**  
+- App UI → `https://ordo.asfins.com`  
+- Backend API → `https://api.ordo.asfins.com`  
+- Media → `https://media.ordo.asfins.com`  
+See `docs/ASFINS-DNS.md` + `docs/LIVE-SETUP.md`.
 
 ## Quick start (localhost)
 

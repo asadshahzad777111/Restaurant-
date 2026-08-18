@@ -7,6 +7,7 @@ import type { LineModifier, MenuItem, ModifierGroup } from "@/lib/tenant-types";
 import type { PaymentMethod, ServiceType } from "@/lib/types";
 import { computeFees, lineUnitPrice, money } from "@/lib/fees";
 import { LANG_KEY, dual, type Lang } from "@/lib/i18n";
+import { apiUrl } from "@/lib/urls";
 import styles from "./order.module.css";
 
 type CartLine = {
@@ -101,7 +102,7 @@ function OrderInner() {
   }, []);
 
   useEffect(() => {
-    void fetch(`/api/state?tenant=${tenantCode}`)
+    void fetch(apiUrl(`/api/state?tenant=${tenantCode}`))
       .then((r) => r.json())
       .then((d) => {
         if (d.error) {
@@ -235,7 +236,7 @@ function OrderInner() {
   async function placeOrder() {
     setBusy(true);
     setError("");
-    const res = await fetch("/api/orders", {
+    const res = await fetch(apiUrl("/api/orders"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

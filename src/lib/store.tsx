@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import type { Permission, SessionRole } from "./types";
 import type { TenantState, MenuItem, Order, StockItem, TenantUser } from "./tenant-types";
+import { apiUrl } from "./urls";
 
 export const TOKEN_KEY = "restaurant_pos_token_v2";
 
@@ -64,7 +65,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (!headers.has("Content-Type") && init?.body) {
         headers.set("Content-Type", "application/json");
       }
-      return fetch(path, { ...init, headers });
+      return fetch(apiUrl(path), { ...init, headers });
     },
     [token],
   );
@@ -82,7 +83,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     setTokenState(t);
-    const res = await fetch("/api/state", {
+    const res = await fetch(apiUrl("/api/state"), {
       headers: { Authorization: `Bearer ${t}` },
     });
     if (!res.ok) {
@@ -108,7 +109,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     const t = localStorage.getItem(TOKEN_KEY);
     if (t) {
-      await fetch("/api/auth", {
+      await fetch(apiUrl("/api/auth"), {
         method: "DELETE",
         headers: { Authorization: `Bearer ${t}` },
       });

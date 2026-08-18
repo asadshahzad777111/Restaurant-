@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TOKEN_KEY, useStore } from "@/lib/store";
+import { apiUrl } from "@/lib/urls";
 import styles from "./login.module.css";
 
 export default function LoginPage() {
@@ -20,7 +21,7 @@ export default function LoginPage() {
     e.preventDefault();
     setBusy(true);
     setError("");
-    const res = await fetch("/api/auth", {
+    const res = await fetch(apiUrl("/api/auth"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(

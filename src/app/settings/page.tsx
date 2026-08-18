@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useStore } from "@/lib/store";
+import { apiUrl } from "@/lib/urls";
 import styles from "../staff.module.css";
 
 export default function SettingsPage() {
@@ -76,7 +77,9 @@ export default function SettingsPage() {
 
   async function exportData(type: "menu" | "orders", format: "json" | "csv") {
     const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const url = `/api/export?type=${type}&format=${format}${type === "orders" ? `&from=${encodeURIComponent(from)}` : ""}`;
+    const url = apiUrl(
+      `/api/export?type=${type}&format=${format}${type === "orders" ? `&from=${encodeURIComponent(from)}` : ""}`,
+    );
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) {
       setMsg("Export failed");
@@ -222,7 +225,7 @@ export default function SettingsPage() {
               const fd = new FormData();
               fd.append("file", file);
               fd.append("kind", "logo");
-              const res = await fetch("/api/upload", {
+              const res = await fetch(apiUrl("/api/upload"), {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token}` },
                 body: fd,

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TOKEN_KEY, useStore } from "@/lib/store";
+import { apiUrl } from "@/lib/urls";
 import type { Lead, Plan, PlatformTenantMeta } from "@/lib/types";
 import styles from "./super.module.css";
 
@@ -32,7 +33,7 @@ export default function SuperPage() {
       const headers = new Headers(init?.headers);
       if (t) headers.set("Authorization", `Bearer ${t}`);
       if (init?.body) headers.set("Content-Type", "application/json");
-      return fetch(path, { ...init, headers });
+      return fetch(apiUrl(path), { ...init, headers });
     },
     [token],
   );
@@ -44,7 +45,7 @@ export default function SuperPage() {
       return;
     }
     setLocalToken(t);
-    const auth = await fetch("/api/auth", { headers: { Authorization: `Bearer ${t}` } });
+    const auth = await fetch(apiUrl("/api/auth"), { headers: { Authorization: `Bearer ${t}` } });
     if (!auth.ok) {
       router.replace("/login");
       return;
@@ -55,8 +56,8 @@ export default function SuperPage() {
       return;
     }
     const [tenRes, leadRes] = await Promise.all([
-      fetch("/api/super/tenants", { headers: { Authorization: `Bearer ${t}` } }),
-      fetch("/api/leads", { headers: { Authorization: `Bearer ${t}` } }),
+      fetch(apiUrl("/api/super/tenants"), { headers: { Authorization: `Bearer ${t}` } }),
+      fetch(apiUrl("/api/leads"), { headers: { Authorization: `Bearer ${t}` } }),
     ]);
     if (tenRes.ok) {
       const d = await tenRes.json();

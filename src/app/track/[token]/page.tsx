@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { apiUrl } from "@/lib/urls";
 import styles from "./track.module.css";
 
 interface TrackData {
@@ -78,7 +79,7 @@ export default function TrackPage() {
   const [sent, setSent] = useState(false);
 
   async function load() {
-    const res = await fetch(`/api/track/${token}`);
+    const res = await fetch(apiUrl(`/api/track/${token}`));
     const json = await res.json();
     if (!res.ok) {
       setError(json.error || "Not found");
@@ -96,7 +97,7 @@ export default function TrackPage() {
 
   async function submitReview(e: React.FormEvent) {
     e.preventDefault();
-    const res = await fetch("/api/reviews", {
+    const res = await fetch(apiUrl("/api/reviews"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ trackToken: token, rating, comment }),

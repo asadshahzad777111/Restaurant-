@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { apiUrl } from "@/lib/urls";
 import styles from "./marketing.module.css";
 
 const TABS = [
@@ -67,7 +68,7 @@ export function MarketingHome() {
   });
 
   useEffect(() => {
-    void fetch("/api/leads")
+    void fetch(apiUrl("/api/leads"))
       .then((r) => r.json())
       .then((d) => {
         if (d.contactWhatsapp) setWhatsapp(d.contactWhatsapp);
@@ -79,7 +80,7 @@ export function MarketingHome() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const res = await fetch("/api/leads", {
+    const res = await fetch(apiUrl("/api/leads"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, source: "contact" }),

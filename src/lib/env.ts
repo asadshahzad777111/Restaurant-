@@ -15,9 +15,7 @@ export function mongoDbName() {
   return process.env.MONGODB_DB?.trim() || "ordo";
 }
 
-export function appUrl() {
-  return process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:3000";
-}
+export { appUrl } from "./urls";
 
 export function contactWhatsapp() {
   return process.env.CONTACT_WHATSAPP?.trim() || "";
