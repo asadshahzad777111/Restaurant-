@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureBootstrap } from "@/lib/bootstrap";
+import { ensureStore, addOrder, readTenant, findTenantMetaByCode } from "@/lib/db";
 import { AuthError, hasPermission, requireTenantSession } from "@/lib/session";
-import { addOrder, readTenant } from "@/lib/tenant-store";
-import { findTenantMetaByCode } from "@/lib/platform-store";
 import { computeFees, lineUnitPrice } from "@/lib/fees";
 import type { LineModifier, OrderLine } from "@/lib/tenant-types";
 import type { PaymentMethod, PaymentStatus, ServiceType } from "@/lib/types";
@@ -21,16 +19,16 @@ function paymentStatusFor(method: PaymentMethod): PaymentStatus {
 
 export async function GET(req: NextRequest) {
   try {
-    ensureBootstrap();
-    const session = requireTenantSession(req);
+    await ensureStore();
+    const session = await requireTenantSession(req);
     if (
-      !hasPermission(session, "orders") &&
-      !hasPermission(session, "kitchen") &&
-      !hasPermission(session, "pos")
+      !(await hasPermission(session, "orders")) &&
+      !(await hasPermission(session, "kitchen")) &&
+      !(await hasPermission(session, "pos"))
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    const tenant = readTenant(session.tenantId!);
+    const tenant = await readTenant(session.tenantId!);
     return NextResponse.json({ orders: tenant.orders });
   } catch (e) {
     if (e instanceof AuthError) {
@@ -42,7 +40,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    ensureBootstrap();
+    await ensureStore();
     const body = await req.json();
     const {
       tenantCode,
@@ -84,8 +82,8 @@ export async function POST(req: NextRequest) {
 
     let tenantId: string;
     if (channel === "pos") {
-      const session = requireTenantSession(req);
-      if (!hasPermission(session, "pos")) {
+      const session = await requireTenantSession(req);
+      if (!(await hasPermission(session, "pos"))) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       tenantId = session.tenantId!;
@@ -93,14 +91,14 @@ export async function POST(req: NextRequest) {
       if (!tenantCode) {
         return NextResponse.json({ error: "tenantCode required" }, { status: 400 });
       }
-      const meta = findTenantMetaByCode(tenantCode);
+      const meta = await findTenantMetaByCode(tenantCode);
       if (!meta || meta.status === "suspended") {
         return NextResponse.json({ error: "Restaurant unavailable" }, { status: 403 });
       }
       tenantId = meta.id;
     }
 
-    const tenant = readTenant(tenantId);
+    const tenant = await readTenant(tenantId);
     for (const line of rawLines) {
       const item = tenant.menu.find((m) => m.id === line.itemId);
       if (!item || !item.available) {
@@ -122,7 +120,7 @@ export async function POST(req: NextRequest) {
 
     const fees = computeFees(tenant.shop, serviceType, lines);
     const now = new Date().toISOString();
-    const order = addOrder(tenantId, {
+    const order = await addOrder(tenantId, {
       channel,
       serviceType,
       tableNumber,

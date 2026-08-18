@@ -8,14 +8,13 @@ import {
   getSessionUser,
   publicUser,
 } from "@/lib/session";
-import { findSession } from "@/lib/platform-store";
-import { ensureBootstrap } from "@/lib/bootstrap";
+import { findSession, ensureStore } from "@/lib/db";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
-    ensureBootstrap();
+    await ensureStore();
     const body = await req.json();
     const { mode, username, password, code } = body as {
       mode?: "super" | "tenant";
@@ -27,12 +26,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing credentials" }, { status: 400 });
     }
     if (mode === "super" || (!code && mode !== "tenant")) {
-      const session = loginSuper(username, password);
+      const session = await loginSuper(username, password);
       return NextResponse.json({ token: session.token, session });
     }
     if (!code) return NextResponse.json({ error: "Restaurant code required" }, { status: 400 });
-    const session = loginTenant(code, username, password);
-    const user = publicUser(getSessionUser(session));
+    const session = await loginTenant(code, username, password);
+    const user = publicUser(await getSessionUser(session));
     return NextResponse.json({ token: session.token, session, user });
   } catch (e) {
     if (e instanceof AuthError) {
@@ -44,12 +43,12 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    ensureBootstrap();
+    await ensureStore();
     const token = getBearerToken(req);
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const session = findSession(token);
+    const session = await findSession(token);
     if (!session) return NextResponse.json({ error: "Invalid session" }, { status: 401 });
-    const user = publicUser(getSessionUser(session));
+    const user = publicUser(await getSessionUser(session));
     return NextResponse.json({ session, user });
   } catch {
     return NextResponse.json({ error: "Failed" }, { status: 500 });
@@ -58,6 +57,6 @@ export async function GET(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const token = getBearerToken(req);
-  if (token) logout(token);
+  if (token) await logout(token);
   return NextResponse.json({ ok: true });
 }

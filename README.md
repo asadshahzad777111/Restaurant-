@@ -1,36 +1,28 @@
 # ORDO — Multi-tenant Restaurant OS
 
-Next.js App Router + TypeScript + CSS Modules. File-backed store under `.data/` (no DB yet).
+Next.js App Router + TypeScript + CSS Modules.
 
-## Quick start
+**Localhost:** file store `.data/` (no Mongo needed) — `/lab` works.  
+**LIVE:** GitHub → Vercel + MongoDB Atlas + Cloudflare DNS/R2 + Resend — see `docs/LIVE-SETUP.md`.
+
+## Quick start (localhost)
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000/lab](http://localhost:3000/lab) for demo links.
+Open http://localhost:3000/lab
 
-### Guest look (mobile)
-- Light UI · orange accents · food photos · category pills · Place cart bar
-- Track page with live kitchen timeline
-- Open: `/order?tenant=DEMO` or `/order?tenant=DEMO&table=3`
+| Role | Login |
+|---|---|
+| Super | `super` / `super123` |
+| Rest Admin | Code `DEMO` · `admin` / `admin123` |
+| 2nd tenant | Code `ISO2` (after Mongo seed / Super create) |
+| Guest | `/order?tenant=DEMO` |
 
-### Demo credentials
+## LIVE stack
+GitHub · Vercel · MongoDB Atlas · Cloudflare DNS · Cloudflare R2 · Resend · WhatsApp number · Uptime on `/api/health`  
+POS APK later. No Render. No refunds (cancel/void only).
 
-| Role | Path | Login |
-|---|---|---|
-| Super Admin | `/super` | `super` / `super123` |
-| Restaurant Admin | `/login` | Code `DEMO` · `admin` / `admin123` |
-| Guest | `/order?tenant=DEMO` | — |
-
-## Sell model
-- **You = Super** → create restaurants, plans, leads
-- **Each restaurant = Rest Admin** → own menu, stock, staff, QR, branding
-- Staff permissions are per-user; guest QR never mixes tenants
-
-## APK
-See `docs/APK-PATH.md` (PWA first, then Capacitor Android shell).
-
-## Architecture
-See `docs/MULTI-TENANT-SAAS.md`.
+Env placeholders: `.env.example` → paste real values only in **Vercel Environment Variables**.

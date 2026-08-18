@@ -1,38 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureBootstrap } from "@/lib/bootstrap";
+import { ensureStore, findTenantMetaByCode, findTenantMetaById, listPlans, getPublicMenu, readTenantSafe } from "@/lib/db";
 import { AuthError, getSessionUser, publicUser, requireSession } from "@/lib/session";
-import { findTenantMetaByCode, findTenantMetaById, listPlans } from "@/lib/platform-store";
-import { getPublicMenu, readTenantSafe } from "@/lib/tenant-store";
+import { storageMode } from "@/lib/env";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   try {
-    ensureBootstrap();
+    await ensureStore();
     const { searchParams } = new URL(req.url);
     const tenantCode = searchParams.get("tenant");
 
     const authHeader = req.headers.get("authorization");
     if (authHeader?.startsWith("Bearer ")) {
       try {
-        const session = requireSession(req);
+        const session = await requireSession(req);
         if (session.role === "super") {
           return NextResponse.json({
             session,
-            plans: listPlans(),
+            plans: await listPlans(),
+            storage: storageMode(),
           });
         }
         if (!session.tenantId) {
           return NextResponse.json({ error: "No tenant" }, { status: 400 });
         }
-        const meta = findTenantMetaById(session.tenantId);
-        const tenant = readTenantSafe(session.tenantId);
-        const user = publicUser(getSessionUser(session));
+        const meta = await findTenantMetaById(session.tenantId);
+        const tenant = await readTenantSafe(session.tenantId);
+        const user = publicUser(await getSessionUser(session));
         return NextResponse.json({
           session,
           user,
           meta,
           tenant,
+          storage: storageMode(),
         });
       } catch (e) {
         if (e instanceof AuthError && !tenantCode) {
@@ -44,12 +45,16 @@ export async function GET(req: NextRequest) {
     if (!tenantCode) {
       return NextResponse.json({ error: "tenant query required" }, { status: 400 });
     }
-    const meta = findTenantMetaByCode(tenantCode);
+    const meta = await findTenantMetaByCode(tenantCode);
     if (!meta) return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
     if (meta.status === "suspended") {
       return NextResponse.json({ error: "Restaurant suspended" }, { status: 403 });
     }
-    return NextResponse.json({ public: getPublicMenu(meta.id), meta });
+    return NextResponse.json({
+      public: await getPublicMenu(meta.id),
+      meta,
+      storage: storageMode(),
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed";
     return NextResponse.json({ error: message }, { status: 500 });

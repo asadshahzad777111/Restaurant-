@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureBootstrap } from "@/lib/bootstrap";
-import { addReview, findOrderByTrackToken } from "@/lib/tenant-store";
+import { ensureStore, addReview, findOrderByTrackToken } from "@/lib/db";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
-    ensureBootstrap();
+    await ensureStore();
     const body = await req.json();
     const { trackToken, rating, comment } = body as {
       trackToken: string;
@@ -16,9 +15,9 @@ export async function POST(req: NextRequest) {
     if (!trackToken || !rating || rating < 1 || rating > 5) {
       return NextResponse.json({ error: "Invalid review" }, { status: 400 });
     }
-    const hit = findOrderByTrackToken(trackToken);
+    const hit = await findOrderByTrackToken(trackToken);
     if (!hit) return NextResponse.json({ error: "Order not found" }, { status: 404 });
-    const review = addReview(hit.tenant.id, {
+    const review = await addReview(hit.tenant.id, {
       trackToken,
       orderId: hit.order.id,
       rating,

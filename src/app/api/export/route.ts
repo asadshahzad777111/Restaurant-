@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureBootstrap } from "@/lib/bootstrap";
-import { AuthError, hasPermission, requireTenantSession, getBearerToken } from "@/lib/session";
-import { findSession } from "@/lib/platform-store";
-import { readTenant } from "@/lib/tenant-store";
+import { ensureStore, findSession, readTenant } from "@/lib/db";
+import { AuthError, getBearerToken, hasPermission, requireTenantSession } from "@/lib/session";
 
 export const runtime = "nodejs";
 
@@ -17,7 +15,7 @@ function toCsv(rows: Record<string, string | number>[]) {
 
 export async function GET(req: NextRequest) {
   try {
-    ensureBootstrap();
+    await ensureStore();
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type") || "menu";
     const format = searchParams.get("format") || "json";
@@ -26,7 +24,7 @@ export async function GET(req: NextRequest) {
 
     const token = getBearerToken(req);
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const session = findSession(token);
+    const session = await findSession(token);
     if (!session) return NextResponse.json({ error: "Invalid session" }, { status: 401 });
 
     let tenantId = session.tenantId;
@@ -34,13 +32,13 @@ export async function GET(req: NextRequest) {
       tenantId = searchParams.get("tenantId") || undefined;
       if (!tenantId) return NextResponse.json({ error: "tenantId required for super" }, { status: 400 });
     } else {
-      requireTenantSession(req);
-      if (!hasPermission(session, "settings") && session.role !== "tenant_admin") {
+      await requireTenantSession(req);
+      if (!(await hasPermission(session, "settings")) && session.role !== "tenant_admin") {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     }
 
-    const tenant = readTenant(tenantId!);
+    const tenant = await readTenant(tenantId!);
 
     if (type === "menu") {
       if (format === "csv") {

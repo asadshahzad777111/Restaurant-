@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureBootstrap } from "@/lib/bootstrap";
-import { findOrderByTrackToken } from "@/lib/tenant-store";
+import { ensureStore, findOrderByTrackToken } from "@/lib/db";
 
 export const runtime = "nodejs";
 
@@ -9,9 +8,9 @@ export async function GET(
   ctx: { params: Promise<{ token: string }> },
 ) {
   try {
-    ensureBootstrap();
+    await ensureStore();
     const { token } = await ctx.params;
-    const hit = findOrderByTrackToken(token);
+    const hit = await findOrderByTrackToken(token);
     if (!hit) return NextResponse.json({ error: "Not found" }, { status: 404 });
     const { tenant, order } = hit;
     const review = tenant.reviews.find((r) => r.trackToken === token);

@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureBootstrap } from "@/lib/bootstrap";
+import { ensureStore, addDayClose, readTenant } from "@/lib/db";
 import { AuthError, hasPermission, requireTenantSession } from "@/lib/session";
-import { addDayClose, readTenant } from "@/lib/tenant-store";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   try {
-    ensureBootstrap();
-    const session = requireTenantSession(req);
-    if (!hasPermission(session, "settings") && !hasPermission(session, "home")) {
+    await ensureStore();
+    const session = await requireTenantSession(req);
+    if (!(await hasPermission(session, "settings")) && !(await hasPermission(session, "home"))) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    const tenant = readTenant(session.tenantId!);
+    const tenant = await readTenant(session.tenantId!);
     const { searchParams } = new URL(req.url);
     const from = searchParams.get("from");
     const to = searchParams.get("to") || new Date().toISOString();
@@ -35,8 +34,7 @@ export async function GET(req: NextRequest) {
       }
       if (o.status === "completed") completedCount += 1;
       grossTotal += o.total;
-      const key = o.paymentMethod;
-      byPayment[key] = (byPayment[key] || 0) + o.total;
+      byPayment[o.paymentMethod] = (byPayment[o.paymentMethod] || 0) + o.total;
     }
 
     return NextResponse.json({
@@ -61,15 +59,15 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    ensureBootstrap();
-    const session = requireTenantSession(req);
-    if (!hasPermission(session, "settings") && session.role !== "tenant_admin") {
+    await ensureStore();
+    const session = await requireTenantSession(req);
+    if (!(await hasPermission(session, "settings")) && session.role !== "tenant_admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     const body = await req.json();
     const from = body.from || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const to = body.to || new Date().toISOString();
-    const tenant = readTenant(session.tenantId!);
+    const tenant = await readTenant(session.tenantId!);
     const fromMs = new Date(from).getTime();
     const toMs = new Date(to).getTime();
     const slice = tenant.orders.filter((o) => {
@@ -89,7 +87,7 @@ export async function POST(req: NextRequest) {
       grossTotal += o.total;
       byPayment[o.paymentMethod] = (byPayment[o.paymentMethod] || 0) + o.total;
     }
-    const summary = addDayClose(session.tenantId!, {
+    const summary = await addDayClose(session.tenantId!, {
       closedAt: new Date().toISOString(),
       closedBy: session.userId,
       from,

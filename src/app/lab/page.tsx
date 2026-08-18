@@ -16,7 +16,8 @@ const LINKS = [
   { href: "/tables", label: "Tables", note: "empty / occupied / bill" },
   { href: "/menu", label: "Menu admin", note: "One-tap 86" },
   { href: "/day-close", label: "Day close", note: "Shift summary" },
-  { href: "/settings", label: "Settings", note: "Fees · export · password" },
+  { href: "/settings", label: "Settings", note: "Fees · export · password · R2 upload" },
+  { href: "/api/health", label: "Health (uptime)", note: "Mongo/file + integrations flags" },
 ];
 
 export default function LabPage() {

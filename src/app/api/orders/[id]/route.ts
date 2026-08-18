@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureBootstrap } from "@/lib/bootstrap";
+import { ensureStore, patchOrder, readTenant } from "@/lib/db";
 import { AuthError, hasPermission, requireTenantSession } from "@/lib/session";
-import { patchOrder, readTenant } from "@/lib/tenant-store";
 import type { OrderStatus, PaymentStatus } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -11,12 +10,12 @@ export async function PATCH(
   ctx: { params: Promise<{ id: string }> },
 ) {
   try {
-    ensureBootstrap();
-    const session = requireTenantSession(req);
+    await ensureStore();
+    const session = await requireTenantSession(req);
     if (
-      !hasPermission(session, "orders") &&
-      !hasPermission(session, "kitchen") &&
-      !hasPermission(session, "pos")
+      !(await hasPermission(session, "orders")) &&
+      !(await hasPermission(session, "kitchen")) &&
+      !(await hasPermission(session, "pos"))
     ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -41,8 +40,8 @@ export async function PATCH(
       patch.note = reason;
     }
 
-    const order = patchOrder(session.tenantId!, id, patch);
-    const tenant = readTenant(session.tenantId!);
+    const order = await patchOrder(session.tenantId!, id, patch);
+    const tenant = await readTenant(session.tenantId!);
     return NextResponse.json({ order, tables: tenant.tables });
   } catch (e) {
     if (e instanceof AuthError) {

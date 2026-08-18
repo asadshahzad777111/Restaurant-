@@ -1,24 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureBootstrap, createEmptyTenant } from "@/lib/bootstrap";
-import { AuthError, impersonateTenant, requireSuper } from "@/lib/session";
 import {
+  ensureStore,
+  createEmptyTenantState,
   createTenantMeta,
   listPlans,
   listTenantsMeta,
   setTenantStatus,
   updateTenantMeta,
-} from "@/lib/platform-store";
+} from "@/lib/db";
+import { AuthError, impersonateTenant, requireSuper } from "@/lib/session";
 import type { PlanId, TenantStatus } from "@/lib/types";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   try {
-    ensureBootstrap();
-    requireSuper(req);
+    await ensureStore();
+    await requireSuper(req);
     return NextResponse.json({
-      tenants: listTenantsMeta(),
-      plans: listPlans(),
+      tenants: await listTenantsMeta(),
+      plans: await listPlans(),
     });
   } catch (e) {
     if (e instanceof AuthError) {
@@ -30,8 +31,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    ensureBootstrap();
-    const session = requireSuper(req);
+    await ensureStore();
+    const session = await requireSuper(req);
     const body = await req.json();
     const { action } = body as { action: string };
 
@@ -45,23 +46,23 @@ export async function POST(req: NextRequest) {
       if (!code || !name) {
         return NextResponse.json({ error: "code and name required" }, { status: 400 });
       }
-      createEmptyTenant({ id, code, name, adminUsername, adminPassword });
-      const meta = createTenantMeta({ id, code, name, planId });
+      await createEmptyTenantState({ id, code, name, adminUsername, adminPassword });
+      const meta = await createTenantMeta({ id, code, name, planId });
       return NextResponse.json({ tenant: meta });
     }
 
     if (action === "status") {
-      const meta = setTenantStatus(body.id, body.status as TenantStatus);
+      const meta = await setTenantStatus(body.id, body.status as TenantStatus);
       return NextResponse.json({ tenant: meta });
     }
 
     if (action === "rename") {
-      const meta = updateTenantMeta(body.id, { name: body.name });
+      const meta = await updateTenantMeta(body.id, { name: body.name });
       return NextResponse.json({ tenant: meta });
     }
 
     if (action === "impersonate") {
-      const newSession = impersonateTenant(session, body.id);
+      const newSession = await impersonateTenant(session, body.id);
       return NextResponse.json({ token: newSession.token, session: newSession });
     }
 

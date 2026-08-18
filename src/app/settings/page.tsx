@@ -203,6 +203,39 @@ export default function SettingsPage() {
               Orders CSV (30d)
             </button>
           </div>
+          <p className={styles.muted} style={{ marginTop: 8 }}>
+            LIVE se pehle yahan se backup lein. Mongo switch ke baad bhi export kaam karta hai.
+          </p>
+        </div>
+
+        <div className={styles.card}>
+          <h3 style={{ marginTop: 0 }}>Upload logo (Cloudflare R2)</h3>
+          <p className={styles.muted}>
+            Vercel pe R2_* env set hon to yahan se upload. Warna logo URL field use karein.
+          </p>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file || !token) return;
+              const fd = new FormData();
+              fd.append("file", file);
+              fd.append("kind", "logo");
+              const res = await fetch("/api/upload", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+                body: fd,
+              });
+              const data = await res.json();
+              if (!res.ok) {
+                setMsg(data.error || data.hint || "Upload failed");
+                return;
+              }
+              setBranding((b) => ({ ...b, logoUrl: data.url }));
+              setMsg("Uploaded — Save branding dabao");
+            }}
+          />
         </div>
 
         <div className={styles.card}>

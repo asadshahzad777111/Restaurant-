@@ -1,6 +1,13 @@
 import { NextRequest } from "next/server";
-import { findSession, verifySuper, addSession, deleteSession, findTenantMetaByCode } from "./platform-store";
-import { findUser, readTenant } from "./tenant-store";
+import {
+  findSession,
+  verifySuper,
+  addSession,
+  deleteSession,
+  findTenantMetaByCode,
+  findUser,
+  readTenant,
+} from "@/lib/db";
 import type { Permission, Session, SessionRole } from "./types";
 import type { TenantUser } from "./tenant-types";
 
@@ -16,10 +23,10 @@ export function getBearerToken(req: NextRequest): string | null {
   return null;
 }
 
-export function requireSession(req: NextRequest): Session {
+export async function requireSession(req: NextRequest): Promise<Session> {
   const token = getBearerToken(req);
   if (!token) throw new AuthError("Unauthorized", 401);
-  const session = findSession(token);
+  const session = await findSession(token);
   if (!session) throw new AuthError("Invalid session", 401);
   return session;
 }
@@ -32,8 +39,8 @@ export class AuthError extends Error {
   }
 }
 
-export function loginSuper(username: string, password: string): Session {
-  if (!verifySuper(username, password)) throw new AuthError("Invalid credentials", 401);
+export async function loginSuper(username: string, password: string): Promise<Session> {
+  if (!(await verifySuper(username, password))) throw new AuthError("Invalid credentials", 401);
   return addSession({
     token: newToken(),
     role: "super",
@@ -41,11 +48,15 @@ export function loginSuper(username: string, password: string): Session {
   });
 }
 
-export function loginTenant(code: string, username: string, password: string): Session {
-  const meta = findTenantMetaByCode(code);
+export async function loginTenant(
+  code: string,
+  username: string,
+  password: string,
+): Promise<Session> {
+  const meta = await findTenantMetaByCode(code);
   if (!meta) throw new AuthError("Restaurant code not found", 404);
   if (meta.status === "suspended") throw new AuthError("Restaurant is suspended", 403);
-  const user = findUser(meta.id, username);
+  const user = await findUser(meta.id, username);
   if (!user || user.password !== password) throw new AuthError("Invalid credentials", 401);
   const role: SessionRole = user.role === "admin" ? "tenant_admin" : "staff";
   return addSession({
@@ -57,9 +68,12 @@ export function loginTenant(code: string, username: string, password: string): S
   });
 }
 
-export function impersonateTenant(superSession: Session, tenantId: string): Session {
+export async function impersonateTenant(
+  superSession: Session,
+  tenantId: string,
+): Promise<Session> {
   if (superSession.role !== "super") throw new AuthError("Forbidden", 403);
-  const tenant = readTenant(tenantId);
+  const tenant = await readTenant(tenantId);
   const admin = tenant.users.find((u) => u.role === "admin");
   if (!admin) throw new AuthError("No admin user", 400);
   return addSession({
@@ -72,13 +86,13 @@ export function impersonateTenant(superSession: Session, tenantId: string): Sess
   });
 }
 
-export function logout(token: string) {
-  deleteSession(token);
+export async function logout(token: string) {
+  await deleteSession(token);
 }
 
-export function getSessionUser(session: Session): TenantUser | null {
+export async function getSessionUser(session: Session): Promise<TenantUser | null> {
   if (!session.tenantId || !session.userId) return null;
-  const tenant = readTenant(session.tenantId);
+  const tenant = await readTenant(session.tenantId);
   return tenant.users.find((u) => u.id === session.userId) ?? null;
 }
 
@@ -88,23 +102,23 @@ export function publicUser(user: TenantUser | null) {
   return rest;
 }
 
-export function hasPermission(session: Session, perm: Permission): boolean {
+export async function hasPermission(session: Session, perm: Permission): Promise<boolean> {
   if (session.role === "super") return true;
   if (session.role === "tenant_admin") return true;
-  const user = getSessionUser(session);
+  const user = await getSessionUser(session);
   return !!user?.permissions.includes(perm);
 }
 
-export function requireTenantSession(req: NextRequest): Session {
-  const session = requireSession(req);
+export async function requireTenantSession(req: NextRequest): Promise<Session> {
+  const session = await requireSession(req);
   if (!session.tenantId || (session.role !== "tenant_admin" && session.role !== "staff")) {
     throw new AuthError("Tenant session required", 403);
   }
   return session;
 }
 
-export function requireSuper(req: NextRequest): Session {
-  const session = requireSession(req);
+export async function requireSuper(req: NextRequest): Promise<Session> {
+  const session = await requireSession(req);
   if (session.role !== "super") throw new AuthError("Super admin required", 403);
   return session;
 }
