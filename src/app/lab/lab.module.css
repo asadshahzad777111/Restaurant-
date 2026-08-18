@@ -1,0 +1,49 @@
+.page {
+  min-height: 100vh;
+  padding: 2.5rem 6vw 4rem;
+  background: #0b0c10;
+}
+
+.brand {
+  margin: 0;
+  font-weight: 800;
+  color: var(--accent-hot);
+  letter-spacing: 0.04em;
+}
+
+.page h1 {
+  margin: 0.35rem 0;
+}
+
+.sub {
+  color: #b9b2a8;
+  max-width: 40rem;
+}
+
+.list {
+  list-style: none;
+  margin: 2rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+  max-width: 44rem;
+}
+
+.list a {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #14161c;
+}
+
+.list span {
+  color: #a8a29a;
+  font-size: 0.9rem;
+}
+
+.list code {
+  font-size: 0.78rem;
+  color: #7d8799;
+}

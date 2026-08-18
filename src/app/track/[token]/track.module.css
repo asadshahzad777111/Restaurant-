@@ -1,0 +1,146 @@
+.page {
+  min-height: 100vh;
+  padding: 1.5rem 1.1rem 3rem;
+  background: #0c0d11;
+  color: #f5f1eb;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.brand {
+  margin: 0;
+  color: var(--accent-hot);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.page h1 {
+  margin: 0.35rem 0;
+}
+
+.status {
+  display: inline-block;
+  margin: 0;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(255, 106, 26, 0.18);
+  color: #ffb07a;
+  font-weight: 700;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+.timeline {
+  list-style: none;
+  margin: 1.5rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+  border-left: 2px solid rgba(255, 106, 26, 0.35);
+  padding-left: 1rem;
+}
+
+.timeline li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.timeline span {
+  color: #8f887e;
+  font-size: 0.85rem;
+}
+
+.box {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #14161c;
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.box h2,
+.review h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.box ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.box li {
+  display: flex;
+  justify-content: space-between;
+}
+
+.total {
+  margin: 0.85rem 0 0.35rem;
+  font-weight: 800;
+}
+
+.meta {
+  margin: 0;
+  color: #a8a29a;
+  font-size: 0.85rem;
+  text-transform: capitalize;
+}
+
+.review {
+  margin-top: 1.25rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.stars {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.star,
+.starOn {
+  border: none;
+  background: transparent;
+  font-size: 1.8rem;
+  color: #4a4640;
+  padding: 0;
+}
+
+.starOn {
+  color: #ffb020;
+}
+
+.review textarea {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #14161c;
+  color: #fff;
+  padding: 0.75rem;
+}
+
+.review button[type="submit"] {
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #120b07;
+  font-weight: 800;
+  padding: 0.75rem;
+}
+
+.thanks {
+  margin-top: 1rem;
+  color: var(--success);
+  font-weight: 600;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}

@@ -1,0 +1,24 @@
+.toast {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 50;
+  background: #111318;
+  color: #fff;
+  padding: 0.85rem 1.1rem;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  border-left: 3px solid var(--accent);
+  animation: slide 0.35s ease;
+}
+
+@keyframes slide {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}

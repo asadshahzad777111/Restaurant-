@@ -1,0 +1,129 @@
+.page {
+  color: var(--staff-text);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e8e4de;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.card strong {
+  display: block;
+  font-size: 1.6rem;
+  margin-top: 0.35rem;
+}
+
+.muted {
+  color: var(--staff-muted);
+  font-size: 0.9rem;
+}
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.btn,
+.btnGhost {
+  border-radius: 8px;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid #ddd6cc;
+  background: #fff;
+}
+
+.btn {
+  background: var(--staff-accent);
+  border-color: var(--staff-accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 0.7rem;
+  border-bottom: 1px solid #eee8e0;
+  font-size: 0.9rem;
+}
+
+.menuGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.55rem;
+}
+
+.item {
+  background: #fff;
+  border: 1px solid #e8e4de;
+  border-radius: 10px;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.item strong {
+  display: block;
+}
+
+.kitchen {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.ticket {
+  background: #fff;
+  border: 1px solid #e8e4de;
+  border-radius: 12px;
+  padding: 0.9rem;
+}
+
+.ticket h3 {
+  margin: 0 0 0.5rem;
+}
+
+.form {
+  display: grid;
+  gap: 0.55rem;
+  max-width: 420px;
+  background: #fff;
+  border: 1px solid #e8e4de;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.form input,
+.form textarea,
+.form select {
+  border: 1px solid #ddd6cc;
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+}
+
+.stack {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (max-width: 800px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

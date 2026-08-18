@@ -1,0 +1,87 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background:
+    radial-gradient(800px 400px at 20% 0%, rgba(255, 106, 26, 0.2), transparent),
+    #0b0c10;
+}
+
+.card {
+  width: min(100%, 400px);
+  background: #14161c;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1.75rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.brand {
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--accent-hot);
+}
+
+.card h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.modes button {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: #cfc8be;
+  border-radius: 8px;
+  padding: 0.55rem;
+}
+
+.modes .active {
+  background: rgba(255, 106, 26, 0.15);
+  border-color: rgba(255, 106, 26, 0.5);
+  color: #fff;
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: #b9b2a8;
+}
+
+.input {
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #0b0c10;
+  color: #fff;
+  padding: 0.65rem 0.75rem;
+}
+
+.submit {
+  margin-top: 0.35rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #120b07;
+  font-weight: 700;
+  padding: 0.75rem;
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #8f887e;
+}
