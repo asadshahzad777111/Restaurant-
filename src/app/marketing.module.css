@@ -34,6 +34,12 @@
   font-weight: 700;
   padding: 0.45rem 0.9rem;
   border-radius: 999px;
+  transition: transform var(--motion-hover) var(--motion-ease), opacity var(--motion-hover) var(--motion-ease);
+}
+
+.navCta:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
 }
 
 .hero {
@@ -55,14 +61,13 @@
   height: 55%;
   background: radial-gradient(circle, rgba(255, 106, 26, 0.35), transparent 70%);
   filter: blur(40px);
-  animation: pulse 6s ease-in-out infinite;
+  opacity: 0.7;
 }
 
 .heroInner {
   position: relative;
   z-index: 2;
   max-width: 36rem;
-  animation: rise 0.9s ease both;
 }
 
 .heroBrand {
@@ -108,6 +113,18 @@
   padding: 0.75rem 1.2rem;
   font-weight: 700;
   border: none;
+  transition:
+    transform var(--motion-hover) var(--motion-ease),
+    opacity var(--motion-hover) var(--motion-ease),
+    border-color var(--motion-hover) var(--motion-ease),
+    background-color var(--motion-hover) var(--motion-ease);
+}
+
+.primary:hover,
+.secondary:hover,
+.planCta:hover {
+  opacity: 0.94;
+  transform: translateY(-1px);
 }
 
 .primary {
@@ -127,7 +144,6 @@
   display: flex;
   justify-content: flex-end;
   align-items: flex-end;
-  animation: float 5s ease-in-out infinite;
 }
 
 .heroPanel {
@@ -204,7 +220,6 @@
 .tabPanel {
   padding: 1.5rem 0 0;
   max-width: 36rem;
-  animation: rise 0.45s ease both;
 }
 
 .tabPanel h3 {
@@ -314,37 +329,6 @@
   padding: 2rem 6vw 3rem;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   color: #9e978d;
-}
-
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 0.9;
-  }
 }
 
 @media (max-width: 900px) {

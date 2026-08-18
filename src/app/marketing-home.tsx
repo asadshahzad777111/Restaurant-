@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { apiUrl } from "@/lib/urls";
+import {
+  listContainer,
+  listItem,
+  pageEnter,
+  sectionEnter,
+  useIsCoarsePointer,
+  usePrefersReducedMotion,
+  viewOnce,
+} from "@/lib/motion";
 import styles from "./marketing.module.css";
 
 const TABS = [
@@ -55,6 +65,8 @@ const PLANS = [
 ] as const;
 
 export function MarketingHome() {
+  const reduced = usePrefersReducedMotion();
+  const coarse = useIsCoarsePointer();
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("owner");
   const [whatsapp, setWhatsapp] = useState("+923001234567");
   const [sent, setSent] = useState(false);
@@ -77,6 +89,9 @@ export function MarketingHome() {
   }, []);
 
   const active = TABS.find((t) => t.id === tab)!;
+  const hero = pageEnter(reduced, coarse);
+  const section = sectionEnter(reduced);
+  const item = listItem(reduced, coarse);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -110,7 +125,12 @@ export function MarketingHome() {
 
       <section className={styles.hero}>
         <div className={styles.heroGlow} aria-hidden />
-        <div className={styles.heroInner}>
+        <motion.div
+          className={styles.heroInner}
+          variants={hero}
+          initial="hidden"
+          animate="show"
+        >
           <p className={styles.heroBrand}>ORDO</p>
           <h1 className={styles.heroTitle}>Restaurant OS for every outlet — isolated by design.</h1>
           <p className={styles.heroSub}>
@@ -124,17 +144,31 @@ export function MarketingHome() {
               Try guest demo
             </Link>
           </div>
-        </div>
-        <div className={styles.heroVisual} aria-hidden>
+        </motion.div>
+        <motion.div
+          className={styles.heroVisual}
+          aria-hidden
+          variants={hero}
+          initial="hidden"
+          animate="show"
+          transition={{ delay: reduced || coarse ? 0 : 0.06 }}
+        >
           <div className={styles.heroPanel}>
             <span>Live tickets</span>
             <strong>#1042 · Table 7</strong>
             <em>Preparing</em>
           </div>
-        </div>
+        </motion.div>
       </section>
 
-      <section className={styles.section} id="product">
+      <motion.section
+        className={styles.section}
+        id="product"
+        variants={section}
+        initial="hidden"
+        whileInView="show"
+        viewport={viewOnce}
+      >
         <h2>Built like a restaurant, not a spreadsheet</h2>
         <p className={styles.lead}>
           WordPress-simple admin for restaurant owners. Staff app for the floor. Guest app for the table.
@@ -151,31 +185,66 @@ export function MarketingHome() {
             </button>
           ))}
         </div>
-        <div className={styles.tabPanel}>
+        <div className={styles.tabPanel} key={tab}>
           <h3>{active.title}</h3>
           <p>{active.body}</p>
         </div>
-      </section>
+      </motion.section>
 
-      <section className={styles.sectionAlt}>
+      <motion.section
+        className={styles.sectionAlt}
+        variants={section}
+        initial="hidden"
+        whileInView="show"
+        viewport={viewOnce}
+      >
         <h2>Multi-tenant by default</h2>
         <p className={styles.lead}>
           Tenant A’s logo prints on Tenant A’s receipts. Tenant B’s stock never appears in Tenant A’s Settings.
           Platform owner can open a restaurant to help — with a clear support badge, no restaurant password.
         </p>
-        <ol className={styles.flow}>
-          <li>Create restaurant + admin from owner control</li>
-          <li>Brand menu, stock, staff, QR</li>
-          <li>Guests order · staff run · reviews land</li>
-        </ol>
-      </section>
+        <motion.ol
+          className={styles.flow}
+          variants={listContainer(0.06)}
+          initial="hidden"
+          whileInView="show"
+          viewport={viewOnce}
+        >
+          {[
+            "Create restaurant + admin from owner control",
+            "Brand menu, stock, staff, QR",
+            "Guests order · staff run · reviews land",
+          ].map((text) => (
+            <motion.li key={text} variants={item}>
+              {text}
+            </motion.li>
+          ))}
+        </motion.ol>
+      </motion.section>
 
-      <section className={styles.section} id="plans">
+      <motion.section
+        className={styles.section}
+        id="plans"
+        variants={section}
+        initial="hidden"
+        whileInView="show"
+        viewport={viewOnce}
+      >
         <h2>Plans for Pakistan kitchens</h2>
         <p className={styles.lead}>Monthly PKR pricing. Upgrade when the team grows.</p>
-        <div className={styles.plans}>
+        <motion.div
+          className={styles.plans}
+          variants={listContainer(0.05)}
+          initial="hidden"
+          whileInView="show"
+          viewport={viewOnce}
+        >
           {PLANS.map((p) => (
-            <article key={p.id} className={"featured" in p && p.featured ? styles.planFeatured : styles.plan}>
+            <motion.article
+              key={p.id}
+              variants={item}
+              className={"featured" in p && p.featured ? styles.planFeatured : styles.plan}
+            >
               <h3>{p.name}</h3>
               <p className={styles.price}>
                 {p.price}
@@ -189,20 +258,33 @@ export function MarketingHome() {
               >
                 Request {p.name}
               </a>
-            </article>
+            </motion.article>
           ))}
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
 
-      <section className={styles.sectionAlt}>
+      <motion.section
+        className={styles.sectionAlt}
+        variants={section}
+        initial="hidden"
+        whileInView="show"
+        viewport={viewOnce}
+      >
         <h2>Printer package</h2>
         <p className={styles.lead}>
           Thermal ESC/POS wiring is on the roadmap. Today: browser receipt print with the restaurant’s own logo —
           never another tenant’s.
         </p>
-      </section>
+      </motion.section>
 
-      <section className={styles.section} id="faq">
+      <motion.section
+        className={styles.section}
+        id="faq"
+        variants={section}
+        initial="hidden"
+        whileInView="show"
+        viewport={viewOnce}
+      >
         <h2>FAQ</h2>
         <details className={styles.faq}>
           <summary>Can two restaurants share a menu?</summary>
@@ -219,9 +301,16 @@ export function MarketingHome() {
             open them for support — without needing the restaurant password.
           </p>
         </details>
-      </section>
+      </motion.section>
 
-      <section className={styles.sectionAlt} id="contact">
+      <motion.section
+        className={styles.sectionAlt}
+        id="contact"
+        variants={section}
+        initial="hidden"
+        whileInView="show"
+        viewport={viewOnce}
+      >
         <h2>Talk to ORDO</h2>
         <p className={styles.lead}>Plans and contact requests land in owner control → Leads.</p>
         {sent ? (
@@ -278,7 +367,7 @@ export function MarketingHome() {
         >
           WhatsApp {whatsapp}
         </a>
-      </section>
+      </motion.section>
 
       <footer className={styles.footer}>
         <strong>ORDO</strong>

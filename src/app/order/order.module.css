@@ -133,7 +133,28 @@
   box-shadow: 0 8px 24px rgba(18, 20, 23, 0.05);
   display: flex;
   flex-direction: column;
-  animation: rise 0.4s ease both;
+  transition:
+    transform var(--motion-hover) var(--motion-ease),
+    box-shadow var(--motion-hover) var(--motion-ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(18, 20, 23, 0.08);
+  }
+}
+
+.cat,
+.catOn,
+.mode,
+.modeOn,
+.lang,
+.langOn {
+  transition:
+    background-color var(--motion-hover) var(--motion-ease),
+    border-color var(--motion-hover) var(--motion-ease),
+    color var(--motion-hover) var(--motion-ease);
 }
 
 .cardHit {
@@ -156,11 +177,30 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.35s ease;
+  opacity: 0;
+  animation: imgFade 0.35s var(--motion-ease) forwards;
 }
 
-.card:hover .img {
-  transform: scale(1.04);
+@keyframes imgFade {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .img {
+    transition: transform var(--motion-list) var(--motion-ease);
+  }
+  .card:hover .img {
+    transform: scale(1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .img {
+    opacity: 1;
+    animation: none;
+  }
 }
 
 .imgFallback {
@@ -307,7 +347,6 @@
   background: #fff;
   border-radius: 22px 22px 0 0;
   padding: 1.1rem 1.1rem 1.6rem;
-  animation: slideUp 0.28s ease;
 }
 
 .sheetHead {
@@ -417,34 +456,11 @@
   z-index: 50;
   font-size: 0.88rem;
   font-weight: 600;
-  animation: rise 0.25s ease;
 }
 
 .error {
   color: #d32f2f;
   font-weight: 600;
-}
-
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(24px);
-    opacity: 0.6;
-  }
-  to {
-    transform: none;
-    opacity: 1;
-  }
 }
 
 @media (min-width: 720px) {

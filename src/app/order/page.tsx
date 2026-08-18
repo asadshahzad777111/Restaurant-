@@ -3,11 +3,24 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import type { LineModifier, MenuItem, ModifierGroup } from "@/lib/tenant-types";
 import type { PaymentMethod, ServiceType } from "@/lib/types";
 import { computeFees, lineUnitPrice, money } from "@/lib/fees";
 import { LANG_KEY, dual, type Lang } from "@/lib/i18n";
 import { apiUrl } from "@/lib/urls";
+import {
+  backdropTransition,
+  emptyState,
+  listContainer,
+  listItem,
+  pageEnter,
+  sheetTransition,
+  toastTransition,
+  useIsCoarsePointer,
+  usePrefersReducedMotion,
+  viewOnce,
+} from "@/lib/motion";
 import styles from "./order.module.css";
 
 type CartLine = {
@@ -95,6 +108,11 @@ function OrderInner() {
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const reduced = usePrefersReducedMotion();
+  const coarse = useIsCoarsePointer();
+  const pageMotion = pageEnter(reduced, coarse);
+  const itemMotion = listItem(reduced, coarse);
+  const emptyMotion = emptyState(reduced);
 
   useEffect(() => {
     const saved = localStorage.getItem(LANG_KEY) as Lang | null;
@@ -276,7 +294,7 @@ function OrderInner() {
   }
 
   return (
-    <div className={styles.page}>
+    <motion.div className={styles.page} variants={pageMotion} initial="hidden" animate="show">
       <div className={styles.langRow}>
         <button
           type="button"
@@ -338,224 +356,300 @@ function OrderInner() {
         ))}
       </div>
 
-      <div className={styles.grid}>
-        {visible.map((item, i) => (
-          <article
-            key={item.id}
-            className={styles.card}
-            style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
-          >
-            <button type="button" className={styles.cardHit} onClick={() => openAdd(item)}>
-              <div className={styles.imgWrap}>
-                {item.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={item.imageUrl} alt="" className={styles.img} />
-                ) : (
-                  <div className={styles.imgFallback}>{item.imageEmoji || "🍽️"}</div>
-                )}
-                {item.isDeal && item.dealLabel && (
-                  <span className={styles.dealBadge}>{item.dealLabel}</span>
-                )}
-              </div>
-              <div className={styles.cardBody}>
-                <strong>{item.name}</strong>
-                <span className={styles.catLabel}>{item.category}</span>
-                <span className={styles.price}>{money(shop.currency, item.price)}</span>
-              </div>
-            </button>
-          </article>
-        ))}
-      </div>
-
-      {count > 0 && (
-        <div className={styles.cartBar}>
-          <button type="button" className={styles.cartInfo} onClick={() => setSheetOpen(true)}>
-            <span className={styles.count}>{count}</span>
-            <span>
-              {dual("yourOrder", lang)} · <strong>{money(shop.currency, fees.total)}</strong>
-            </span>
-          </button>
-          <button type="button" className={styles.placeBtn} onClick={() => setSheetOpen(true)}>
-            {dual("place", lang)}
-          </button>
-        </div>
+      {visible.length === 0 ? (
+        <motion.p
+          className={styles.tagline}
+          variants={emptyMotion}
+          initial="hidden"
+          animate="show"
+        >
+          No items in this category.
+        </motion.p>
+      ) : (
+        <motion.div
+          className={styles.grid}
+          key={category}
+          variants={listContainer(0.05)}
+          initial="hidden"
+          animate="show"
+        >
+          {visible.map((item) => (
+            <motion.article
+              key={item.id}
+              className={styles.card}
+              variants={itemMotion}
+              viewport={viewOnce}
+            >
+              <button type="button" className={styles.cardHit} onClick={() => openAdd(item)}>
+                <div className={styles.imgWrap}>
+                  {item.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={item.imageUrl} alt="" className={styles.img} loading="lazy" />
+                  ) : (
+                    <div className={styles.imgFallback}>{item.imageEmoji || "🍽️"}</div>
+                  )}
+                  {item.isDeal && item.dealLabel && (
+                    <span className={styles.dealBadge}>{item.dealLabel}</span>
+                  )}
+                </div>
+                <div className={styles.cardBody}>
+                  <strong>{item.name}</strong>
+                  <span className={styles.catLabel}>{item.category}</span>
+                  <span className={styles.price}>{money(shop.currency, item.price)}</span>
+                </div>
+              </button>
+            </motion.article>
+          ))}
+        </motion.div>
       )}
 
-      {modItem && (
-        <div className={styles.sheet}>
-          <button type="button" className={styles.sheetBg} onClick={() => setModItem(null)} />
-          <div className={styles.sheetPanel}>
-            <div className={styles.sheetHead}>
-              <h3>{modItem.name}</h3>
-              <button type="button" className={styles.closeX} onClick={() => setModItem(null)}>
-                ×
+      <AnimatePresence>
+        {count > 0 && (
+          <motion.div
+            className={styles.cartBar}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <button type="button" className={styles.cartInfo} onClick={() => setSheetOpen(true)}>
+              <span className={styles.count}>{count}</span>
+              <span>
+                {dual("yourOrder", lang)} · <strong>{money(shop.currency, fees.total)}</strong>
+              </span>
+            </button>
+            <button type="button" className={styles.placeBtn} onClick={() => setSheetOpen(true)}>
+              {dual("place", lang)}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {modItem && (
+          <motion.div
+            className={styles.sheet}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={backdropTransition(reduced)}
+          >
+            <motion.button
+              type="button"
+              className={styles.sheetBg}
+              onClick={() => setModItem(null)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+            <motion.div
+              className={styles.sheetPanel}
+              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.98 }}
+              animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+              exit={reduced ? { opacity: 0 } : { opacity: 0, y: 16 }}
+              transition={sheetTransition}
+            >
+              <div className={styles.sheetHead}>
+                <h3>{modItem.name}</h3>
+                <button type="button" className={styles.closeX} onClick={() => setModItem(null)}>
+                  ×
+                </button>
+              </div>
+              {(modItem.modifiers || []).map((g) => (
+                <div key={g.id} className={styles.pay}>
+                  <h4>
+                    {g.name}
+                    {g.required ? " *" : ""}
+                  </h4>
+                  {g.options.map((o) => (
+                    <label key={o.id} className={styles.payOpt}>
+                      <input
+                        type={g.multi ? "checkbox" : "radio"}
+                        checked={(modSel[g.id] || []).includes(o.id)}
+                        onChange={() => toggleMod(g, o.id)}
+                      />
+                      {o.name}
+                      {o.priceDelta ? ` (+${o.priceDelta})` : ""}
+                    </label>
+                  ))}
+                </div>
+              ))}
+              <button
+                type="button"
+                className={styles.confirm}
+                onClick={() =>
+                  addConfigured(modItem, toLineModifiers(modItem.modifiers || [], modSel))
+                }
+              >
+                Add ·{" "}
+                {money(
+                  shop.currency,
+                  lineUnitPrice(
+                    modItem.price,
+                    toLineModifiers(modItem.modifiers || [], modSel),
+                  ),
+                )}
               </button>
-            </div>
-            {(modItem.modifiers || []).map((g) => (
-              <div key={g.id} className={styles.pay}>
-                <h4>
-                  {g.name}
-                  {g.required ? " *" : ""}
-                </h4>
-                {g.options.map((o) => (
-                  <label key={o.id} className={styles.payOpt}>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {sheetOpen && (
+          <motion.div
+            className={styles.sheet}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={backdropTransition(reduced)}
+          >
+            <motion.button
+              type="button"
+              className={styles.sheetBg}
+              aria-label="Close"
+              onClick={() => setSheetOpen(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+            <motion.div
+              className={styles.sheetPanel}
+              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 28, scale: 0.98 }}
+              animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+              exit={reduced ? { opacity: 0 } : { opacity: 0, y: 18 }}
+              transition={sheetTransition}
+            >
+              <div className={styles.sheetHead}>
+                <h3>{dual("yourOrder", lang)}</h3>
+                <button type="button" className={styles.closeX} onClick={() => setSheetOpen(false)}>
+                  ×
+                </button>
+              </div>
+              <ul className={styles.cartList}>
+                {cart.map((c) => (
+                  <li key={c.key}>
+                    <span>
+                      {c.qty}× {c.item.name}
+                      {(c.modifiers || []).map((m) => (
+                        <small key={m.optionId} style={{ display: "block", color: "#8a8790" }}>
+                          + {m.optionName}
+                        </small>
+                      ))}
+                    </span>
+                    <span>
+                      {money(shop.currency, c.unitPrice * c.qty)}
+                      <button type="button" className={styles.clear} onClick={() => removeKey(c.key)}>
+                        −
+                      </button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <div className={styles.cartList}>
+                <li>
+                  <span>Subtotal</span>
+                  <span>{money(shop.currency, fees.subtotal)}</span>
+                </li>
+                {fees.packingFee > 0 && (
+                  <li>
+                    <span>Packing</span>
+                    <span>{money(shop.currency, fees.packingFee)}</span>
+                  </li>
+                )}
+                {fees.deliveryFee > 0 && (
+                  <li>
+                    <span>Delivery</span>
+                    <span>{money(shop.currency, fees.deliveryFee)}</span>
+                  </li>
+                )}
+                {fees.serviceCharge > 0 && (
+                  <li>
+                    <span>Service</span>
+                    <span>{money(shop.currency, fees.serviceCharge)}</span>
+                  </li>
+                )}
+                {fees.tax > 0 && (
+                  <li>
+                    <span>GST/Tax</span>
+                    <span>{money(shop.currency, fees.tax)}</span>
+                  </li>
+                )}
+                <li>
+                  <strong>Total</strong>
+                  <strong>{money(shop.currency, fees.total)}</strong>
+                </li>
+              </div>
+              <button type="button" className={styles.clear} onClick={clearCart}>
+                {dual("clearCart", lang)}
+              </button>
+              <div className={styles.pay}>
+                <h4>{dual("payment", lang)}</h4>
+                {paymentChoices(mode).map((p) => (
+                  <label key={p.id} className={styles.payOpt}>
                     <input
-                      type={g.multi ? "checkbox" : "radio"}
-                      checked={(modSel[g.id] || []).includes(o.id)}
-                      onChange={() => toggleMod(g, o.id)}
+                      type="radio"
+                      name="pay"
+                      checked={paymentMethod === p.id}
+                      onChange={() => setPaymentMethod(p.id)}
                     />
-                    {o.name}
-                    {o.priceDelta ? ` (+${o.priceDelta})` : ""}
+                    {p.label}
                   </label>
                 ))}
               </div>
-            ))}
-            <button
-              type="button"
-              className={styles.confirm}
-              onClick={() =>
-                addConfigured(modItem, toLineModifiers(modItem.modifiers || [], modSel))
-              }
-            >
-              Add ·{" "}
-              {money(
-                shop.currency,
-                lineUnitPrice(
-                  modItem.price,
-                  toLineModifiers(modItem.modifiers || [], modSel),
-                ),
-              )}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {sheetOpen && (
-        <div className={styles.sheet}>
-          <button
-            type="button"
-            className={styles.sheetBg}
-            aria-label="Close"
-            onClick={() => setSheetOpen(false)}
-          />
-          <div className={styles.sheetPanel}>
-            <div className={styles.sheetHead}>
-              <h3>{dual("yourOrder", lang)}</h3>
-              <button type="button" className={styles.closeX} onClick={() => setSheetOpen(false)}>
-                ×
-              </button>
-            </div>
-            <ul className={styles.cartList}>
-              {cart.map((c) => (
-                <li key={c.key}>
-                  <span>
-                    {c.qty}× {c.item.name}
-                    {(c.modifiers || []).map((m) => (
-                      <small key={m.optionId} style={{ display: "block", color: "#8a8790" }}>
-                        + {m.optionName}
-                      </small>
-                    ))}
-                  </span>
-                  <span>
-                    {money(shop.currency, c.unitPrice * c.qty)}
-                    <button type="button" className={styles.clear} onClick={() => removeKey(c.key)}>
-                      −
-                    </button>
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <div className={styles.cartList}>
-              <li>
-                <span>Subtotal</span>
-                <span>{money(shop.currency, fees.subtotal)}</span>
-              </li>
-              {fees.packingFee > 0 && (
-                <li>
-                  <span>Packing</span>
-                  <span>{money(shop.currency, fees.packingFee)}</span>
-                </li>
-              )}
-              {fees.deliveryFee > 0 && (
-                <li>
-                  <span>Delivery</span>
-                  <span>{money(shop.currency, fees.deliveryFee)}</span>
-                </li>
-              )}
-              {fees.serviceCharge > 0 && (
-                <li>
-                  <span>Service</span>
-                  <span>{money(shop.currency, fees.serviceCharge)}</span>
-                </li>
-              )}
-              {fees.tax > 0 && (
-                <li>
-                  <span>GST/Tax</span>
-                  <span>{money(shop.currency, fees.tax)}</span>
-                </li>
-              )}
-              <li>
-                <strong>Total</strong>
-                <strong>{money(shop.currency, fees.total)}</strong>
-              </li>
-            </div>
-            <button type="button" className={styles.clear} onClick={clearCart}>
-              {dual("clearCart", lang)}
-            </button>
-            <div className={styles.pay}>
-              <h4>{dual("payment", lang)}</h4>
-              {paymentChoices(mode).map((p) => (
-                <label key={p.id} className={styles.payOpt}>
+              {(mode === "pickup" || mode === "delivery") && (
+                <div className={styles.fields}>
                   <input
-                    type="radio"
-                    name="pay"
-                    checked={paymentMethod === p.id}
-                    onChange={() => setPaymentMethod(p.id)}
+                    placeholder="Name"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
                   />
-                  {p.label}
-                </label>
-              ))}
-            </div>
-            {(mode === "pickup" || mode === "delivery") && (
-              <div className={styles.fields}>
-                <input
-                  placeholder="Name"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                />
-                <input
-                  placeholder="Phone"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                />
-                {mode === "delivery" && (
-                  <textarea
-                    placeholder="Delivery address"
-                    value={deliveryAddress}
-                    onChange={(e) => setDeliveryAddress(e.target.value)}
-                    rows={2}
+                  <input
+                    placeholder="Phone"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
                   />
-                )}
-              </div>
-            )}
-            {error && <p className={styles.error}>{error}</p>}
-            <button
-              type="button"
-              className={styles.confirm}
-              disabled={busy || !cart.length}
-              onClick={() => void placeOrder()}
-            >
-              {busy
-                ? "…"
-                : `${dual("placeOrder", lang)} · ${money(shop.currency, fees.total)}`}
-            </button>
-            <p className={styles.note}>After place, changes go through staff only.</p>
-          </div>
-        </div>
-      )}
+                  {mode === "delivery" && (
+                    <textarea
+                      placeholder="Delivery address"
+                      value={deliveryAddress}
+                      onChange={(e) => setDeliveryAddress(e.target.value)}
+                      rows={2}
+                    />
+                  )}
+                </div>
+              )}
+              {error && <p className={styles.error}>{error}</p>}
+              <button
+                type="button"
+                className={styles.confirm}
+                disabled={busy || !cart.length}
+                onClick={() => void placeOrder()}
+              >
+                {busy
+                  ? "…"
+                  : `${dual("placeOrder", lang)} · ${money(shop.currency, fees.total)}`}
+              </button>
+              <p className={styles.note}>After place, changes go through staff only.</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {toast && <div className={styles.toast}>{toast}</div>}
-    </div>
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            className={styles.toast}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={toastTransition}
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 

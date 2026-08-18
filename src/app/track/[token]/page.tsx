@@ -3,7 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { motion } from "framer-motion";
 import { apiUrl } from "@/lib/urls";
+import {
+  listContainer,
+  listItem,
+  pageEnter,
+  useIsCoarsePointer,
+  usePrefersReducedMotion,
+} from "@/lib/motion";
 import styles from "./track.module.css";
 
 interface TrackData {
@@ -77,6 +85,10 @@ export default function TrackPage() {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [sent, setSent] = useState(false);
+  const reduced = usePrefersReducedMotion();
+  const coarse = useIsCoarsePointer();
+  const pageMotion = pageEnter(reduced, coarse);
+  const stepMotion = listItem(reduced, coarse);
 
   async function load() {
     const res = await fetch(apiUrl(`/api/track/${token}`));
@@ -136,7 +148,7 @@ export default function TrackPage() {
   );
 
   return (
-    <div className={styles.page}>
+    <motion.div className={styles.page} variants={pageMotion} initial="hidden" animate="show">
       <div className={styles.card}>
         <p className={styles.brand}>{data.branding.name}</p>
         <h1>Order #{data.order.number}</h1>
@@ -164,14 +176,20 @@ export default function TrackPage() {
           </div>
         )}
 
-        <ol className={styles.timeline}>
+        <motion.ol
+          className={styles.timeline}
+          variants={listContainer(0.045)}
+          initial="hidden"
+          animate="show"
+        >
           {visibleSteps.map((step, i) => {
             const done = current > i || data.order.status === step.id;
             const active = data.order.status === step.id;
             const at = historyAt[step.id];
             return (
-              <li
+              <motion.li
                 key={step.id}
+                variants={stepMotion}
                 className={active ? styles.stepOn : done ? styles.stepDone : styles.step}
               >
                 <span className={styles.dot} />
@@ -182,10 +200,10 @@ export default function TrackPage() {
                     {at ? ` · ${new Date(at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}
                   </p>
                 </div>
-              </li>
+              </motion.li>
             );
           })}
-        </ol>
+        </motion.ol>
 
         <div className={styles.summary}>
           {data.order.lines.map((l, i) => (
@@ -270,6 +288,6 @@ export default function TrackPage() {
           New order
         </Link>
       </div>
-    </div>
+    </motion.div>
   );
 }
