@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import { StoreProvider } from "@/lib/store";
 import "./globals.css";
 
@@ -9,16 +9,22 @@ const jakarta = Plus_Jakarta_Sans({
   weight: ["400", "500", "600", "700", "800"],
 });
 
+const display = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["500", "600", "700"],
+});
+
 export const metadata: Metadata = {
-  title: "ORDO — Restaurant OS",
+  title: "ORDO — Restaurant OS for Pakistan kitchens",
   description:
-    "Multi-tenant restaurant operating system: POS, kitchen, inventory, guest QR ordering.",
+    "Guest QR ordering, counter POS, kitchen tickets, and isolated restaurants. Browser-first, PKR pricing from ₨999/month. No per-order fee.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={jakarta.variable}>
+      <body className={`${jakarta.variable} ${display.variable}`}>
         <StoreProvider>{children}</StoreProvider>
       </body>
     </html>

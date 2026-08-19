@@ -42,3 +42,7 @@ next-env.d.ts
 
 # file-backed store
 .data/
+
+# capacitor / android
+mobile/**/node_modules/
+mobile/**/android/app/build/

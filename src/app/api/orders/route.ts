@@ -3,7 +3,8 @@ import { ensureBootstrap } from "@/lib/bootstrap";
 import { AuthError, hasPermission, requireTenantSession } from "@/lib/session";
 import { addOrder, readTenant } from "@/lib/tenant-store";
 import { findTenantMetaByCode } from "@/lib/platform-store";
-import type { OrderLine, Order } from "@/lib/tenant-types";
+import { assertOrderRules } from "@/lib/guest";
+import type { OrderLine } from "@/lib/tenant-types";
 import type { PaymentMethod, PaymentStatus, ServiceType } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -67,6 +68,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
 
+    const ruleError = assertOrderRules({
+      channel,
+      serviceType,
+      paymentMethod,
+      tableNumber,
+      customerPhone,
+      deliveryAddress,
+    });
+    if (ruleError) {
+      return NextResponse.json({ error: ruleError }, { status: 400 });
+    }
+
     let tenantId: string;
     if (channel === "pos") {
       const session = requireTenantSession(req);
@@ -115,7 +128,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function PATCH(req: NextRequest) {
+export async function PATCH() {
   // bulk status convenience — prefer /api/orders/[id]
   return NextResponse.json({ error: "Use /api/orders/[id]" }, { status: 400 });
 }

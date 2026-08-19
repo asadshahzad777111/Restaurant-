@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
+import { modeLabel, trackSteps } from "@/lib/guest";
 import styles from "./track.module.css";
 
 interface TrackData {
@@ -40,6 +42,7 @@ export default function TrackPage() {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [sent, setSent] = useState(false);
+  const [reviewError, setReviewError] = useState("");
 
   async function load() {
     const res = await fetch(`/api/track/${token}`);
@@ -53,52 +56,70 @@ export default function TrackPage() {
 
   useEffect(() => {
     void load();
-    const id = setInterval(() => void load(), 5000);
+    const id = setInterval(() => void load(), 4000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   async function submitReview(e: React.FormEvent) {
     e.preventDefault();
+    setReviewError("");
     const res = await fetch("/api/reviews", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ trackToken: token, rating, comment }),
     });
-    if (res.ok) {
-      setSent(true);
-      await load();
+    const json = await res.json();
+    if (!res.ok) {
+      setReviewError(json.error || "Could not save review");
+      return;
     }
+    setSent(true);
+    await load();
   }
 
-  if (error)
+  if (error) {
     return (
       <div className={styles.page}>
-        <p>{error}</p>
+        <p className={styles.fail}>{error}</p>
+        <Link href="/guest">Find a restaurant</Link>
       </div>
     );
-  if (!data)
+  }
+  if (!data) {
     return (
       <div className={styles.page}>
-        <p>Loading…</p>
+        <p className={styles.muted}>Loading live ticket…</p>
       </div>
     );
+  }
+
+  const current = data.order.status;
+  const steps =
+    current === "cancelled" ? data.order.statusHistory.map((h) => h.status) : trackSteps(data.order.serviceType);
 
   return (
     <div className={styles.page}>
       <header>
         <p className={styles.brand}>{data.branding.name}</p>
         <h1>Order #{data.order.number}</h1>
-        <p className={styles.status}>{LABELS[data.order.status] || data.order.status}</p>
+        <p className={current === "cancelled" ? styles.statusBad : styles.status}>
+          {LABELS[current] || current}
+        </p>
+        <p className={styles.live}>Updates every few seconds from this kitchen.</p>
       </header>
 
       <ol className={styles.timeline}>
-        {data.order.statusHistory.map((h, i) => (
-          <li key={`${h.status}-${i}`}>
-            <strong>{LABELS[h.status] || h.status}</strong>
-            <span>{new Date(h.at).toLocaleTimeString()}</span>
-          </li>
-        ))}
+        {steps.map((step) => {
+          const hit = data.order.statusHistory.find((h) => h.status === step);
+          const state = step === current ? "now" : hit ? "done" : "wait";
+          return (
+            <li key={step} data-state={state}>
+              <strong>{LABELS[step] || step}</strong>
+              <span>{hit ? new Date(hit.at).toLocaleTimeString() : state === "now" ? "Now" : "—"}</span>
+            </li>
+          );
+        })}
       </ol>
 
       <section className={styles.box}>
@@ -119,15 +140,16 @@ export default function TrackPage() {
           Total · {data.shop.currency} {data.order.total}
         </p>
         <p className={styles.meta}>
-          {data.order.serviceType}
+          {modeLabel(data.order.serviceType)}
           {data.order.tableNumber ? ` · Table ${data.order.tableNumber}` : ""} ·{" "}
           {data.order.paymentMethod.replaceAll("_", " ")} · {data.order.paymentStatus}
         </p>
       </section>
 
       {data.canReview && !sent && (
-        <form className={styles.review} onSubmit={submitReview}>
+        <form className={styles.review} onSubmit={(e) => void submitReview(e)}>
           <h2>How was your meal?</h2>
+          <p className={styles.muted}>Reviews unlock after staff marks the order completed.</p>
           <div className={styles.stars}>
             {[1, 2, 3, 4, 5].map((n) => (
               <button
@@ -135,6 +157,7 @@ export default function TrackPage() {
                 type="button"
                 className={n <= rating ? styles.starOn : styles.star}
                 onClick={() => setRating(n)}
+                aria-label={`${n} star${n === 1 ? "" : "s"}`}
               >
                 ★
               </button>
@@ -146,6 +169,7 @@ export default function TrackPage() {
             onChange={(e) => setComment(e.target.value)}
             rows={3}
           />
+          {reviewError && <p className={styles.fail}>{reviewError}</p>}
           <button type="submit">Submit review</button>
         </form>
       )}
@@ -153,6 +177,10 @@ export default function TrackPage() {
       {(data.review || sent) && (
         <p className={styles.thanks}>Thanks for the {data.review?.rating || rating}★ review.</p>
       )}
+
+      <p className={styles.footerNav}>
+        <Link href="/guest">Order again</Link>
+      </p>
     </div>
   );
 }

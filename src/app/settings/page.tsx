@@ -108,7 +108,15 @@ export default function SettingsPage() {
 
         <div className={styles.card}>
           <h3 style={{ marginTop: 0 }}>QR / guest links</h3>
-          <p className={styles.muted}>Share these — each restaurant uses its own code.</p>
+          <p className={styles.muted}>Print these on table tents — each restaurant uses its own code.</p>
+          <code>
+            {origin}/guest
+          </code>
+          <br />
+          <code>
+            {origin}/scan
+          </code>
+          <br />
           <code>
             {origin}/order?tenant={tenant?.code}
           </code>

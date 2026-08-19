@@ -2,31 +2,48 @@
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 2rem;
-  background:
-    radial-gradient(800px 400px at 20% 0%, rgba(255, 106, 26, 0.2), transparent),
-    #0b0c10;
+  padding: 2rem 1.25rem;
+  background: var(--guest-bg);
+  animation: ordo-fade 0.35s ease both;
 }
 
 .card {
-  width: min(100%, 400px);
-  background: #14161c;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  width: min(100%, 420px);
+  background: var(--guest-elevated);
+  border: 1px solid var(--guest-line);
+  border-radius: var(--radius-lg);
   padding: 1.75rem;
   display: grid;
   gap: 0.85rem;
+  animation: ordo-rise 0.45s ease both;
 }
 
 .brand {
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  color: var(--accent-hot);
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--guest-text);
+  font-size: 1.35rem;
 }
 
 .card h1 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.35rem;
+}
+
+.guestStrip {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem 0.9rem;
+  border-radius: var(--radius);
+  background: var(--guest-bg);
+  border: 1px solid var(--guest-line);
+  font-size: 0.88rem;
+}
+
+.guestStrip a {
+  color: var(--ember-bright);
+  font-weight: 700;
 }
 
 .modes {
@@ -36,31 +53,33 @@
 }
 
 .modes button {
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--guest-line);
   background: transparent;
-  color: #cfc8be;
-  border-radius: 8px;
+  color: var(--guest-muted);
+  border-radius: var(--radius);
   padding: 0.55rem;
 }
 
 .modes .active {
-  background: rgba(255, 106, 26, 0.15);
-  border-color: rgba(255, 106, 26, 0.5);
-  color: #fff;
+  background: var(--guest-text);
+  border-color: var(--guest-text);
+  color: var(--ink);
+  font-weight: 700;
 }
 
 .field {
   display: grid;
   gap: 0.35rem;
   font-size: 0.85rem;
-  color: #b9b2a8;
+  color: var(--guest-muted);
+  font-weight: 600;
 }
 
 .input {
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: #0b0c10;
-  color: #fff;
+  border-radius: var(--radius);
+  border: 1px solid var(--guest-line);
+  background: var(--guest-bg);
+  color: var(--guest-text);
   padding: 0.65rem 0.75rem;
 }
 
@@ -68,10 +87,14 @@
   margin-top: 0.35rem;
   border: none;
   border-radius: 999px;
-  background: var(--accent);
-  color: #120b07;
+  background: var(--ember);
+  color: var(--ember-ink);
   font-weight: 700;
   padding: 0.75rem;
+}
+
+.submit:hover {
+  background: var(--ember-bright);
 }
 
 .error {
@@ -83,5 +106,5 @@
 .hint {
   margin: 0;
   font-size: 0.8rem;
-  color: #8f887e;
+  color: var(--guest-muted);
 }

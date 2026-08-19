@@ -7,7 +7,7 @@ import { TOKEN_KEY, useStore } from "@/lib/store";
 import type { Lead, Plan, PlatformTenantMeta } from "@/lib/types";
 import styles from "./super.module.css";
 
-type Tab = "dashboard" | "restaurants" | "plans" | "leads";
+type Tab = "dashboard" | "restaurants" | "apps" | "plans" | "leads";
 
 export default function SuperPage() {
   const router = useRouter();
@@ -17,6 +17,21 @@ export default function SuperPage() {
   const [tenants, setTenants] = useState<PlatformTenantMeta[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [apks, setApks] = useState<
+    {
+      id: string;
+      title: string;
+      filename: string;
+      audience: string;
+      loadsPath: string;
+      version: string;
+      note: string;
+      available: boolean;
+      sizeBytes: number;
+      updatedAt: string | null;
+      loadsUrl: string;
+    }[]
+  >([]);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     code: "",
@@ -54,9 +69,10 @@ export default function SuperPage() {
       router.replace("/home");
       return;
     }
-    const [tenRes, leadRes] = await Promise.all([
+    const [tenRes, leadRes, apkRes] = await Promise.all([
       fetch("/api/super/tenants", { headers: { Authorization: `Bearer ${t}` } }),
       fetch("/api/leads", { headers: { Authorization: `Bearer ${t}` } }),
+      fetch("/api/super/apks", { headers: { Authorization: `Bearer ${t}` } }),
     ]);
     if (tenRes.ok) {
       const d = await tenRes.json();
@@ -66,6 +82,10 @@ export default function SuperPage() {
     if (leadRes.ok) {
       const d = await leadRes.json();
       setLeads(d.leads || []);
+    }
+    if (apkRes.ok) {
+      const d = await apkRes.json();
+      setApks(d.apps || []);
     }
   }, [router]);
 
@@ -98,6 +118,42 @@ export default function SuperPage() {
     await load();
   }
 
+  async function downloadApk(id: string, filename: string) {
+    setError("");
+    const res = await api(`/api/super/apks/${id}`);
+    if (!res.ok) {
+      setError("APK not on the server yet. Upload a built Android file here.");
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function uploadApk(id: string, file: File | undefined) {
+    if (!file) return;
+    setError("");
+    const t = token || localStorage.getItem(TOKEN_KEY);
+    const body = new FormData();
+    body.append("id", id);
+    body.append("file", file);
+    const res = await fetch("/api/super/apks", {
+      method: "POST",
+      headers: t ? { Authorization: `Bearer ${t}` } : undefined,
+      body,
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "Upload failed");
+      return;
+    }
+    await load();
+  }
+
   async function openTenant(id: string) {
     const res = await api("/api/super/tenants", {
       method: "POST",
@@ -124,6 +180,7 @@ export default function SuperPage() {
           [
             ["dashboard", "Dashboard"],
             ["restaurants", "Restaurants"],
+            ["apps", "Apps"],
             ["plans", "Plans"],
             ["leads", "Leads"],
           ] as const
@@ -248,6 +305,56 @@ export default function SuperPage() {
                 ))}
               </tbody>
             </table>
+          </section>
+        )}
+
+        {tab === "apps" && (
+          <section>
+            <h1>Android apps</h1>
+            <p className={styles.muted}>
+              Three Android APKs — POS, Customer, and Client. Download is only here on Super, never on restaurant
+              Admin. Super has no extra domain: apps open <code>ordo.asfins.com</code> kitchen/guest URLs only.
+            </p>
+            <div className={styles.appGrid}>
+              {apks.map((app) => (
+                <article key={app.id} className={styles.appCard}>
+                  <h3>{app.title}</h3>
+                  <p className={styles.appMeta}>{app.audience}</p>
+                  <p>{app.note}</p>
+                  <p className={styles.muted}>
+                    Opens {app.loadsUrl} · v{app.version}
+                  </p>
+                  <p className={styles.muted}>
+                    {app.available
+                      ? `${app.filename} · ${(app.sizeBytes / (1024 * 1024)).toFixed(1)} MB`
+                      : `${app.filename} not uploaded yet`}
+                  </p>
+                  <div className={styles.actions}>
+                    <button
+                      type="button"
+                      disabled={!app.available}
+                      onClick={() => void downloadApk(app.id, app.filename)}
+                    >
+                      Download APK
+                    </button>
+                    <label className={styles.upload}>
+                      Upload APK
+                      <input
+                        type="file"
+                        accept=".apk,application/vnd.android.package-archive"
+                        hidden
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = "";
+                          void uploadApk(app.id, file);
+                        }}
+                      />
+                    </label>
+                  </div>
+                </article>
+              ))}
+            </div>
+            {error && <p className={styles.error}>{error}</p>}
           </section>
         )}
 

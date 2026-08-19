@@ -3,12 +3,14 @@ import styles from "./lab.module.css";
 
 const LINKS = [
   { href: "/", label: "Marketing home", note: "ORDO landing" },
+  { href: "/guest", label: "Guest entry", note: "Code · paste QR · Demo Kitchen" },
+  { href: "/scan", label: "QR scanner", note: "Camera + paste fallback" },
   { href: "/super", label: "Super Admin", note: "super / super123" },
   { href: "/login", label: "Staff login", note: "DEMO · admin / admin123" },
-  { href: "/order?tenant=DEMO", label: "Guest hub", note: "Pick mode" },
+  { href: "/order?tenant=DEMO", label: "Guest hub", note: "Dining / takeaway / delivery" },
   { href: "/order?tenant=DEMO&table=7", label: "Table 7 QR", note: "Pay at counter" },
-  { href: "/order?tenant=DEMO&mode=pickup", label: "Pickup", note: "Counter or advance" },
-  { href: "/order?tenant=DEMO&mode=delivery", label: "Delivery", note: "COD or advance" },
+  { href: "/order?tenant=DEMO&mode=pickup", label: "Takeaway", note: "Counter or paid in advance" },
+  { href: "/order?tenant=DEMO&mode=delivery", label: "Delivery", note: "COD or paid in advance" },
   { href: "/home", label: "Staff Home", note: "After login" },
   { href: "/pos", label: "POS", note: "Counter sales" },
   { href: "/orders", label: "Orders", note: "Advance status" },

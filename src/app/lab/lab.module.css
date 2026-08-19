@@ -1,23 +1,29 @@
 .page {
   min-height: 100vh;
-  padding: 2.5rem 6vw 4rem;
-  background: #0b0c10;
+  padding: 2.5rem var(--page-pad) 4rem;
+  background: var(--guest-bg);
+  color: var(--guest-text);
+  animation: ordo-rise 0.4s ease both;
 }
 
 .brand {
   margin: 0;
-  font-weight: 800;
-  color: var(--accent-hot);
-  letter-spacing: 0.04em;
+  font-family: var(--display);
+  font-weight: 600;
+  color: var(--ember-bright);
+  letter-spacing: 0.08em;
 }
 
 .page h1 {
   margin: 0.35rem 0;
+  font-family: var(--display);
+  font-weight: 600;
 }
 
 .sub {
-  color: #b9b2a8;
+  color: var(--guest-muted);
   max-width: 40rem;
+  line-height: 1.55;
 }
 
 .list {
@@ -32,18 +38,22 @@
 .list a {
   display: grid;
   gap: 0.2rem;
-  padding: 0.9rem 1rem;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: #14161c;
+  padding: 0.95rem 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--guest-line);
+  background: var(--guest-elevated);
+}
+
+.list a:hover {
+  border-color: rgba(243, 237, 228, 0.28);
 }
 
 .list span {
-  color: #a8a29a;
+  color: var(--guest-muted);
   font-size: 0.9rem;
 }
 
 .list code {
   font-size: 0.78rem;
-  color: #7d8799;
+  color: #8a8278;
 }

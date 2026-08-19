@@ -138,48 +138,61 @@ function demoTenant(): TenantState {
   };
 }
 
+export function launchPlans(): PlatformState["plans"] {
+  return [
+    {
+      id: "starter",
+      name: "Starter",
+      pricePkr: 999,
+      maxStaff: 5,
+      description: "One kitchen · guest QR · kitchen tickets",
+      features: [
+        "Guest dining, takeaway, delivery",
+        "QR / scan entry",
+        "Counter POS + kitchen display",
+        "Public menu in sync with POS",
+        "Browser receipts",
+        "Up to 5 staff",
+      ],
+    },
+    {
+      id: "pro",
+      name: "Pro",
+      pricePkr: 1999,
+      maxStaff: 15,
+      description: "Staff roles · stock · reviews",
+      features: [
+        "Everything in Starter",
+        "Staff roles & permissions",
+        "Stock alerts",
+        "Guest tracking + reviews",
+        "Receipt branding",
+        "Up to 15 staff",
+      ],
+    },
+    {
+      id: "enterprise",
+      name: "Enterprise",
+      pricePkr: 4499,
+      maxStaff: 40,
+      description: "Multi-kitchen Super desk · printer quote",
+      features: [
+        "Everything in Pro",
+        "Super Admin: create / suspend kitchens",
+        "Open restaurant (help without mixing data)",
+        "Thermal printer package on request",
+        "Priority onboarding",
+        "Up to 40 staff",
+      ],
+    },
+  ];
+}
+
 function defaultPlatform(): PlatformState {
   return {
     superAdmin: { username: "super", password: "super123" },
     contactWhatsapp: "+923001234567",
-    plans: [
-      {
-        id: "starter",
-        name: "Starter",
-        pricePkr: 4999,
-        maxStaff: 5,
-        description: "One branch · QR ordering · kitchen display",
-        features: ["Guest QR + pickup", "POS & kitchen", "Basic stock", "Up to 5 staff"],
-      },
-      {
-        id: "pro",
-        name: "Pro",
-        pricePkr: 9999,
-        maxStaff: 20,
-        description: "Multi-shift teams · deals · reviews",
-        features: [
-          "Everything in Starter",
-          "Deals & reviews",
-          "Staff roles",
-          "Up to 20 staff",
-          "Receipt branding",
-        ],
-      },
-      {
-        id: "enterprise",
-        name: "Enterprise",
-        pricePkr: 24999,
-        maxStaff: 100,
-        description: "Groups · dedicated support · custom printers",
-        features: [
-          "Everything in Pro",
-          "Multi-outlet roadmap",
-          "Priority support",
-          "Printer package",
-          "Up to 100 staff",
-        ],
-      },
-    ],
+    plans: launchPlans(),
     tenants: [
       {
         id: "tenant_demo",
@@ -203,6 +216,13 @@ export function ensureBootstrap() {
   fs.mkdirSync(path.join(DATA_ROOT, "tenants"), { recursive: true });
   if (!fs.existsSync(PLATFORM_PATH)) {
     fs.writeFileSync(PLATFORM_PATH, JSON.stringify(defaultPlatform(), null, 2));
+  } else {
+    const platform = JSON.parse(fs.readFileSync(PLATFORM_PATH, "utf8")) as PlatformState;
+    const starter = platform.plans?.find((p) => p.id === "starter");
+    if (starter && starter.pricePkr >= 4999) {
+      platform.plans = launchPlans();
+      fs.writeFileSync(PLATFORM_PATH, JSON.stringify(platform, null, 2));
+    }
   }
   const demoPath = path.join(DATA_ROOT, "tenants", "tenant_demo", "tenant.json");
   if (!fs.existsSync(demoPath)) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TOKEN_KEY, useStore } from "@/lib/store";
@@ -10,11 +10,24 @@ export default function LoginPage() {
   const router = useRouter();
   const { setToken, refresh } = useStore();
   const [mode, setMode] = useState<"tenant" | "super">("tenant");
+  const [appShell, setAppShell] = useState<string | null>(null);
   const [code, setCode] = useState("DEMO");
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("admin123");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const app = new URLSearchParams(window.location.search).get("app");
+    setAppShell(app);
+    if (app === "pos" || app === "client") {
+      setMode("tenant");
+      setUsername("admin");
+      setPassword("admin123");
+    }
+  }, []);
+
+  const hideSuper = appShell === "pos" || appShell === "client";
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,7 +51,9 @@ export default function LoginPage() {
     localStorage.setItem(TOKEN_KEY, data.token);
     setToken(data.token);
     await refresh();
-    router.push(mode === "super" ? "/super" : "/home");
+    if (appShell === "pos") router.push("/pos");
+    else if (mode === "super") router.push("/super");
+    else router.push("/home");
   }
 
   return (
@@ -47,7 +62,18 @@ export default function LoginPage() {
         <Link href="/" className={styles.brand}>
           ORDO
         </Link>
-        <h1>Staff login</h1>
+        <h1>{appShell === "pos" ? "POS login" : appShell === "client" ? "Client login" : "Staff login"}</h1>
+        <p className={styles.guestStrip}>
+          Ordering food? This page is for kitchen staff.
+          <span>
+            <Link href="/guest">Enter as guest</Link>
+            {" · "}
+            <Link href="/scan">Scan table QR</Link>
+          </span>
+        </p>
+        {hideSuper ? (
+          <p className={styles.hint}>Use your restaurant code. Super Admin is not part of this app.</p>
+        ) : (
         <div className={styles.modes}>
           <button
             type="button"
@@ -72,6 +98,7 @@ export default function LoginPage() {
             Super Admin
           </button>
         </div>
+        )}
         {mode === "tenant" && (
           <label className={styles.field}>
             Restaurant code
@@ -107,7 +134,9 @@ export default function LoginPage() {
           {busy ? "Signing in…" : "Sign in"}
         </button>
         <p className={styles.hint}>
-          Demo: code <strong>DEMO</strong> · admin/admin123 · or Super super/super123
+          {hideSuper
+            ? "Demo kitchen code DEMO · admin / admin123"
+            : "Demo: code DEMO · admin/admin123 · or Super super/super123"}
         </p>
       </form>
     </div>
