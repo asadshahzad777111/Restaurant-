@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureBootstrap } from "@/lib/bootstrap";
 import { AuthError, hasPermission, requireTenantSession } from "@/lib/session";
-import { patchOrder } from "@/lib/tenant-store";
+import { patchOrder, readTenant } from "@/lib/tenant-store";
 import type { OrderStatus, PaymentStatus } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -26,12 +26,24 @@ export async function PATCH(
       status?: OrderStatus;
       paymentStatus?: PaymentStatus;
       note?: string;
+      cancelReason?: string;
     } = {};
     if (body.status) patch.status = body.status;
     if (body.paymentStatus) patch.paymentStatus = body.paymentStatus;
     if (body.note) patch.note = body.note;
+
+    if (body.status === "cancelled") {
+      const reason = String(body.cancelReason || body.reason || "").trim();
+      if (!reason) {
+        return NextResponse.json({ error: "Cancel reason required" }, { status: 400 });
+      }
+      patch.cancelReason = reason;
+      patch.note = reason;
+    }
+
     const order = patchOrder(session.tenantId!, id, patch);
-    return NextResponse.json({ order });
+    const tenant = readTenant(session.tenantId!);
+    return NextResponse.json({ order, tables: tenant.tables });
   } catch (e) {
     if (e instanceof AuthError) {
       return NextResponse.json({ error: e.message }, { status: e.status });

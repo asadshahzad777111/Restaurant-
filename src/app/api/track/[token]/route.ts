@@ -17,6 +17,7 @@ export async function GET(
     const review = tenant.reviews.find((r) => r.trackToken === token);
     return NextResponse.json({
       branding: tenant.branding,
+      code: tenant.code,
       shop: {
         phone: tenant.shop.phone,
         whatsapp: tenant.shop.whatsapp,
@@ -34,6 +35,8 @@ export async function GET(
         total: order.total,
         tableNumber: order.tableNumber,
         createdAt: order.createdAt,
+        cancelReason: order.cancelReason,
+        fees: order.fees,
       },
       review: review ?? null,
       canReview: order.status === "completed" && !review,

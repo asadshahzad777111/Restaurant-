@@ -2,6 +2,7 @@
 
 import { AppShell } from "@/components/AppShell";
 import { useStore } from "@/lib/store";
+import { kitchenTicketHtml, openPrintWindow } from "@/lib/print";
 import type { OrderStatus } from "@/lib/types";
 import styles from "../staff.module.css";
 
@@ -42,19 +43,38 @@ export default function KitchenPage() {
             <ul>
               {o.lines.map((l, i) => (
                 <li key={i}>
-                  {l.qty}× {l.name}
+                  <strong>
+                    {l.qty}× {l.name}
+                  </strong>
+                  {(l.modifiers || []).map((m) => (
+                    <div key={m.optionId} className={styles.muted}>
+                      · {m.optionName}
+                    </div>
+                  ))}
+                  {l.lineNote && <div className={styles.muted}>NOTE: {l.lineNote}</div>}
                 </li>
               ))}
             </ul>
-            {KITCHEN_NEXT[o.status] && (
-              <button
-                type="button"
-                className={styles.btn}
-                onClick={() => void bump(o.id, o.status)}
-              >
-                Mark {KITCHEN_NEXT[o.status]}
-              </button>
-            )}
+            <div className={styles.row}>
+              {KITCHEN_NEXT[o.status] && (
+                <button
+                  type="button"
+                  className={styles.btn}
+                  onClick={() => void bump(o.id, o.status)}
+                >
+                  Mark {KITCHEN_NEXT[o.status]}
+                </button>
+              )}
+              {tenant && (
+                <button
+                  type="button"
+                  className={styles.btnGhost}
+                  onClick={() => openPrintWindow(kitchenTicketHtml(tenant, o))}
+                >
+                  Print ticket
+                </button>
+              )}
+            </div>
           </article>
         ))}
         {tickets.length === 0 && <p className={styles.muted}>No open kitchen tickets</p>}

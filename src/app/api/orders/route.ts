@@ -4,7 +4,8 @@ import { AuthError, hasPermission, requireTenantSession } from "@/lib/session";
 import { addOrder, readTenant } from "@/lib/tenant-store";
 import { findTenantMetaByCode } from "@/lib/platform-store";
 import { assertOrderRules } from "@/lib/guest";
-import type { OrderLine } from "@/lib/tenant-types";
+import { computeFees, lineUnitPrice } from "@/lib/fees";
+import type { LineModifier, OrderLine } from "@/lib/tenant-types";
 import type { PaymentMethod, PaymentStatus, ServiceType } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -23,7 +24,11 @@ export async function GET(req: NextRequest) {
   try {
     ensureBootstrap();
     const session = requireTenantSession(req);
-    if (!hasPermission(session, "orders") && !hasPermission(session, "kitchen") && !hasPermission(session, "pos")) {
+    if (
+      !hasPermission(session, "orders") &&
+      !hasPermission(session, "kitchen") &&
+      !hasPermission(session, "pos")
+    ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     const tenant = readTenant(session.tenantId!);
@@ -45,10 +50,11 @@ export async function POST(req: NextRequest) {
       channel,
       serviceType,
       tableNumber,
+      tableId,
       customerName,
       customerPhone,
       deliveryAddress,
-      lines,
+      lines: rawLines,
       note,
       paymentMethod,
     } = body as {
@@ -56,15 +62,24 @@ export async function POST(req: NextRequest) {
       channel: "guest" | "pos";
       serviceType: ServiceType;
       tableNumber?: string;
+      tableId?: string;
       customerName?: string;
       customerPhone?: string;
       deliveryAddress?: string;
-      lines: OrderLine[];
+      lines: Array<{
+        itemId: string;
+        name: string;
+        qty: number;
+        basePrice: number;
+        modifiers?: LineModifier[];
+        lineNote?: string;
+        unitPrice?: number;
+      }>;
       note?: string;
       paymentMethod: PaymentMethod;
     };
 
-    if (!lines?.length) {
+    if (!rawLines?.length) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
 
@@ -98,12 +113,33 @@ export async function POST(req: NextRequest) {
       tenantId = meta.id;
     }
 
-    const subtotal = lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
+    const tenant = readTenant(tenantId);
+    for (const line of rawLines) {
+      const item = tenant.menu.find((m) => m.id === line.itemId);
+      if (!item || !item.available) {
+        return NextResponse.json(
+          { error: `${line.name || "Item"} is unavailable (86)` },
+          { status: 400 },
+        );
+      }
+    }
+
+    const lines: OrderLine[] = rawLines.map((l) => ({
+      itemId: l.itemId,
+      name: l.name,
+      qty: l.qty,
+      modifiers: l.modifiers,
+      lineNote: l.lineNote,
+      unitPrice: l.unitPrice ?? lineUnitPrice(l.basePrice, l.modifiers),
+    }));
+
+    const fees = computeFees(tenant.shop, serviceType, lines);
     const now = new Date().toISOString();
     const order = addOrder(tenantId, {
       channel,
       serviceType,
       tableNumber,
+      tableId,
       customerName,
       customerPhone,
       deliveryAddress,
@@ -114,8 +150,15 @@ export async function POST(req: NextRequest) {
       status: "placed",
       statusHistory: [{ status: "placed", at: now }],
       trackToken: trackToken(),
-      subtotal,
-      total: subtotal,
+      fees: {
+        subtotal: fees.subtotal,
+        deliveryFee: fees.deliveryFee,
+        packingFee: fees.packingFee,
+        serviceCharge: fees.serviceCharge,
+        tax: fees.tax,
+      },
+      subtotal: fees.subtotal,
+      total: fees.total,
     });
 
     return NextResponse.json({ order });
@@ -126,9 +169,4 @@ export async function POST(req: NextRequest) {
     const message = e instanceof Error ? e.message : "Failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
-
-export async function PATCH() {
-  // bulk status convenience — prefer /api/orders/[id]
-  return NextResponse.json({ error: "Use /api/orders/[id]" }, { status: 400 });
 }

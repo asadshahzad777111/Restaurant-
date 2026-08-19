@@ -5,51 +5,75 @@ import { useStore } from "@/lib/store";
 import styles from "./StaffAlerts.module.css";
 
 export function StaffAlerts() {
-  const { tenant, api, refresh } = useStore();
+  const { tenant, refresh, user } = useStore();
   const [toast, setToast] = useState<string | null>(null);
   const seen = useRef<Set<string>>(new Set());
   const primed = useRef(false);
+  const [soundOk, setSoundOk] = useState(false);
+
+  const canHear =
+    user?.role === "admin" ||
+    user?.permissions.includes("orders") ||
+    user?.permissions.includes("kitchen") ||
+    user?.permissions.includes("pos");
 
   useEffect(() => {
-    if (!tenant) return;
+    if (!tenant || !canHear) return;
     if (!primed.current) {
       tenant.orders.forEach((o) => seen.current.add(o.id));
       primed.current = true;
       return;
     }
-    const fresh = tenant.orders.filter((o) => !seen.current.has(o.id) && o.status === "placed");
+    const fresh = tenant.orders.filter(
+      (o) => !seen.current.has(o.id) && o.status === "placed" && o.channel === "guest",
+    );
     if (fresh.length) {
       fresh.forEach((o) => seen.current.add(o.id));
-      setToast(`New order #${fresh[0].number}`);
-      try {
-        const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.frequency.value = 880;
-        gain.gain.value = 0.05;
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.18);
-      } catch {
-        /* ignore */
+      setToast(`New guest order #${fresh[0].number}`);
+      if (soundOk) {
+        try {
+          const Ctx =
+            window.AudioContext ||
+            (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+          const ctx = new Ctx();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.frequency.value = 920;
+          gain.gain.value = 0.06;
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.22);
+        } catch {
+          /* ignore */
+        }
       }
     }
-  }, [tenant]);
+  }, [tenant, canHear, soundOk]);
 
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), 3500);
+    const t = setTimeout(() => setToast(null), 4000);
     return () => clearTimeout(t);
   }, [toast]);
 
   useEffect(() => {
     const id = setInterval(() => {
       void refresh();
-    }, 8000);
+    }, 6000);
     return () => clearInterval(id);
-  }, [refresh, api]);
+  }, [refresh]);
 
-  if (!toast) return null;
-  return <div className={styles.toast}>{toast}</div>;
+  if (!canHear) return null;
+
+  return (
+    <>
+      {!soundOk && (
+        <button type="button" className={styles.enable} onClick={() => setSoundOk(true)}>
+          Enable order sound
+        </button>
+      )}
+      {toast && <div className={styles.toast}>{toast}</div>}
+    </>
+  );
 }

@@ -137,6 +137,8 @@ export default function LoginPage() {
           {hideSuper
             ? "Demo kitchen code DEMO · admin / admin123"
             : "Demo: code DEMO · admin/admin123 · or Super super/super123"}
+          <br />
+          Lab demos only — production pe passwords change karein (Settings).
         </p>
       </form>
     </div>

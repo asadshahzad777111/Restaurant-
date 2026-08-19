@@ -1,0 +1,6 @@
+{
+  "name": "ORDO",
+  "version": "0.2.0-localhost",
+  "build": "mvp-ops-pack",
+  "notes": "Localhost multi-tenant restaurant OS. APK shell not built yet."
+}
