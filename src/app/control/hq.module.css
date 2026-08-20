@@ -1,4 +1,4 @@
-/* ORDO HQ — WordPress-like platform owner chrome (not restaurant orange) */
+/* ORDO HQ — WordPress-like platform owner chrome (light slate, not restaurant black/orange) */
 .layout {
   --hq-bg: #f0f0f1;
   --hq-surface: #ffffff;
@@ -7,8 +7,8 @@
   --hq-line: #dcdcde;
   --hq-accent: #2271b1;
   --hq-accent-dark: #135e96;
-  --hq-side: #1d2327;
-  --hq-side-text: #f0f0f1;
+  --hq-side: #e8ecf1;
+  --hq-side-text: #1d2327;
   --hq-warn: #dba617;
 
   display: grid;
@@ -26,25 +26,27 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  border-right: 1px solid var(--hq-line);
 }
 
 .sideTop {
   padding: 1rem 1rem 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--hq-line);
+  background: #dfe5ec;
 }
 
 .brand {
   font-weight: 800;
   font-size: 1.15rem;
   letter-spacing: 0.02em;
-  color: #fff;
+  color: var(--hq-ink);
   text-decoration: none;
 }
 
 .role {
   margin: 0.25rem 0 0;
   font-size: 0.75rem;
-  color: #a7aaad;
+  color: var(--hq-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -62,7 +64,7 @@
   text-align: left;
   border: none;
   background: transparent;
-  color: #c3c4c7;
+  color: #3c434a;
   padding: 0.65rem 0.85rem;
   border-radius: 4px;
   font-size: 0.92rem;
@@ -70,8 +72,8 @@
 }
 
 .nav:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--hq-ink);
+  background: rgba(34, 113, 177, 0.08);
 }
 
 .navActive {
@@ -83,16 +85,17 @@
 .logout {
   margin: 0.5rem 0.65rem 1rem;
   text-align: left;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: transparent;
-  color: #a7aaad;
+  border: 1px solid var(--hq-line);
+  background: #fff;
+  color: var(--hq-muted);
   padding: 0.55rem 0.85rem;
   border-radius: 4px;
   cursor: pointer;
 }
 
 .logout:hover {
-  color: #fff;
+  color: var(--hq-ink);
+  border-color: #c3c4c7;
 }
 
 .main {

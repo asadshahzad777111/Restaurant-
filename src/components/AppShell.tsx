@@ -65,7 +65,7 @@ export function AppShell({
           <div>
             <div className={styles.chips}>
               <span className={styles.panelChip}>Restaurant panel</span>
-              {isDemo && <span className={styles.demoChip}>Demo / trial</span>}
+              {isDemo && <span className={styles.demoChip}>Demo / trial restaurant</span>}
             </div>
             <p className={styles.brand}>{tenant.branding.name}</p>
             <h1 className={styles.title}>{title}</h1>

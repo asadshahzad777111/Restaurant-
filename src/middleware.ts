@@ -70,7 +70,7 @@ export function middleware(req: NextRequest) {
       url.pathname = "/control";
       return withSecurity(NextResponse.redirect(url));
     }
-    // Owner panel + temporary staff UI after "Open" (help without restaurant password)
+    // Owner panel + temporary staff UI after Help this restaurant (no restaurant password)
     const allowed =
       pathname.startsWith("/control") ||
       pathname.startsWith("/login") ||

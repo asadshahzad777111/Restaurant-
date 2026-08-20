@@ -6,11 +6,11 @@ import { useStore } from "@/lib/store";
 import type { Permission } from "@/lib/types";
 import styles from "./Sidebar.module.css";
 
-const NAV: { href: string; label: string; perm: Permission | "any" }[] = [
+const NAV: { href: string; label: string; hint?: string; perm: Permission | "any" }[] = [
   { href: "/home", label: "Home", perm: "home" },
-  { href: "/pos", label: "POS", perm: "pos" },
-  { href: "/orders", label: "Orders", perm: "orders" },
-  { href: "/kitchen", label: "Kitchen", perm: "kitchen" },
+  { href: "/pos", label: "POS", hint: "Counter sales", perm: "pos" },
+  { href: "/orders", label: "Orders", hint: "Live tickets", perm: "orders" },
+  { href: "/kitchen", label: "Kitchen", hint: "Prep board", perm: "kitchen" },
   { href: "/tables", label: "Tables", perm: "pos" },
   { href: "/menu", label: "Menu", perm: "menu" },
   { href: "/day-close", label: "Day close", perm: "settings" },
@@ -47,7 +47,8 @@ export function Sidebar() {
               href={n.href}
               className={pathname === n.href ? styles.active : styles.link}
             >
-              {n.label}
+              <span className={styles.linkLabel}>{n.label}</span>
+              {n.hint ? <span className={styles.linkHint}>{n.hint}</span> : null}
             </Link>
           ),
         )}
