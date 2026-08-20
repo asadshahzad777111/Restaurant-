@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useStore } from "@/lib/store";
 import { uploadTenantMedia } from "@/lib/media-client";
+import { AdminApkCard } from "@/components/AdminApkCard";
 import styles from "../staff.module.css";
 
 export default function SettingsPage() {
@@ -369,6 +370,8 @@ export default function SettingsPage() {
             {origin}/order?tenant={tenant?.code}&table=3
           </code>
         </div>
+
+        <AdminApkCard />
 
         <div className={styles.card}>
           <h3 style={{ marginTop: 0 }}>Staff on this kitchen</h3>
