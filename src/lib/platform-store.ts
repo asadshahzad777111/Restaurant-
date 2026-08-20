@@ -67,7 +67,9 @@ export function createTenantMeta(input: {
 
 export function updateTenantMeta(
   id: string,
-  patch: Partial<Pick<PlatformTenantMeta, "name" | "planId" | "status" | "renewsAt" | "adminEmail">>,
+  patch: Partial<
+    Pick<PlatformTenantMeta, "name" | "planId" | "status" | "renewsAt" | "adminEmail" | "billingNote">
+  >,
 ) {
   const platform = readPlatform();
   const idx = platform.tenants.findIndex((t) => t.id === id);
@@ -75,6 +77,18 @@ export function updateTenantMeta(
   platform.tenants[idx] = { ...platform.tenants[idx], ...patch };
   writePlatform(platform);
   return platform.tenants[idx];
+}
+
+export function getPlatformFeatures() {
+  const platform = getPlatform();
+  return platform.features ?? { fbrOptional: false };
+}
+
+export function setPlatformFeatures(features: { fbrOptional: boolean }) {
+  const platform = readPlatform();
+  platform.features = { fbrOptional: Boolean(features.fbrOptional) };
+  writePlatform(platform);
+  return platform.features;
 }
 
 export function setTenantStatus(id: string, status: TenantStatus) {

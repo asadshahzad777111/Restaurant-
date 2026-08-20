@@ -21,6 +21,7 @@ export function defaultPlatformSeed(): PlatformState {
     superAdmin: { username: "super", password: "super123" },
     contactWhatsapp: process.env.CONTACT_WHATSAPP?.trim() || PLATFORM_CONTACT_WHATSAPP,
     plans: CANONICAL_PLANS.map((p) => ({ ...p })),
+    features: { fbrOptional: false },
     tenants: [
       {
         id: "tenant_demo",

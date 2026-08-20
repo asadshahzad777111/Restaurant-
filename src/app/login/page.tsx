@@ -47,7 +47,8 @@ export default function LoginPage() {
       setUsername("super");
     }
     const saved = localStorage.getItem(CODE_KEY);
-    setCode(saved || (staff ? "" : "DEMO"));
+    const urlTenant = new URLSearchParams(window.location.search).get("tenant");
+    setCode((urlTenant || saved || (staff ? "" : "DEMO")).toUpperCase());
     setPassword(staff ? "" : desk ? "super123" : "admin123");
     if (desk) router.prefetch("/control");
     else router.prefetch("/home");

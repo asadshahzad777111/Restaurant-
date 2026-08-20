@@ -25,6 +25,11 @@ export interface TenantShop {
   packingFee: number;
   /** Service charge % of subtotal */
   serviceChargePercent: number;
+  /**
+   * Kitchen opt-in. Only meaningful when Super enables platform.features.fbrOptional.
+   * There is no dedicated FBR page — fields stay inside Settings when allowed.
+   */
+  fbrEnabled?: boolean;
 }
 
 export interface TenantUser {

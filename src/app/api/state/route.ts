@@ -5,6 +5,7 @@ import {
   findTenantMetaById,
   listPlans,
   getPublicMenu,
+  getPlatformFeatures,
   readTenantStaffView,
 } from "@/lib/db";
 import { AuthError, publicUser, requireSession } from "@/lib/session";
@@ -33,9 +34,10 @@ export async function GET(req: NextRequest) {
         if (!session.tenantId) {
           return NextResponse.json({ error: "No tenant" }, { status: 400 });
         }
-        const [meta, tenant] = await Promise.all([
+        const [meta, tenant, features] = await Promise.all([
           findTenantMetaById(session.tenantId),
           readTenantStaffView(session.tenantId),
+          getPlatformFeatures(),
         ]);
         const user =
           session.userId && tenant
@@ -46,6 +48,7 @@ export async function GET(req: NextRequest) {
           user,
           meta,
           tenant,
+          features,
           storage: storageMode(),
         });
       } catch (e) {

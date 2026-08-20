@@ -6,18 +6,37 @@ import { useRouter } from "next/navigation";
 import { TOKEN_KEY, OWNER_TOKEN_KEY, useStore } from "@/lib/store";
 import { setHelpModeCookieClient } from "@/lib/help-mode";
 import { apiUrl } from "@/lib/urls";
-import type { Lead, Plan, PlanId, PlatformTenantMeta } from "@/lib/types";
+import type { Lead, Plan, PlanId, PlatformFeatures, PlatformTenantMeta, TenantStatus } from "@/lib/types";
 import styles from "./hq.module.css";
 
-type Tab = "dashboard" | "restaurants" | "plans" | "leads" | "settings";
+type Tab = "dashboard" | "restaurants" | "apps" | "plans" | "leads" | "settings";
+
+type ApkRow = {
+  id: "staff" | "customer";
+  title: string;
+  filename: string;
+  available: boolean;
+  sizeBytes: number;
+  updatedAt: string | null;
+  loadsUrl: string;
+  loadsPath: string;
+  note: string;
+};
 
 const NAV: { id: Tab; label: string }[] = [
   { id: "dashboard", label: "Home" },
   { id: "restaurants", label: "Your restaurants" },
+  { id: "apps", label: "Apps" },
   { id: "plans", label: "Pricing plans" },
   { id: "leads", label: "Messages" },
   { id: "settings", label: "Settings" },
 ];
+
+function formatBytes(n: number) {
+  if (!n) return "—";
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export default function ControlPage() {
   const router = useRouter();
@@ -27,8 +46,14 @@ export default function ControlPage() {
   const [tenants, setTenants] = useState<PlatformTenantMeta[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [features, setFeatures] = useState<PlatformFeatures>({ fbrOptional: false });
   const [error, setError] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [apkTenantId, setApkTenantId] = useState("");
+  const [apkRows, setApkRows] = useState<ApkRow[]>([]);
+  const [apkBusy, setApkBusy] = useState(false);
+  const [apkMessage, setApkMessage] = useState("");
+  const [billingBusy, setBillingBusy] = useState("");
   const emptyForm = {
     code: "",
     name: "",
@@ -45,8 +70,27 @@ export default function ControlPage() {
       const t = token || localStorage.getItem(TOKEN_KEY);
       const headers = new Headers(init?.headers);
       if (t) headers.set("Authorization", `Bearer ${t}`);
-      if (init?.body) headers.set("Content-Type", "application/json");
+      if (init?.body && !(init.body instanceof FormData)) {
+        headers.set("Content-Type", "application/json");
+      }
       return fetch(apiUrl(path), { ...init, headers });
+    },
+    [token],
+  );
+
+  const loadApks = useCallback(
+    async (tenantId: string, authToken?: string) => {
+      if (!tenantId) {
+        setApkRows([]);
+        return;
+      }
+      const t = authToken || token || localStorage.getItem(TOKEN_KEY);
+      const res = await fetch(apiUrl(`/api/super/apks?tenantId=${encodeURIComponent(tenantId)}`), {
+        headers: t ? { Authorization: `Bearer ${t}` } : undefined,
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as { apps?: ApkRow[] };
+      setApkRows(data.apps || []);
     },
     [token],
   );
@@ -101,16 +145,28 @@ export default function ControlPage() {
       const d = await tenRes.json();
       setTenants(d.tenants);
       setPlans(d.plans);
+      setFeatures(d.features || { fbrOptional: false });
+      const firstId = d.tenants?.[0]?.id || "";
+      setApkTenantId((prev) => prev || firstId);
+      if (firstId || apkTenantId) {
+        await loadApks(apkTenantId || firstId, t);
+      }
     }
     if (leadRes.ok) {
       const d = await leadRes.json();
       setLeads(d.leads || []);
     }
-  }, [router, setToken]);
+  }, [router, setToken, loadApks, apkTenantId]);
 
   useEffect(() => {
     void load();
-  }, [load]);
+    // Initial auth load only — avoid re-loop when apkTenantId changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (apkTenantId) void loadApks(apkTenantId);
+  }, [apkTenantId, loadApks]);
 
   function startEdit(t: PlatformTenantMeta) {
     setEditingId(t.id);
@@ -184,6 +240,53 @@ export default function ControlPage() {
     await load();
   }
 
+  async function renewRestaurant(id: string) {
+    setBillingBusy(id);
+    try {
+      const res = await api("/api/super/tenants", {
+        method: "POST",
+        body: JSON.stringify({ action: "renew", id, days: 30 }),
+      });
+      if (!res.ok) {
+        window.alert("Renew failed");
+        return;
+      }
+      await load();
+    } finally {
+      setBillingBusy("");
+    }
+  }
+
+  async function billingStatus(id: string, status: TenantStatus) {
+    setBillingBusy(id);
+    try {
+      const res = await api("/api/super/tenants", {
+        method: "POST",
+        body: JSON.stringify({ action: "billing", id, status }),
+      });
+      if (!res.ok) {
+        window.alert("Billing update failed");
+        return;
+      }
+      await load();
+    } finally {
+      setBillingBusy("");
+    }
+  }
+
+  async function saveBillingNote(id: string, note: string) {
+    setBillingBusy(id);
+    try {
+      await api("/api/super/tenants", {
+        method: "POST",
+        body: JSON.stringify({ action: "billing", id, billingNote: note }),
+      });
+      await load();
+    } finally {
+      setBillingBusy("");
+    }
+  }
+
   async function helpRestaurant(id: string) {
     const res = await api("/api/super/tenants", {
       method: "POST",
@@ -197,6 +300,78 @@ export default function ControlPage() {
     enterHelp(data.token);
     setToken(data.token);
     router.push("/home");
+  }
+
+  async function uploadApk(slot: "staff" | "customer", file: File) {
+    if (!apkTenantId) {
+      window.alert("Select a restaurant first");
+      return;
+    }
+    setApkBusy(true);
+    setApkMessage("");
+    try {
+      const fd = new FormData();
+      fd.set("id", slot);
+      fd.set("tenantId", apkTenantId);
+      fd.set("file", file);
+      const res = await api("/api/super/apks", { method: "POST", body: fd });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        window.alert(err.error || "Upload failed");
+        return;
+      }
+      setApkMessage(`${slot === "staff" ? "Staff" : "Customer"} APK uploaded for this restaurant.`);
+      await loadApks(apkTenantId);
+    } finally {
+      setApkBusy(false);
+    }
+  }
+
+  async function removeApk(slot: "staff" | "customer") {
+    if (!apkTenantId) return;
+    if (!window.confirm(`Remove ${slot} APK for this restaurant?`)) return;
+    setApkBusy(true);
+    try {
+      const res = await api(`/api/super/apks/${slot}?tenantId=${encodeURIComponent(apkTenantId)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        window.alert("Could not remove APK");
+        return;
+      }
+      await loadApks(apkTenantId);
+    } finally {
+      setApkBusy(false);
+    }
+  }
+
+  async function downloadApk(slot: "staff" | "customer", filename: string) {
+    if (!apkTenantId) return;
+    setApkBusy(true);
+    try {
+      const res = await api(`/api/super/apks/${slot}?tenantId=${encodeURIComponent(apkTenantId)}`);
+      if (!res.ok) {
+        window.alert("Download failed");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setApkBusy(false);
+    }
+  }
+
+  async function saveFbrOptional(next: boolean) {
+    setFeatures({ fbrOptional: next });
+    await api("/api/super/tenants", {
+      method: "POST",
+      body: JSON.stringify({ action: "features", fbrOptional: next }),
+    });
   }
 
   function goTab(id: Tab) {
@@ -216,6 +391,14 @@ export default function ControlPage() {
       return "—";
     }
   }
+
+  function statusLabel(s: string) {
+    if (s === "suspended") return "Paused";
+    if (s === "past_due") return "Past due";
+    return s;
+  }
+
+  const selectedTenant = tenants.find((t) => t.id === apkTenantId) || null;
 
   return (
     <div className={styles.layout}>
@@ -279,8 +462,8 @@ export default function ControlPage() {
             <section>
               <h1>Home</h1>
               <p className={styles.lead}>
-                Manage restaurants here. Staff and guests use ordo.asfins.com — this panel never becomes
-                their Admin login.
+                Manage restaurants, billing, and per-kitchen Staff + Customer APKs here. Staff and guests
+                use ordo.asfins.com — this panel never becomes their Admin login.
               </p>
               <div className={styles.how}>
                 <strong>How it works</strong>
@@ -289,8 +472,12 @@ export default function ControlPage() {
                   <li>They sign in at ordo.asfins.com/login with that code — they cannot open HQ.</li>
                   <li>Guests order with /order?tenant=CODE or table QR for that kitchen only.</li>
                   <li>
+                    Upload named Staff + Customer APKs under Apps — each binary is locked to that
+                    restaurant code so kitchens never mix.
+                  </li>
+                  <li>
                     <em>Help this restaurant</em> is the only way into their panel. Yellow banner + Back to
-                    ORDO HQ. Plans and messages stay on this page.
+                    ORDO HQ.
                   </li>
                 </ol>
               </div>
@@ -304,8 +491,10 @@ export default function ControlPage() {
                   <span>Active</span>
                 </div>
                 <div>
-                  <strong>{tenants.filter((t) => t.status === "suspended").length}</strong>
-                  <span>Paused</span>
+                  <strong>
+                    {tenants.filter((t) => t.status === "suspended" || t.status === "past_due").length}
+                  </strong>
+                  <span>Paused / past due</span>
                 </div>
                 <div>
                   <strong>{leads.length}</strong>
@@ -319,8 +508,8 @@ export default function ControlPage() {
             <section>
               <h1>Your restaurants</h1>
               <p className={styles.lead}>
-                Each Admin belongs to one kitchen. Pause blocks their staff login. Billing is the monthly
-                package you assign — not a restaurant Settings screen.
+                Each Admin belongs to one kitchen. Pause blocks their staff login. Billing renewals and
+                past-due flags live here — not inside restaurant Settings.
               </p>
               <form className={styles.create} onSubmit={createRestaurant}>
                 <h2>{editingId ? "Edit restaurant" : "Add restaurant + Admin"}</h2>
@@ -399,7 +588,12 @@ export default function ControlPage() {
                           <code>{t.code}</code>
                           {t.code === "DEMO" && <span className={styles.demoTag}>Demo</span>}
                         </td>
-                        <td>{t.name}</td>
+                        <td>
+                          {t.name}
+                          {t.billingNote ? (
+                            <div className={styles.muted}>{t.billingNote}</div>
+                          ) : null}
+                        </td>
                         <td>{t.adminEmail || "—"}</td>
                         <td>
                           <select
@@ -415,7 +609,7 @@ export default function ControlPage() {
                           <div className={styles.muted}>{planPrice(t.planId)}</div>
                         </td>
                         <td>{renewLabel(t.renewsAt)}</td>
-                        <td>{t.status === "suspended" ? "Paused" : t.status}</td>
+                        <td>{statusLabel(t.status)}</td>
                         <td className={styles.actions}>
                           <button type="button" onClick={() => startEdit(t)}>
                             Edit
@@ -427,7 +621,52 @@ export default function ControlPage() {
                           >
                             Help this restaurant
                           </button>
-                          {t.status === "active" ? (
+                          <button
+                            type="button"
+                            disabled={billingBusy === t.id}
+                            onClick={() => void renewRestaurant(t.id)}
+                          >
+                            Renew +30d
+                          </button>
+                          {t.status !== "past_due" && (
+                            <button
+                              type="button"
+                              disabled={billingBusy === t.id}
+                              onClick={() => void billingStatus(t.id, "past_due")}
+                            >
+                              Mark past due
+                            </button>
+                          )}
+                          {t.status === "past_due" && (
+                            <button
+                              type="button"
+                              disabled={billingBusy === t.id}
+                              onClick={() => void billingStatus(t.id, "active")}
+                            >
+                              Clear past due
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            disabled={billingBusy === t.id}
+                            onClick={() => {
+                              const note = window.prompt("Billing note (APK fee, custom deal…)", t.billingNote || "");
+                              if (note === null) return;
+                              void saveBillingNote(t.id, note.trim());
+                            }}
+                          >
+                            Note
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setApkTenantId(t.id);
+                              setTab("apps");
+                            }}
+                          >
+                            Apps
+                          </button>
+                          {t.status === "active" || t.status === "past_due" ? (
                             <button type="button" onClick={() => void setStatus(t.id, "suspended")}>
                               Pause
                             </button>
@@ -442,6 +681,95 @@ export default function ControlPage() {
                   </tbody>
                 </table>
               </div>
+            </section>
+          )}
+
+          {tab === "apps" && (
+            <section>
+              <h1>Apps · per restaurant</h1>
+              <p className={styles.lead}>
+                Every kitchen gets its own named Staff and Customer APKs. Filenames and deep links include
+                the restaurant code so there is no mix-up. APKs never open Super HQ.
+              </p>
+              <div className={styles.create}>
+                <h2>Restaurant</h2>
+                <select
+                  value={apkTenantId}
+                  onChange={(e) => setApkTenantId(e.target.value)}
+                  style={{ maxWidth: "28rem" }}
+                >
+                  {tenants.length === 0 && <option value="">No restaurants yet</option>}
+                  {tenants.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} · {t.code}
+                    </option>
+                  ))}
+                </select>
+                {selectedTenant && (
+                  <p className={styles.muted} style={{ marginTop: "0.75rem" }}>
+                    Staff opens{" "}
+                    <code>/login?app=staff&amp;tenant={selectedTenant.code}</code> · Customer opens{" "}
+                    <code>/guest?app=customer&amp;tenant={selectedTenant.code}</code>
+                  </p>
+                )}
+                {apkMessage && <p className={styles.muted}>{apkMessage}</p>}
+              </div>
+
+              {selectedTenant && (
+                <div className={styles.planGrid}>
+                  {apkRows.map((app) => (
+                    <article key={app.id}>
+                      <h3>{app.title}</h3>
+                      <p className={styles.muted}>{app.filename}</p>
+                      <p>
+                        {app.available ? (
+                          <>
+                            Ready · {formatBytes(app.sizeBytes)}
+                            {app.updatedAt ? ` · ${new Date(app.updatedAt).toLocaleString()}` : ""}
+                          </>
+                        ) : (
+                          <span className={styles.muted}>Not uploaded yet — download stays hidden</span>
+                        )}
+                      </p>
+                      <p className={styles.muted}>{app.note}</p>
+                      <p className={styles.muted}>
+                        Loads: <code>{app.loadsPath}</code>
+                      </p>
+                      <div className={styles.actions} style={{ marginTop: "0.75rem" }}>
+                        <label className={styles.helpBtn} style={{ cursor: apkBusy ? "wait" : "pointer" }}>
+                          {apkBusy ? "Working…" : "Upload .apk"}
+                          <input
+                            type="file"
+                            accept=".apk,application/vnd.android.package-archive"
+                            hidden
+                            disabled={apkBusy}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              e.target.value = "";
+                              if (file) void uploadApk(app.id, file);
+                            }}
+                          />
+                        </label>
+                        {app.available && (
+                          <>
+                            <button
+                              type="button"
+                              className={styles.primaryBtn}
+                              disabled={apkBusy}
+                              onClick={() => void downloadApk(app.id, app.filename)}
+                            >
+                              Download
+                            </button>
+                            <button type="button" disabled={apkBusy} onClick={() => void removeApk(app.id)}>
+                              Remove
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
             </section>
           )}
 
@@ -517,16 +845,33 @@ export default function ControlPage() {
                 Help this restaurant, then Back to ORDO HQ.
               </p>
               <div className={styles.how}>
+                <strong>Optional features</strong>
+                <p>
+                  There is no FBR page on the website. Use one click below to allow kitchens to optionally
+                  enable FBR fields inside their own Settings. Off by default for every kitchen.
+                </p>
+                <button
+                  type="button"
+                  className={features.fbrOptional ? styles.primaryBtn : styles.helpBtn}
+                  onClick={() => void saveFbrOptional(!features.fbrOptional)}
+                >
+                  {features.fbrOptional
+                    ? "FBR option ON — kitchens may opt in"
+                    : "FBR option OFF — one click to allow"}
+                </button>
+              </div>
+              <div className={styles.how}>
                 <strong>Pause &amp; billing</strong>
                 <p>
-                  Pause a restaurant from Your restaurants. Staff login is blocked while paused. Billing is
-                  Starter ₨999, Pro ₨1,999, Enterprise ₨4,499 per month, assigned per kitchen.
+                  Pause, renew +30 days, mark past due, and billing notes live under Your restaurants.
+                  Staff login is blocked while paused. Billing is Starter ₨999, Pro ₨1,999, Enterprise
+                  ₨4,499 per month, assigned per kitchen.
                 </p>
                 <strong>Android apps</strong>
                 <p>
-                  Staff and guest APKs are not published yet. Download and upload stay hidden until a real
-                  file exists — we will not offer a 404. Later APKs will login with that restaurant’s code,
-                  never open /super, and never mix kitchens.
+                  Upload finished Staff and Customer APKs under the Apps tab — one pair per restaurant,
+                  named <code>ORDO-CODE-Staff.apk</code> / <code>ORDO-CODE-Customer.apk</code>. Download
+                  stays hidden until a real file exists. APKs never open /super or /control.
                 </p>
               </div>
             </section>

@@ -9,7 +9,7 @@ import React, {
   useState,
   startTransition,
 } from "react";
-import type { Permission, SessionRole } from "./types";
+import type { Permission, PlatformFeatures, SessionRole } from "./types";
 import type { DiningTable, TenantState, MenuItem, Order, StockItem, TenantUser } from "./tenant-types";
 import { setHelpModeCookieClient } from "./help-mode";
 
@@ -33,6 +33,7 @@ export interface AuthState {
   impersonating: boolean;
   user: AuthUser | null;
   tenant: TenantState | null;
+  platformFeatures: PlatformFeatures | null;
   loading: boolean;
 }
 
@@ -67,6 +68,7 @@ type MemorySession = {
   impersonating: boolean;
   user: AuthUser | null;
   tenant: TenantState | null;
+  platformFeatures: PlatformFeatures | null;
 };
 
 /** Survives StoreProvider remounts during client navigation (React state does not). */
@@ -104,6 +106,7 @@ function emptyAuth(): Omit<AuthState, "loading"> {
     impersonating: false,
     user: null,
     tenant: null,
+    platformFeatures: null,
   };
 }
 
@@ -132,6 +135,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [impersonating, setImpersonating] = useState(boot.impersonating);
   const [user, setUser] = useState<AuthUser | null>(boot.user);
   const [tenant, setTenant] = useState<TenantState | null>(boot.tenant);
+  const [platformFeatures, setPlatformFeatures] = useState<PlatformFeatures | null>(
+    boot.platformFeatures,
+  );
   const [loading, setLoading] = useState(boot.loading);
 
   const setToken = useCallback((t: string | null) => {
@@ -162,6 +168,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setImpersonating(payload.impersonating);
       setUser(payload.user);
       setTenant(payload.tenant);
+      setPlatformFeatures(payload.platformFeatures);
       if (doneLoading) setLoading(false);
     });
   }, []);
@@ -183,6 +190,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       impersonating: !!payload.session?.impersonating,
       user: payload.user ?? null,
       tenant: payload.tenant ?? null,
+      platformFeatures: null,
     });
   }, [applySession]);
 
@@ -221,6 +229,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setTenantId(null);
       setUser(null);
       setTenant(null);
+      setPlatformFeatures(null);
       setImpersonating(false);
       setLoading(false);
       return;
@@ -248,6 +257,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setTokenState(null);
       setRole(null);
       setTenant(null);
+      setPlatformFeatures(null);
       setUser(null);
       setImpersonating(false);
       setLoading(false);
@@ -261,6 +271,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       impersonating: !!data.session?.impersonating,
       user: data.user ?? null,
       tenant: data.tenant ?? null,
+      platformFeatures: data.features ?? null,
     });
   }, [applySession]);
 
@@ -297,6 +308,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setTenantId(null);
       setUser(null);
       setTenant(null);
+      setPlatformFeatures(null);
       setImpersonating(false);
       setLoading(false);
       return;
@@ -306,6 +318,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setTenantId(null);
     setUser(null);
     setTenant(null);
+    setPlatformFeatures(null);
     setImpersonating(false);
   }, [setToken]);
 
@@ -332,6 +345,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setTenantId(null);
     setUser(null);
     setTenant(null);
+    setPlatformFeatures(null);
     setImpersonating(false);
   }, [setToken]);
 
@@ -362,8 +376,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       impersonating,
       user,
       tenant,
+      platformFeatures,
     });
-  }, [token, role, tenantId, impersonating, user, tenant]);
+  }, [token, role, tenantId, impersonating, user, tenant, platformFeatures]);
 
   const value = useMemo(
     () => ({
@@ -373,6 +388,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       impersonating,
       user,
       tenant,
+      platformFeatures,
       loading,
       setToken,
       refresh,
@@ -392,6 +408,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       impersonating,
       user,
       tenant,
+      platformFeatures,
       loading,
       setToken,
       refresh,

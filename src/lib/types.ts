@@ -52,6 +52,8 @@ export interface PlatformTenantMeta {
   adminEmail?: string;
   renewsAt: string;
   createdAt: string;
+  /** Super billing note (APK fee, custom deal, etc.) */
+  billingNote?: string;
 }
 
 export interface Session {
@@ -75,6 +77,11 @@ export interface Lead {
   createdAt: string;
 }
 
+export interface PlatformFeatures {
+  /** When true, kitchens may optionally enable FBR fields. No dedicated FBR page. */
+  fbrOptional: boolean;
+}
+
 export interface PlatformState {
   superAdmin: { username: string; password: string };
   plans: Plan[];
@@ -82,4 +89,5 @@ export interface PlatformState {
   sessions: Session[];
   leads: Lead[];
   contactWhatsapp: string;
+  features?: PlatformFeatures;
 }

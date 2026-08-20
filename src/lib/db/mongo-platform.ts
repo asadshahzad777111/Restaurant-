@@ -181,7 +181,9 @@ export async function createTenantMetaMongo(input: {
 
 export async function updateTenantMetaMongo(
   id: string,
-  patch: Partial<Pick<PlatformTenantMeta, "name" | "planId" | "status" | "renewsAt" | "adminEmail">>,
+  patch: Partial<
+    Pick<PlatformTenantMeta, "name" | "planId" | "status" | "renewsAt" | "adminEmail" | "billingNote">
+  >,
 ) {
   const platform = await getPlatformMongo();
   const idx = platform.tenants.findIndex((t) => t.id === id);
@@ -189,6 +191,18 @@ export async function updateTenantMetaMongo(
   platform.tenants[idx] = { ...platform.tenants[idx], ...patch };
   await savePlatformMongo(platform);
   return platform.tenants[idx];
+}
+
+export async function getPlatformFeaturesMongo() {
+  const platform = await getPlatformMongo();
+  return platform.features ?? { fbrOptional: false };
+}
+
+export async function setPlatformFeaturesMongo(features: { fbrOptional: boolean }) {
+  const platform = await getPlatformMongo();
+  platform.features = { fbrOptional: Boolean(features.fbrOptional) };
+  await savePlatformMongo(platform);
+  return platform.features;
 }
 
 export async function setTenantStatusMongo(id: string, status: TenantStatus) {

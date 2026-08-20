@@ -69,12 +69,28 @@ export async function createTenantMeta(input: {
 
 export async function updateTenantMeta(
   id: string,
-  patch: Partial<Pick<PlatformTenantMeta, "name" | "planId" | "status" | "renewsAt" | "adminEmail">>,
+  patch: Partial<
+    Pick<PlatformTenantMeta, "name" | "planId" | "status" | "renewsAt" | "adminEmail" | "billingNote">
+  >,
 ) {
   await ensureStore();
   return useMongo()
     ? mongoPlatform.updateTenantMetaMongo(id, patch)
     : filePlatform.updateTenantMeta(id, patch);
+}
+
+export async function getPlatformFeatures() {
+  await ensureStore();
+  return useMongo()
+    ? mongoPlatform.getPlatformFeaturesMongo()
+    : filePlatform.getPlatformFeatures();
+}
+
+export async function setPlatformFeatures(features: { fbrOptional: boolean }) {
+  await ensureStore();
+  return useMongo()
+    ? mongoPlatform.setPlatformFeaturesMongo(features)
+    : filePlatform.setPlatformFeatures(features);
 }
 
 export async function setTenantStatus(id: string, status: TenantStatus) {

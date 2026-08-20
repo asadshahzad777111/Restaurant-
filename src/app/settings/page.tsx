@@ -7,7 +7,7 @@ import { uploadTenantMedia } from "@/lib/media-client";
 import styles from "../staff.module.css";
 
 export default function SettingsPage() {
-  const { tenant, api, applyTenant, user, token, loading } = useStore();
+  const { tenant, api, applyTenant, user, token, loading, platformFeatures } = useStore();
   const [msg, setMsg] = useState("");
   const [branding, setBranding] = useState({
     name: "",
@@ -22,6 +22,7 @@ export default function SettingsPage() {
     serviceChargePercent: 0,
     taxRate: 0,
   });
+  const [fbrEnabled, setFbrEnabled] = useState(false);
   const [pw, setPw] = useState({ current: "", next: "" });
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function SettingsPage() {
       serviceChargePercent: tenant.shop.serviceChargePercent || 0,
       taxRate: tenant.shop.taxRate || 0,
     });
+    setFbrEnabled(Boolean(tenant.shop.fbrEnabled));
   }, [tenant]);
 
   async function saveBranding(e: React.FormEvent) {
@@ -76,6 +78,21 @@ export default function SettingsPage() {
     setMsg(res.ok ? "Fees saved" : "Failed");
     if (res.ok && (data as { tenant?: typeof tenant }).tenant) {
       applyTenant((data as { tenant: NonNullable<typeof tenant> }).tenant);
+    }
+  }
+
+  async function saveFbrOptIn(next: boolean) {
+    setFbrEnabled(next);
+    const res = await api("/api/admin", {
+      method: "PUT",
+      body: JSON.stringify({ action: "fees", shop: { fbrEnabled: next } }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setMsg(res.ok ? (next ? "FBR fields enabled for this kitchen" : "FBR fields off") : "Failed");
+    if (res.ok && (data as { tenant?: typeof tenant }).tenant) {
+      applyTenant((data as { tenant: NonNullable<typeof tenant> }).tenant);
+    } else if (!res.ok) {
+      setFbrEnabled(!next);
     }
   }
 
@@ -230,6 +247,23 @@ export default function SettingsPage() {
             Save fees
           </button>
         </form>
+
+        {platformFeatures?.fbrOptional && (
+          <div className={styles.card}>
+            <h3 style={{ marginTop: 0 }}>Optional · FBR fields</h3>
+            <p className={styles.muted}>
+              Super enabled this option platform-wide. There is no separate FBR page — turn fields on only
+              if this kitchen needs them. Off by default.
+            </p>
+            <button
+              type="button"
+              className={fbrEnabled ? styles.btn : styles.btnGhost}
+              onClick={() => void saveFbrOptIn(!fbrEnabled)}
+            >
+              {fbrEnabled ? "FBR fields ON for this kitchen" : "Enable FBR fields (experimental)"}
+            </button>
+          </div>
+        )}
 
         <form className={styles.form} onSubmit={changePassword}>
           <h3 style={{ margin: 0 }}>Change password</h3>

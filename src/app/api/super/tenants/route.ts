@@ -9,6 +9,8 @@ import {
   setTenantStatus,
   updateBranding,
   updateTenantMeta,
+  getPlatformFeatures,
+  setPlatformFeatures,
 } from "@/lib/db";
 import { AuthError, impersonateTenant, requireSuper } from "@/lib/session";
 import type { PlanId, TenantStatus } from "@/lib/types";
@@ -24,6 +26,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       tenants: await listTenantsMeta(),
       plans: await listPlans(),
+      features: await getPlatformFeatures(),
     });
   } catch (e) {
     if (e instanceof AuthError) {
@@ -127,6 +130,46 @@ export async function POST(req: NextRequest) {
       const res = NextResponse.json({ token: newSession.token, session: newSession });
       res.cookies.set(HELP_MODE_COOKIE, "1", helpModeCookieSetOptions());
       return res;
+    }
+
+    if (action === "renew") {
+      if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
+      const days = Math.min(366, Math.max(1, Number(body.days) || 30));
+      const renewsAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+      const meta = await updateTenantMeta(body.id, {
+        renewsAt,
+        status: "active",
+        ...(typeof body.billingNote === "string" ? { billingNote: body.billingNote } : {}),
+      });
+      return NextResponse.json({ tenant: meta });
+    }
+
+    if (action === "billing") {
+      if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
+      const patch: {
+        status?: TenantStatus;
+        billingNote?: string;
+        renewsAt?: string;
+        planId?: PlanId;
+      } = {};
+      if (body.status && ["active", "suspended", "past_due"].includes(body.status)) {
+        patch.status = body.status as TenantStatus;
+      }
+      if (typeof body.billingNote === "string") patch.billingNote = body.billingNote;
+      if (body.renewsAt) patch.renewsAt = String(body.renewsAt);
+      if (body.planId && ["starter", "pro", "enterprise"].includes(body.planId)) {
+        patch.planId = body.planId as PlanId;
+      }
+      const meta = await updateTenantMeta(body.id, patch);
+      return NextResponse.json({ tenant: meta });
+    }
+
+    if (action === "features") {
+      if (typeof body.fbrOptional === "boolean") {
+        const features = await setPlatformFeatures({ fbrOptional: body.fbrOptional });
+        return NextResponse.json({ features });
+      }
+      return NextResponse.json({ features: await getPlatformFeatures() });
     }
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });

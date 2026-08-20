@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { MenuItem } from "@/lib/tenant-types";
+import type { LineModifier, MenuItem, ModifierGroup } from "@/lib/tenant-types";
 import type { PaymentMethod, ServiceType } from "@/lib/types";
+import { lineUnitPrice } from "@/lib/fees";
 import {
   LAST_GUEST_TENANT_KEY,
   assertOrderRules,
@@ -30,7 +31,49 @@ import {
 } from "@/lib/motion";
 import styles from "./order.module.css";
 
-type CartLine = { item: MenuItem; qty: number };
+type CartLine = {
+  key: string;
+  item: MenuItem;
+  qty: number;
+  modifiers: LineModifier[];
+  unitPrice: number;
+};
+
+function toMods(groups: ModifierGroup[], selected: Record<string, string[]>): LineModifier[] {
+  const out: LineModifier[] = [];
+  for (const g of groups) {
+    for (const id of selected[g.id] || []) {
+      const opt = g.options.find((o) => o.id === id);
+      if (opt) {
+        out.push({
+          groupId: g.id,
+          groupName: g.name,
+          optionId: opt.id,
+          optionName: opt.name,
+          priceDelta: opt.priceDelta,
+        });
+      }
+    }
+  }
+  return out;
+}
+
+function normalizeCart(raw: unknown): CartLine[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((row) => {
+      const r = row as Partial<CartLine> & { item?: MenuItem; qty?: number };
+      if (!r?.item?.id || !r.qty) return null;
+      const modifiers = Array.isArray(r.modifiers) ? r.modifiers : [];
+      const unitPrice =
+        typeof r.unitPrice === "number" ? r.unitPrice : lineUnitPrice(r.item.price, modifiers);
+      const key =
+        r.key ||
+        `${r.item.id}:${modifiers.map((m) => m.optionId).sort().join(",")}`;
+      return { key, item: r.item, qty: r.qty, modifiers, unitPrice };
+    })
+    .filter(Boolean) as CartLine[];
+}
 
 type PublicShop = {
   address: string;
@@ -40,7 +83,7 @@ type PublicShop = {
 };
 
 function qtyOf(cart: CartLine[], id: string) {
-  return cart.find((c) => c.item.id === id)?.qty ?? 0;
+  return cart.filter((c) => c.item.id === id).reduce((s, c) => s + c.qty, 0);
 }
 
 function CheckoutForm({
@@ -93,12 +136,19 @@ function CheckoutForm({
     <div className={styles.checkout}>
       <ul className={styles.cartList}>
         {cart.map((c) => (
-          <li key={c.item.id}>
+          <li key={c.key}>
             <span>
               {c.qty}× {c.item.name}
+              {(c.modifiers || []).map((m) => (
+                <em key={m.optionId} className={styles.muted}>
+                  {" "}
+                  +{m.optionName}
+                  {m.priceDelta ? ` (${m.priceDelta > 0 ? "+" : ""}${m.priceDelta})` : ""}
+                </em>
+              ))}
             </span>
             <span>
-              {currency} {c.item.price * c.qty}
+              {currency} {c.unitPrice * c.qty}
             </span>
           </li>
         ))}
@@ -211,6 +261,8 @@ function OrderInner() {
   const [busy, setBusy] = useState(false);
   const [tableDraft, setTableDraft] = useState("");
   const [cartReady, setCartReady] = useState(false);
+  const [modItem, setModItem] = useState<MenuItem | null>(null);
+  const [modSel, setModSel] = useState<Record<string, string[]>>({});
   const reduced = usePrefersReducedMotion();
   const coarse = useIsCoarsePointer();
   const enter = pageEnter(reduced, coarse);
@@ -245,7 +297,7 @@ function OrderInner() {
     if (!tenantCode) return;
     try {
       const raw = localStorage.getItem(cartStorageKey(tenantCode));
-      if (raw) setCart(JSON.parse(raw) as CartLine[]);
+      if (raw) setCart(normalizeCart(JSON.parse(raw)));
     } catch {
       /* ignore */
     }
@@ -283,26 +335,46 @@ function OrderInner() {
     return [...map.entries()];
   }, [menu]);
 
-  const total = cart.reduce((s, c) => s + c.item.price * c.qty, 0);
+  const total = cart.reduce((s, c) => s + c.unitPrice * c.qty, 0);
   const count = cart.reduce((s, c) => s + c.qty, 0);
   const currency = shop?.currency || "PKR";
 
-  function addItem(item: MenuItem) {
+  function pushLine(item: MenuItem, modifiers: LineModifier[]) {
+    const unitPrice = lineUnitPrice(item.price, modifiers);
+    const key = `${item.id}:${modifiers.map((m) => m.optionId).sort().join(",")}`;
     setCart((prev) => {
-      const hit = prev.find((p) => p.item.id === item.id);
-      if (hit) return prev.map((p) => (p.item.id === item.id ? { ...p, qty: p.qty + 1 } : p));
-      return [...prev, { item, qty: 1 }];
+      const hit = prev.find((p) => p.key === key);
+      if (hit) return prev.map((p) => (p.key === key ? { ...p, qty: p.qty + 1 } : p));
+      return [...prev, { key, item, qty: 1, modifiers, unitPrice }];
     });
     setToast(`Added ${item.name}`);
   }
 
+  function addItem(item: MenuItem) {
+    if (!item.available) {
+      setToast(`${item.name} is unavailable`);
+      return;
+    }
+    if (item.modifiers?.length) {
+      const init: Record<string, string[]> = {};
+      item.modifiers.forEach((g) => {
+        init[g.id] = g.required && g.options[0] ? [g.options[0].id] : [];
+      });
+      setModSel(init);
+      setModItem(item);
+      return;
+    }
+    pushLine(item, []);
+  }
+
   function removeItem(itemId: string) {
     setCart((prev) => {
-      const hit = prev.find((p) => p.item.id === itemId);
-      if (!hit) return prev;
+      const idx = [...prev].map((p, i) => ({ p, i })).reverse().find((x) => x.p.item.id === itemId)?.i;
+      if (idx === undefined) return prev;
+      const hit = prev[idx];
       setToast(`Removed ${hit.item.name}`);
-      if (hit.qty <= 1) return prev.filter((p) => p.item.id !== itemId);
-      return prev.map((p) => (p.item.id === itemId ? { ...p, qty: p.qty - 1 } : p));
+      if (hit.qty <= 1) return prev.filter((_, i) => i !== idx);
+      return prev.map((p, i) => (i === idx ? { ...p, qty: p.qty - 1 } : p));
     });
   }
 
@@ -367,7 +439,9 @@ function OrderInner() {
           itemId: c.item.id,
           name: c.item.name,
           qty: c.qty,
-          unitPrice: c.item.price,
+          basePrice: c.item.price,
+          modifiers: c.modifiers,
+          unitPrice: c.unitPrice,
         })),
       }),
     });
@@ -708,6 +782,86 @@ function OrderInner() {
                 </button>
               </div>
               {checkout}
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {modItem ? (
+          <motion.div
+            key="mod-sheet"
+            className={styles.sheet}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mod-title"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={backdropTransition(reduced)}
+            onClick={() => setModItem(null)}
+          >
+            <motion.div
+              className={styles.sheetPanel}
+              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 28 }}
+              animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              exit={reduced ? { opacity: 0 } : { opacity: 0, y: 16 }}
+              transition={reduced ? backdropTransition(true) : sheetTransition}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={styles.sheetHead}>
+                <h3 id="mod-title">Customize · {modItem.name}</h3>
+                <button type="button" onClick={() => setModItem(null)}>
+                  Close
+                </button>
+              </div>
+              {(modItem.modifiers || []).map((g) => (
+                <div key={g.id} style={{ marginBottom: "0.85rem" }}>
+                  <p className={styles.muted}>
+                    {g.name}
+                    {g.required ? " *" : ""}
+                  </p>
+                  <div className={styles.qty} style={{ flexWrap: "wrap", gap: "0.4rem" }}>
+                    {g.options.map((o) => {
+                      const on = (modSel[g.id] || []).includes(o.id);
+                      return (
+                        <button
+                          key={o.id}
+                          type="button"
+                          className={on ? styles.place : styles.clear}
+                          style={{ width: "auto", margin: 0 }}
+                          onClick={() => {
+                            setModSel((prev) => {
+                              const cur = prev[g.id] || [];
+                              if (g.multi) {
+                                return {
+                                  ...prev,
+                                  [g.id]: on ? cur.filter((x) => x !== o.id) : [...cur, o.id],
+                                };
+                              }
+                              return { ...prev, [g.id]: [o.id] };
+                            });
+                          }}
+                        >
+                          {o.name}
+                          {o.priceDelta ? ` +${o.priceDelta}` : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                className={styles.place}
+                onClick={() => {
+                  pushLine(modItem, toMods(modItem.modifiers || [], modSel));
+                  setModItem(null);
+                }}
+              >
+                Add to cart · {currency}{" "}
+                {lineUnitPrice(modItem.price, toMods(modItem.modifiers || [], modSel))}
+              </button>
             </motion.div>
           </motion.div>
         ) : null}

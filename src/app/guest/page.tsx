@@ -11,7 +11,7 @@ import styles from "./guest.module.css";
 function GuestInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const preset = (params.get("code") || "").toUpperCase();
+  const preset = (params.get("tenant") || params.get("code") || "").toUpperCase();
   const [code, setCode] = useState(preset);
   const [paste, setPaste] = useState("");
   const [error, setError] = useState("");
@@ -25,7 +25,14 @@ function GuestInner() {
   useEffect(() => {
     const shell = readAppShell();
     setAppShell(shell);
-    if (preset) return;
+    if (preset) {
+      setCode(preset);
+      // Customer APK deep-link: lock to this kitchen immediately when valid.
+      if (shell === "customer" && isTenantCode(preset)) {
+        localStorage.setItem(LAST_GUEST_TENANT_KEY, preset);
+      }
+      return;
+    }
     const last = localStorage.getItem(LAST_GUEST_TENANT_KEY);
     if (last) {
       setCode(last);
