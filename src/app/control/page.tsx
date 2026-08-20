@@ -157,6 +157,9 @@ export default function ControlPage() {
               {n.label}
             </button>
           ))}
+          <Link href="/super" className={styles.nav}>
+            Android apps
+          </Link>
         </div>
         <button
           type="button"

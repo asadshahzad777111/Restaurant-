@@ -1,12 +1,14 @@
 import { createHash, createHmac, randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
+import { r2Configured, r2PublicBase } from "./env";
 
 /**
  * Media for logos and menu photos.
  *
  * Cloudflare R2 (S3-compatible) when all of these env vars are set:
- *   R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_URL
+ *   R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET,
+ *   and R2_PUBLIC_URL or R2_PUBLIC_BASE_URL
  * Optional: R2_REGION (default "auto")
  *
  * If R2 is unset or a put fails, files land under `.data/media/` and are served at `/api/media/...`.
@@ -25,18 +27,8 @@ const EXT: Record<string, string> = {
 
 export type MediaKind = "logo" | "menu";
 
-function r2PublicBase() {
-  return (process.env.R2_PUBLIC_URL || process.env.R2_PUBLIC_BASE_URL || "").replace(/\/$/, "");
-}
-
 export function isR2Configured() {
-  return Boolean(
-    process.env.R2_ACCOUNT_ID &&
-      process.env.R2_ACCESS_KEY_ID &&
-      process.env.R2_SECRET_ACCESS_KEY &&
-      process.env.R2_BUCKET &&
-      r2PublicBase(),
-  );
+  return r2Configured();
 }
 
 export function mediaBackend(): "r2" | "file-store" {

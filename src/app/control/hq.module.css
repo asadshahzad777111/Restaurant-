@@ -69,6 +69,8 @@
   border-radius: 4px;
   font-size: 0.92rem;
   cursor: pointer;
+  text-decoration: none;
+  display: block;
 }
 
 .nav:hover {

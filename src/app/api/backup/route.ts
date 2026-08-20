@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error: "R2 not configured",
-          hint: "Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_BASE_URL",
+          hint: "Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, and R2_PUBLIC_URL or R2_PUBLIC_BASE_URL",
         },
         { status: 503 },
       );

@@ -56,7 +56,7 @@ export default function SuperPage() {
   const load = useCallback(async () => {
     const t = localStorage.getItem(TOKEN_KEY);
     if (!t) {
-      router.replace("/login");
+      router.replace("/login?owner=1");
       return;
     }
     setLocalToken(t);
@@ -66,7 +66,7 @@ export default function SuperPage() {
       fetch("/api/super/apks", { headers: { Authorization: `Bearer ${t}` } }),
     ]);
     if (tenRes.status === 401) {
-      router.replace("/login");
+      router.replace("/login?owner=1");
       return;
     }
     if (tenRes.status === 403) {

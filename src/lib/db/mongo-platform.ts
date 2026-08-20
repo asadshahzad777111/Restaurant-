@@ -1,8 +1,11 @@
 import type { PlatformState, Session, Lead, PlatformTenantMeta, PlanId, TenantStatus } from "../types";
 import { getDb } from "../mongo";
 import { demoSeedEnabled } from "../env";
+import { PLATFORM_CONTACT_WHATSAPP } from "../contact";
 import { defaultPlatformSeed, demoTenantSeed, secondTenantSeed } from "./seeds";
 import { demoMenu, demoStock } from "../demo-catalog";
+
+const OLD_PLATFORM_WHATSAPP = ["+923001234567", "+923000000000", "03001234567"];
 
 const PLATFORM_ID = "platform";
 
@@ -21,8 +24,11 @@ export async function ensureMongoBootstrap() {
     const patch: Record<string, unknown> = {
       plans: defaultPlatformSeed().plans,
     };
-    if (contactFromEnv() && !(existing as unknown as PlatformState).contactWhatsapp) {
+    const currentWa = String((existing as unknown as PlatformState).contactWhatsapp || "").replace(/\s/g, "");
+    if (contactFromEnv()) {
       patch.contactWhatsapp = contactFromEnv();
+    } else if (!currentWa || OLD_PLATFORM_WHATSAPP.includes(currentWa)) {
+      patch.contactWhatsapp = PLATFORM_CONTACT_WHATSAPP;
     }
     await pcol.updateOne({ _id: PLATFORM_ID } as never, { $set: patch });
   }

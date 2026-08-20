@@ -22,7 +22,7 @@ Backups use **Cloudflare R2**, not paid Vercel storage.
 2. Domains: ordo + control + api.ordo  
 3. R2 keys + `media.ordo`  
 4. `CONTACT_WHATSAPP`  
-5. Deploy branch `cursor/live-stack-mongo-98ba`
+5. Deploy branch `main` (Vercel Production)
 
 ## Local
 `npm run dev` → http://localhost:3000/lab  

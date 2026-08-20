@@ -2,6 +2,7 @@ import type { PlatformState } from "../types";
 import type { Permission } from "../types";
 import type { TenantState } from "../tenant-types";
 import { CANONICAL_PLANS } from "../plans";
+import { PLATFORM_CONTACT_WHATSAPP } from "../contact";
 import { demoMenu, demoStock } from "../demo-catalog";
 
 const ALL_PERMS: Permission[] = [
@@ -18,7 +19,7 @@ const ALL_PERMS: Permission[] = [
 export function defaultPlatformSeed(): PlatformState {
   return {
     superAdmin: { username: "super", password: "super123" },
-    contactWhatsapp: process.env.CONTACT_WHATSAPP?.trim() || "+923001234567",
+    contactWhatsapp: process.env.CONTACT_WHATSAPP?.trim() || PLATFORM_CONTACT_WHATSAPP,
     plans: CANONICAL_PLANS.map((p) => ({ ...p })),
     tenants: [
       {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { controlUrl } from "@/lib/urls";
 import styles from "./marketing.module.css";
 
 const NAV = [
@@ -829,7 +830,7 @@ export function MarketingHome() {
             <article>
               <span>Access</span>
               <h3>Admin Login</h3>
-              <p>Staff and owner tools. Super stays at /super, not in this nav.</p>
+              <p>Staff login is on this site. Platform HQ is on control.asfins.com, not in this nav.</p>
             </article>
             <article>
               <span>Promise</span>
@@ -916,9 +917,9 @@ export function MarketingHome() {
               <Link href="/order?tenant=DEMO">Demo</Link>
               <Link href="/scan">Scan</Link>
               <Link href="/login">Admin</Link>
-              <Link href="/super" className={styles.footerQuiet}>
-                Super
-              </Link>
+              <a href={controlUrl()} className={styles.footerQuiet}>
+                HQ
+              </a>
             </nav>
           </div>
         </div>

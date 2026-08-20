@@ -21,6 +21,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [hideSuper, setHideSuper] = useState(() => isStaffShell() || appShell === "staff");
+  const [ownerDesk, setOwnerDesk] = useState(false);
 
   useEffect(() => {
     const shell = readAppShell();
@@ -29,15 +31,27 @@ export default function LoginPage() {
       router.replace("/guest?app=customer");
       return;
     }
-    if (shell === "staff") setMode("tenant");
+    const host = window.location.hostname;
+    const owner = new URLSearchParams(window.location.search).get("owner") === "1";
+    const onControl = host === "control.asfins.com";
+    const onLocal = host === "localhost" || host === "127.0.0.1";
+    const staff = shell === "staff" || isStaffShell();
+    const restaurantLive = !onLocal && !onControl;
+    const desk = (owner || onControl) && !staff;
+    setOwnerDesk(desk);
+    setHideSuper(staff || (restaurantLive && !owner));
+    if (staff) setMode("tenant");
+    else if (desk) {
+      setMode("super");
+      setUsername("super");
+    }
     const saved = localStorage.getItem(CODE_KEY);
-    setCode(saved || (shell === "staff" ? "" : "DEMO"));
-    setPassword(shell === "staff" ? "" : "admin123");
+    setCode(saved || (staff ? "" : "DEMO"));
+    setPassword(staff ? "" : desk ? "super123" : "admin123");
     router.prefetch("/home");
-    if (shell !== "staff") router.prefetch("/super");
+    if (desk) router.prefetch("/control");
+    else if (!staff && onLocal) router.prefetch("/super");
   }, [router]);
-
-  const hideSuper = isStaffShell() || appShell === "staff";
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,7 +82,7 @@ export default function LoginPage() {
       user: data.user ?? null,
       tenant: data.tenant ?? null,
     });
-    if (mode === "super") router.push("/super");
+    if (mode === "super") router.push(ownerDesk ? "/control" : "/super");
     else router.push("/home");
   }
 
@@ -82,9 +96,11 @@ export default function LoginPage() {
             ORDO
           </Link>
         )}
-        <h1>Staff login</h1>
+        <h1>{ownerDesk ? "ORDO HQ" : "Staff login"}</h1>
         {hideSuper ? (
-          <p className={styles.hint}>Use your restaurant code. Super Admin is not part of this app.</p>
+          <p className={styles.hint}>Use your restaurant code. Platform HQ is not part of this app.</p>
+        ) : ownerDesk ? (
+          <p className={styles.hint}>ORDO HQ login — restaurants use ordo.asfins.com/login.</p>
         ) : (
           <>
             <p className={styles.guestStrip}>

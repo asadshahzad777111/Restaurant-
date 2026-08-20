@@ -48,7 +48,9 @@ Built files go to `.data/apks/` as `ORDO-Staff.apk` and `ORDO-Customer.apk`. See
 
 Logos and menu photos upload via `POST /api/media`. Health: `GET /api/health` (`integrations.r2`).
 
-If R2 env vars are set, files go to R2; otherwise they are stored under `.data/media/` and served at `/api/media/...`.
+Health: `GET /api/health` reports `mongo` and `r2` booleans. Either `R2_PUBLIC_URL` or `R2_PUBLIC_BASE_URL` is accepted.
+
+If R2 env vars are set, files go to R2; otherwise they are stored under `.data/media/` and served at `/api/media/...`. Live Vercel has no persistent disk — paste R2 keys in the Vercel dashboard for photos to stick.
 
 ## Architecture
 See `docs/MULTI-TENANT-SAAS.md`.

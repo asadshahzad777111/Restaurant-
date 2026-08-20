@@ -25,13 +25,18 @@ export function resendConfigured() {
   return Boolean(process.env.RESEND_API_KEY?.trim() && process.env.RESEND_FROM?.trim());
 }
 
+/** Accept both names used across live docs / Vercel. */
+export function r2PublicBase() {
+  return (process.env.R2_PUBLIC_URL || process.env.R2_PUBLIC_BASE_URL || "").trim().replace(/\/$/, "");
+}
+
 export function r2Configured() {
   return Boolean(
     process.env.R2_ACCOUNT_ID?.trim() &&
       process.env.R2_ACCESS_KEY_ID?.trim() &&
       process.env.R2_SECRET_ACCESS_KEY?.trim() &&
       process.env.R2_BUCKET?.trim() &&
-      process.env.R2_PUBLIC_BASE_URL?.trim(),
+      r2PublicBase(),
   );
 }
 

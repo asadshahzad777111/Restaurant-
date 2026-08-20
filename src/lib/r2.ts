@@ -1,5 +1,5 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { r2Configured } from "./env";
+import { r2Configured, r2PublicBase } from "./env";
 
 export function getR2Client() {
   if (!r2Configured()) return null;
@@ -24,7 +24,10 @@ export async function uploadPublicAsset(input: {
     return { error: "R2 not configured — set R2_* env vars on Vercel" };
   }
   const bucket = process.env.R2_BUCKET!;
-  const base = process.env.R2_PUBLIC_BASE_URL!.replace(/\/$/, "");
+  const base = r2PublicBase();
+  if (!base) {
+    return { error: "R2 not configured — set R2_PUBLIC_URL or R2_PUBLIC_BASE_URL" };
+  }
   await client.send(
     new PutObjectCommand({
       Bucket: bucket,

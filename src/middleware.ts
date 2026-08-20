@@ -65,14 +65,15 @@ export function middleware(req: NextRequest) {
   }
 
   if (isControlHost(host)) {
-    if (pathname === "/" || pathname === "/super") {
+    if (pathname === "/") {
       const url = req.nextUrl.clone();
       url.pathname = "/control";
       return withSecurity(NextResponse.redirect(url));
     }
-    // Owner panel + temporary staff UI after Help this restaurant (no restaurant password)
+    // Owner panel + Super APK desk + temporary staff UI after Help this restaurant
     const allowed =
       pathname.startsWith("/control") ||
+      pathname.startsWith("/super") ||
       pathname.startsWith("/login") ||
       pathname.startsWith("/home") ||
       pathname.startsWith("/pos") ||
@@ -92,9 +93,9 @@ export function middleware(req: NextRequest) {
     return withSecurity(NextResponse.next());
   }
 
-  // Restaurant app host: owner HQ stays on control.asfins.com. Super APKs stay on /super.
+  // Restaurant app host: HQ / Super stay on control.asfins.com. APKs never open /super.
   if (isAppHost(host) && !isLocalHost(host)) {
-    if (pathname.startsWith("/control")) {
+    if (pathname.startsWith("/control") || pathname.startsWith("/super")) {
       return withSecurity(
         NextResponse.json(
           { error: "Not available on restaurant host" },
