@@ -362,6 +362,10 @@
   min-height: 26rem;
 }
 
+.page[data-theme="dark"] .productShot {
+  background: #1c1814;
+}
+
 .productShot img {
   display: block;
   width: 100%;
@@ -370,6 +374,10 @@
   object-fit: cover;
   object-position: center top;
   background: #fbf4e8;
+}
+
+.page[data-theme="dark"] .productShot img {
+  background: #1c1814;
 }
 
 .osFloat {
@@ -623,6 +631,12 @@
     linear-gradient(180deg, #f7efe3 0%, #eadcc6 100%);
 }
 
+.page[data-theme="dark"] .stillPass {
+  background:
+    linear-gradient(180deg, #2a241c 0%, #1a1612 100%);
+  border-color: rgba(244, 238, 229, 0.14);
+}
+
 .stillTicket {
   background:
     radial-gradient(ellipse at 50% 0%, rgba(245, 130, 32, 0.18), transparent 50%),
@@ -646,8 +660,13 @@
 }
 
 .stillPass .stillLabel {
-  background: rgba(255, 253, 248, 0.86);
-  color: var(--m-ink);
+  background: rgba(255, 253, 248, 0.9);
+  color: #1a1612;
+}
+
+.page[data-theme="dark"] .stillPass .stillLabel {
+  background: rgba(26, 22, 18, 0.78);
+  color: #f6eee2;
 }
 
 .bokeh,
@@ -671,15 +690,24 @@
 
 .rail article {
   background: #fffdf8;
+  color: #1a1612;
   border-radius: 0.75rem;
   padding: 0.75rem 0.85rem;
   box-shadow: 0 10px 24px rgba(36, 30, 25, 0.08);
+}
+
+.page[data-theme="dark"] .rail article {
+  background: #241e19;
+  color: #f4eee5;
+  border: 1px solid rgba(244, 238, 229, 0.1);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
 }
 
 .rail strong {
   display: block;
   font-family: var(--display);
   font-size: 1.15rem;
+  color: inherit;
 }
 
 .rail span {
@@ -1025,6 +1053,11 @@
   overflow: hidden;
   background: #ead9be;
   box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35);
+}
+
+.page[data-theme="dark"] .shopVisual {
+  background: #1c1814;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55);
 }
 
 .shopVisual img {
@@ -1386,35 +1419,97 @@
 }
 
 .footer {
-  padding: 1.6rem 0 2.4rem;
+  margin-top: 1rem;
+  padding: 2.6rem 0 2rem;
   border-top: 1px solid var(--m-line);
+  background:
+    linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--m-studio) 55%, transparent) 100%);
   color: var(--m-muted);
 }
 
-.footerRow {
-  display: flex;
-  gap: 1.15rem;
-  flex-wrap: wrap;
-  align-items: baseline;
+.footerInner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.8fr);
+  gap: clamp(1.6rem, 4vw, 3.2rem);
+  align-items: start;
+  padding-bottom: 1.8rem;
+  border-bottom: 1px solid var(--m-line);
 }
 
-.footer strong {
+.footerBrand {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.footerBrand .navMark {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.footerBrand strong {
+  display: block;
   font-family: var(--display);
   font-weight: 400;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
   color: var(--m-ink);
-  font-size: 1.2rem;
+  font-size: 1.45rem;
+  line-height: 1.1;
 }
 
-.footer nav {
+.footerBrand p {
+  margin: 0.45rem 0 0;
+  max-width: 18rem;
+  color: var(--m-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.footerCols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.2rem;
+}
+
+.footerCol {
+  display: grid;
+  gap: 0.55rem;
+  align-content: start;
+}
+
+.footerCol h3 {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--m-orange);
+}
+
+.footerCol a {
+  color: var(--m-ink);
+  font-size: 0.95rem;
+  line-height: 1.35;
+  width: fit-content;
+}
+
+.footerCol a:hover {
+  color: var(--m-orange);
+}
+
+.footerBottom {
   display: flex;
-  gap: 1rem;
-  margin-left: auto;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.4rem;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1.15rem;
+  font-size: 0.82rem;
+  color: var(--m-muted);
 }
 
-.footerQuiet {
-  opacity: 0.55;
-  font-size: 0.85rem;
+.footerBottom span:last-child {
+  letter-spacing: 0.02em;
 }
 
 @media (max-width: 1100px) {
@@ -1497,8 +1592,12 @@
     min-height: 0;
   }
 
-  .footer nav {
-    margin-left: 0;
+  .footerInner {
+    grid-template-columns: 1fr;
+  }
+
+  .footerCols {
+    grid-template-columns: 1fr 1fr;
   }
 
   .shopHero {
@@ -1532,6 +1631,15 @@
 
   .roleStats {
     grid-template-columns: 1fr;
+  }
+
+  .footerCols {
+    grid-template-columns: 1fr;
+  }
+
+  .footerBottom {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 
