@@ -19,10 +19,14 @@ const display = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "ORDO — Restaurant OS for Pakistan kitchens",
+  title: "ORDO — Modern tech for premium hospitality",
   description:
-    "Guest QR ordering, counter POS, kitchen tickets, and isolated restaurants. Browser-first, PKR pricing from ₨999/month. No per-order fee.",
+    "ORDO is the quiet layer between guests and the kitchen: QR ordering, counter POS, tickets, and isolated restaurants. Browser-first, PKR from ₨999/month.",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [{ url: "/ordo-icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/ordo-mark-256.png" }],
+  },
   appleWebApp: {
     capable: true,
     title: "ORDO",

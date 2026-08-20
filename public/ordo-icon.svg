@@ -1,4 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ORDO">
-  <rect width="512" height="512" rx="96" fill="#ff6a1a"/>
-  <text x="256" y="310" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="180" font-weight="800" fill="#fff">O</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ORDO">
+  <defs>
+    <linearGradient id="ordoMarkFill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff9338"/>
+      <stop offset="100%" stop-color="#e06a12"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#ordoMarkFill)"/>
+  <circle cx="32" cy="32" r="14.5" fill="none" stroke="#fff" stroke-width="5.5"/>
+  <path d="M46.2 32a14.2 14.2 0 0 1-8.4 12.9" fill="none" stroke="#fff8ee" stroke-width="2.2" stroke-linecap="round" opacity="0.9"/>
 </svg>
