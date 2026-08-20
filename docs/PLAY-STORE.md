@@ -38,6 +38,8 @@ set JAVA_HOME=%ProgramFiles%\Android\Android Studio\jbr
 node scripts\build-tenant-apks.cjs --code=DEMO --name="Demo Kitchen" --release --version-code=1 --version-name=1.0.0
 ```
 
+Gradle lock / `android-34-2` SDK path issues: see **Troubleshooting** in `docs/APK-PATH.md`.
+
 Output under `.data\apks\tenants\DEMO\`:
 
 - `ORDO-DEMO-Customer.aab` ← **Play Console → Create app → Production → Upload**

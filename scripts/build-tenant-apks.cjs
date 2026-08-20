@@ -7,6 +7,9 @@
  *   node scripts/build-tenant-apks.cjs --code=DEMO --name="Demo Kitchen" --release --version-code=1 --version-name=1.0.0
  *   node scripts/build-tenant-apks.cjs --code=DEMO --name="Demo Kitchen" --skip-gradle
  *
+ * Uses project-local GRADLE_USER_HOME (.gradle-home) unless already set.
+ * Warns if SDK platforms/android-34 is missing or named android-34-2.
+ *
  * Debug output:
  *   .data/apks/tenants/<CODE>/ORDO-<CODE>-Staff.apk
  *   .data/apks/tenants/<CODE>/ORDO-<CODE>-Customer.apk
@@ -95,13 +98,60 @@ function writeConfig(shell) {
   console.log(`Configured ${shell.appName} → ${shell.url}`);
 }
 
+function sdkRoot() {
+  return process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || "";
+}
+
 function hasSdk() {
-  const home = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || "";
+  const home = sdkRoot();
   return home && fs.existsSync(path.join(home, "platforms"));
 }
 
 function hasKeystore(androidDir) {
   return fs.existsSync(path.join(androidDir, "keystore.properties"));
+}
+
+/**
+ * Isolate Gradle caches under the repo so a corrupt %USERPROFILE%\.gradle lock
+ * ("Expected 3, found 0") does not break every Android build on the machine.
+ * Override with GRADLE_USER_HOME if you already manage a shared cache.
+ */
+function ensureGradleUserHome() {
+  if (process.env.GRADLE_USER_HOME) {
+    console.log(`Using GRADLE_USER_HOME=${process.env.GRADLE_USER_HOME}`);
+    return;
+  }
+  const localHome = path.join(root, ".gradle-home");
+  fs.mkdirSync(localHome, { recursive: true });
+  process.env.GRADLE_USER_HOME = localHome;
+  console.log(`Using GRADLE_USER_HOME=${localHome} (project-local; avoids corrupt global locks)`);
+}
+
+/** Warn when platforms;android-34 landed as android-34-2 (SDK Manager path glitch). */
+function checkAndroid34Platform() {
+  const home = sdkRoot();
+  if (!home) return;
+  const platforms = path.join(home, "platforms");
+  const ok = path.join(platforms, "android-34");
+  if (fs.existsSync(ok)) return;
+  const odd = ["android-34-2", "android-34-1", "android-34.0"].find((name) =>
+    fs.existsSync(path.join(platforms, name)),
+  );
+  if (odd) {
+    console.warn(
+      `Warning: compileSdk 34 expected at platforms\\android-34 but found platforms\\${odd}.`,
+    );
+    console.warn(
+      `Fix (CMD): ren "%ANDROID_HOME%\\platforms\\${odd}" android-34`,
+    );
+    console.warn(
+      "Or Android Studio → SDK Manager → uninstall/reinstall Android 14 (API 34) Platform.",
+    );
+  } else {
+    console.warn(
+      "Warning: platforms\\android-34 missing. Install via SDK Manager (Android 14 / API 34).",
+    );
+  }
 }
 
 /** AGP 8.x needs JDK 17+. Prefer Android Studio's bundled JBR over old system Java 8. */
@@ -158,6 +208,8 @@ function copyIfExists(src, dest) {
 }
 
 ensureJava17();
+ensureGradleUserHome();
+if (!skipGradle && hasSdk()) checkAndroid34Platform();
 
 for (const shell of shells) {
   writeConfig(shell);
@@ -209,7 +261,13 @@ for (const shell of shells) {
       copyIfExists(apk, path.join(outRoot, `${shell.slot}.apk`));
     }
   } catch (e) {
-    console.error(e instanceof Error ? e.message : e);
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error(msg);
+    if (/lock protocol|CompileCaches|Unexpected lock/i.test(msg)) {
+      console.error(
+        "Gradle cache lock corrupt. Stop daemons, delete .gradle-home and %USERPROFILE%\\.gradle\\caches, then rebuild. See docs/APK-PATH.md",
+      );
+    }
     console.error("Upload a manually built APK/AAB via Super → Apps for this restaurant.");
   }
 }
