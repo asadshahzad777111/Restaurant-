@@ -94,10 +94,14 @@ export default function LoginPage() {
     <div className={styles.page}>
       <form className={styles.card} onSubmit={onSubmit}>
         {hideSuper ? (
-          <span className={styles.brand}>ORDO</span>
+          <span className={styles.brand}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ordo-logo-on-dark.svg" alt="ORDO" className={styles.brandImg} height={34} width={148} />
+          </span>
         ) : (
-          <Link href="/" className={styles.brand}>
-            ORDO
+          <Link href="/" className={styles.brand} aria-label="ORDO home">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ordo-logo-on-dark.svg" alt="ORDO" className={styles.brandImg} height={34} width={148} />
           </Link>
         )}
         <h1>{ownerDesk ? "ORDO HQ" : "Staff login"}</h1>
