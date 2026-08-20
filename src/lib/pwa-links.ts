@@ -1,4 +1,4 @@
-import { apkAppHost, tenantApkLoadsPath, type ApkId } from "./apks";
+import { apkAppHost, tenantApkLoadsPath, type ApkId } from "./apk-urls";
 
 /** Absolute install / Add-to-Home-Screen URLs for one kitchen (Android webview + iOS Safari). */
 export function tenantInstallUrl(code: string, id: ApkId) {

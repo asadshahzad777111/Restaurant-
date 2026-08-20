@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureStore, findTenantMetaByCode, getPublicMenu } from "@/lib/db";
-import { tenantApkLoadsPath, type ApkId } from "@/lib/apks";
+import { tenantApkLoadsPath, type ApkId } from "@/lib/apk-urls";
 
 export const runtime = "nodejs";
 
