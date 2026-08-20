@@ -1,4 +1,5 @@
 import type { Order, TenantState } from "./tenant-types";
+import { tryNativeThermalPrint } from "./thermal/nativePosPrint";
 
 const SLIP_MM = 58;
 
@@ -257,6 +258,32 @@ export function customerReceiptText(tenant: TenantState, order: Order) {
     .join("\n");
 }
 
+/** Kitchen ticket plain text for Bluetooth ESC/POS. */
+export function kitchenTicketText(tenant: TenantState, order: Order) {
+  const col = 32;
+  const rule = "=".repeat(col);
+  const stamp = when(order.createdAt);
+  const items = order.lines.flatMap((l) => {
+    const rows = [`${l.qty} x ${l.name}`.slice(0, col)];
+    for (const m of l.modifiers || []) rows.push(`  + ${m.optionName}`.slice(0, col));
+    if (l.lineNote) rows.push(`  ${l.lineNote}`.slice(0, col));
+    return rows;
+  });
+  return [
+    "KITCHEN",
+    tenant.branding.name.toUpperCase(),
+    rule,
+    `#${order.number}  ${stamp.time}`,
+    serviceLine(order),
+    rule,
+    ...items,
+    rule,
+    order.note ? `NOTE: ${order.note}` : "",
+  ]
+    .filter((row) => row && String(row).trim())
+    .join("\n");
+}
+
 function lockPageToContent(doc: Document, widthMm = SLIP_MM) {
   const root = (doc.querySelector(".slip") as HTMLElement | null) || doc.body;
   const px = Math.max(root.scrollHeight, root.offsetHeight, 1);
@@ -366,12 +393,18 @@ async function tryOptInBridge(text: string): Promise<boolean> {
 }
 
 export async function printCustomerReceipt(tenant: TenantState, order: Order) {
-  const bridged = await tryOptInBridge(customerReceiptText(tenant, order));
+  const text = customerReceiptText(tenant, order);
+  const native = await tryNativeThermalPrint(text);
+  if (native.ok) return true;
+  const bridged = await tryOptInBridge(text);
   if (bridged) return true;
   return printHtml(customerReceiptHtml(tenant, order));
 }
 
 export async function printKitchenTicket(tenant: TenantState, order: Order) {
+  const text = kitchenTicketText(tenant, order);
+  const native = await tryNativeThermalPrint(text);
+  if (native.ok) return true;
   return printHtml(kitchenTicketHtml(tenant, order));
 }
 

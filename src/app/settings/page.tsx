@@ -6,6 +6,7 @@ import { useStore } from "@/lib/store";
 import { uploadTenantMedia } from "@/lib/media-client";
 import { AdminApkCard } from "@/components/AdminApkCard";
 import { AdminIosInstallCard } from "@/components/AdminIosInstallCard";
+import { AdminThermalPrinterCard } from "@/components/AdminThermalPrinterCard";
 import { AdminPaymentsCard } from "@/components/AdminPaymentsCard";
 import { AdminSpecialOfferCard } from "@/components/AdminSpecialOfferCard";
 import styles from "../staff.module.css";
@@ -381,6 +382,8 @@ export default function SettingsPage() {
         <AdminApkCard />
 
         <AdminIosInstallCard />
+
+        <AdminThermalPrinterCard />
 
         <div className={styles.card}>
           <h3 style={{ marginTop: 0 }}>Staff on this kitchen</h3>

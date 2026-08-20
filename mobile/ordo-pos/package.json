@@ -2,14 +2,17 @@
   "name": "ordo-pos",
   "version": "1.0.0",
   "private": true,
-  "description": "ORDO staff Android shell. Loads https://ordo.asfins.com/login?app=staff — never /super.",
+  "description": "ORDO staff Android shell. Loads https://ordo.asfins.com/login?app=staff — never /super. Includes AsFix Bluetooth thermal plugin.",
   "scripts": {
     "sync": "npx cap sync android",
-    "open": "npx cap open android"
+    "open": "npx cap open android",
+    "build:plugin": "npm run build --prefix plugins/asfix-thermal-print"
   },
   "dependencies": {
+    "@asfixgear/asfix-thermal-print": "file:./plugins/asfix-thermal-print",
     "@capacitor/android": "^6.2.0",
-    "@capacitor/core": "^6.2.0"
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/preferences": "^6.0.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.2.0"

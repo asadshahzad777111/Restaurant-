@@ -1,18 +1,16 @@
-# ORDO Staff (Android)
+# ORDO Staff (Capacitor)
 
-Capacitor shell for **POS, billing, kitchen, and staff**. Live URL: `https://ordo.asfins.com/login?app=staff`
+Loads live `https://ordo.asfins.com/login?app=staff`.
 
-- Does **not** open Super Admin (`/super`). Super has no extra domain.
-- Login requires a **restaurant code**. After login you stay on that tenant.
-- One of two Super-only APKs (the other is Customer). Not on the public marketing page.
+## Bluetooth thermal
+
+Includes AsFix kit plugin `@asfixgear/asfix-thermal-print` under `plugins/asfix-thermal-print`.
 
 ```bash
-cd mobile/ordo-pos
 npm install
-npx cap add android
+npm run build:plugin
 npx cap sync android
-cd android
-./gradlew assembleRelease
+npx cap open android
 ```
 
-Upload the file in Super → Apps as `ORDO-Staff.apk`.
+See `docs/THERMAL-BLUETOOTH-ORDO.md`.
