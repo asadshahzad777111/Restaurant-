@@ -174,8 +174,10 @@ export function StaffAlerts() {
     const ok = await unlockStaffAlertAudio();
     writeSoundPref(true);
     setSoundOk(true);
-    if (!ok) {
-      /* still mark enabled — next gesture may unlock */
+    // Brief confirmation so iOS Safari/PWA users hear that audio unlocked.
+    if (ok) {
+      startContinuousAlert("order");
+      window.setTimeout(() => stopStaffAlert(), 900);
     }
   }
 
