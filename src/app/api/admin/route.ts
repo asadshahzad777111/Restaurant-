@@ -4,6 +4,7 @@ import {
   readTenant,
   readTenantStaffView,
   updateBranding,
+  updateGuestCommerce,
   updateMenu,
   updateStock,
   updateTables,
@@ -100,6 +101,17 @@ export async function PUT(req: NextRequest) {
         body.branding = { ...body.branding, name };
       }
       await updateBranding(tenantId, body.branding ?? {}, body.shop);
+      return NextResponse.json({ tenant: await readTenantStaffView(tenantId) });
+    }
+
+    if (action === "payments" || action === "specialOffer") {
+      if (!(await hasPermission(session, "settings"))) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      await updateGuestCommerce(tenantId, {
+        payments: action === "payments" ? body.payments : undefined,
+        specialOffer: action === "specialOffer" ? body.specialOffer : undefined,
+      });
       return NextResponse.json({ tenant: await readTenantStaffView(tenantId) });
     }
 

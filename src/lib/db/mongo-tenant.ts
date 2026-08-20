@@ -7,10 +7,13 @@ import type {
   Review,
   DiningTable,
   DayCloseSummary,
+  TenantPayments,
+  TenantSpecialOffer,
 } from "../tenant-types";
 import type { Permission } from "../types";
 import { getDb } from "../mongo";
 import { ensureMongoBootstrap } from "./mongo-platform";
+import { normalizeSpecialOffer, normalizeTenantPayments } from "../payments";
 
 type TenantDoc = TenantState & { _id: string };
 
@@ -28,6 +31,8 @@ function normalize(raw: TenantState): TenantState {
       serviceChargePercent: raw.shop?.serviceChargePercent ?? 0,
       taxRate: raw.shop?.taxRate ?? 0,
     },
+    payments: normalizeTenantPayments(raw.payments),
+    specialOffer: normalizeSpecialOffer(raw.specialOffer),
     tables: raw.tables ?? [],
     dayCloses: raw.dayCloses ?? [],
     guestClients: raw.guestClients ?? [],
@@ -69,6 +74,8 @@ export async function getPublicMenuMongo(tenantId: string) {
         shop: 1,
         tables: 1,
         menu: 1,
+        payments: 1,
+        specialOffer: 1,
       },
     },
   )) as unknown as Partial<TenantDoc> | null;
@@ -78,6 +85,8 @@ export async function getPublicMenuMongo(tenantId: string) {
     code: doc.code || "",
     branding: doc.branding!,
     shop: doc.shop!,
+    payments: doc.payments as TenantState["payments"],
+    specialOffer: doc.specialOffer as TenantState["specialOffer"],
     users: [],
     stock: [],
     menu: doc.menu || [],
@@ -102,6 +111,8 @@ export async function getPublicMenuMongo(tenantId: string) {
       packingFee: t.shop.packingFee,
       serviceChargePercent: t.shop.serviceChargePercent,
     },
+    payments: t.payments,
+    specialOffer: t.specialOffer,
     tables: t.tables.map((tb) => ({
       id: tb.id,
       label: tb.label,
@@ -279,6 +290,22 @@ export async function updateBrandingMongo(
   const t = await readTenantMongo(tenantId);
   t.branding = { ...t.branding, ...branding };
   if (shop) t.shop = { ...t.shop, ...shop };
+  await writeTenantMongo(t);
+  return t;
+}
+
+export async function updateGuestCommerceMongo(
+  tenantId: string,
+  input: { payments?: TenantPayments; specialOffer?: TenantSpecialOffer },
+) {
+  const t = await readTenantMongo(tenantId);
+  if (input.payments) t.payments = normalizeTenantPayments(input.payments);
+  if (input.specialOffer) {
+    t.specialOffer = normalizeSpecialOffer({
+      ...input.specialOffer,
+      updatedAt: new Date().toISOString(),
+    });
+  }
   await writeTenantMongo(t);
   return t;
 }

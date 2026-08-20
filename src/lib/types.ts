@@ -22,8 +22,12 @@ export type PaymentMethod =
   | "cod"
   | "cash"
   | "card"
-  | "wallet";
-export type PaymentStatus = "unpaid" | "paid" | "cod_pending";
+  | "wallet"
+  | "bank"
+  | "jazzcash"
+  | "easypaisa";
+export type PaymentStatus = "unpaid" | "paid" | "cod_pending" | "proof_submitted" | "verified";
+export type AdvanceRail = "bank" | "jazzcash" | "easypaisa";
 export type OrderStatus =
   | "placed"
   | "accepted"

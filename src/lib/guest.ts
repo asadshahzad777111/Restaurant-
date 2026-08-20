@@ -1,48 +1,12 @@
 import type { PaymentMethod, ServiceType } from "./types";
+import { paymentChoicesFor } from "./payments";
 
 export type GuestMode = "table" | "pickup" | "delivery";
 
 export const LAST_GUEST_TENANT_KEY = "ordo_guest_tenant";
 
 export function paymentChoices(mode: ServiceType): { id: PaymentMethod; label: string; hint: string }[] {
-  if (mode === "table") {
-    return [
-      {
-        id: "pay_at_counter",
-        label: "Pay at counter",
-        hint: "Settle with staff at the restaurant. No card is charged here.",
-      },
-    ];
-  }
-  if (mode === "pickup") {
-    return [
-      {
-        id: "pay_at_counter",
-        label: "Pay at counter",
-        hint: "Pay when you collect.",
-      },
-      {
-        id: "paid_in_advance",
-        label: "Paid in advance",
-        hint: "Records the ticket as already paid. ORDO does not run a card or wallet charge.",
-      },
-    ];
-  }
-  if (mode === "delivery") {
-    return [
-      {
-        id: "cod",
-        label: "Cash on delivery",
-        hint: "Pay the rider in cash.",
-      },
-      {
-        id: "paid_in_advance",
-        label: "Paid in advance",
-        hint: "Records the ticket as already paid. ORDO does not run a card or wallet charge.",
-      },
-    ];
-  }
-  return [{ id: "cash", label: "Cash", hint: "Counter sale." }];
+  return paymentChoicesFor(mode, null);
 }
 
 export function assertOrderRules(input: {

@@ -9,8 +9,11 @@ import type {
   Review,
   DiningTable,
   DayCloseSummary,
+  TenantPayments,
+  TenantSpecialOffer,
 } from "./tenant-types";
 import { ensureBootstrap } from "./bootstrap";
+import { normalizeSpecialOffer, normalizeTenantPayments } from "./payments";
 
 const DATA_ROOT = path.join(process.cwd(), ".data");
 /** One JSON file per tenantId — never read another kitchen's folder. */
@@ -34,6 +37,8 @@ function normalizeTenant(raw: TenantState): TenantState {
       serviceChargePercent: raw.shop?.serviceChargePercent ?? 0,
       taxRate: raw.shop?.taxRate ?? 0,
     },
+    payments: normalizeTenantPayments(raw.payments),
+    specialOffer: normalizeSpecialOffer(raw.specialOffer),
     tables: raw.tables ?? [],
     dayCloses: raw.dayCloses ?? [],
     guestClients: raw.guestClients ?? [],
@@ -121,6 +126,8 @@ export function getPublicMenu(tenantId: string) {
       packingFee: t.shop.packingFee,
       serviceChargePercent: t.shop.serviceChargePercent,
     },
+    payments: normalizeTenantPayments(t.payments),
+    specialOffer: normalizeSpecialOffer(t.specialOffer),
     tables: t.tables.map((tb) => ({
       id: tb.id,
       label: tb.label,
@@ -218,6 +225,22 @@ export function updateBranding(
   const t = readTenant(tenantId);
   t.branding = { ...t.branding, ...branding };
   if (shop) t.shop = { ...t.shop, ...shop };
+  writeTenant(t);
+  return t;
+}
+
+export function updateGuestCommerce(
+  tenantId: string,
+  input: { payments?: TenantPayments; specialOffer?: TenantSpecialOffer },
+) {
+  const t = readTenant(tenantId);
+  if (input.payments) t.payments = normalizeTenantPayments(input.payments);
+  if (input.specialOffer) {
+    t.specialOffer = normalizeSpecialOffer({
+      ...input.specialOffer,
+      updatedAt: new Date().toISOString(),
+    });
+  }
   writeTenant(t);
   return t;
 }

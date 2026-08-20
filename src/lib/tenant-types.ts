@@ -136,6 +136,10 @@ export interface Order {
   lines: OrderLine[];
   note?: string;
   paymentMethod: PaymentMethod;
+  /** When advance: which Admin account the diner used */
+  advanceRail?: "bank" | "jazzcash" | "easypaisa";
+  /** Screenshot URL of transfer (JazzCash / bank / EasyPaisa) */
+  paymentProofUrl?: string;
   paymentStatus: PaymentStatus;
   status: OrderStatus;
   statusHistory: StatusEvent[];
@@ -146,6 +150,38 @@ export interface Order {
   subtotal: number;
   total: number;
   cancelReason?: string;
+}
+
+export interface PaymentAccount {
+  enabled: boolean;
+  title: string;
+  accountName: string;
+  accountNumber: string;
+  bankName?: string;
+  iban?: string;
+}
+
+export interface TenantPayments {
+  /** Delivery COD — Admin can turn off */
+  codEnabled: boolean;
+  /** Show advance / online transfer options */
+  advanceEnabled: boolean;
+  /** Pickup/table pay at counter */
+  payAtCounterEnabled: boolean;
+  methods: {
+    bank: PaymentAccount;
+    jazzcash: PaymentAccount;
+    easypaisa: PaymentAccount;
+  };
+}
+
+export interface TenantSpecialOffer {
+  enabled: boolean;
+  title: string;
+  body: string;
+  imageUrl?: string;
+  ctaLabel?: string;
+  updatedAt: string;
 }
 
 export type TableStatus = "empty" | "occupied" | "bill";
@@ -195,6 +231,10 @@ export interface TenantState {
   code: string;
   branding: TenantBranding;
   shop: TenantShop;
+  /** Guest payment rails + COD toggle */
+  payments?: TenantPayments;
+  /** Dismissible special offer popup on guest order */
+  specialOffer?: TenantSpecialOffer;
   users: TenantUser[];
   menu: MenuItem[];
   stock: StockItem[];

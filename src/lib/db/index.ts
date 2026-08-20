@@ -246,6 +246,19 @@ export async function updateBranding(
     : fileTenant.updateBranding(tenantId, branding, shop);
 }
 
+export async function updateGuestCommerce(
+  tenantId: string,
+  input: {
+    payments?: import("../tenant-types").TenantPayments;
+    specialOffer?: import("../tenant-types").TenantSpecialOffer;
+  },
+) {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.updateGuestCommerceMongo(tenantId, input)
+    : fileTenant.updateGuestCommerce(tenantId, input);
+}
+
 export async function addOrder(
   tenantId: string,
   order: Omit<Order, "id" | "number" | "createdAt" | "updatedAt">,
