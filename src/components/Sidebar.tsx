@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import type { Permission } from "@/lib/types";
 import styles from "./Sidebar.module.css";
@@ -19,9 +20,14 @@ const NAV: { href: string; label: string; perm: Permission | "any" }[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, tenant } = useStore();
   const perms = new Set(user?.permissions ?? []);
   const isAdmin = user?.role === "admin";
+
+  useEffect(() => {
+    for (const n of NAV) router.prefetch(n.href);
+  }, [router]);
 
   return (
     <aside className={styles.side}>
@@ -43,6 +49,7 @@ export function Sidebar() {
             <Link
               key={n.href}
               href={n.href}
+              prefetch
               className={pathname === n.href ? styles.active : styles.link}
             >
               {n.label}

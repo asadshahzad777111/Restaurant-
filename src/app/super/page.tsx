@@ -164,7 +164,7 @@ export default function SuperPage() {
     }
     localStorage.setItem(TOKEN_KEY, data.token);
     setToken(data.token);
-    await refresh();
+    await refresh({ force: true });
     router.push("/home");
   }
 

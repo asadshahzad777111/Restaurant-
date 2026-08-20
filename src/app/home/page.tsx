@@ -32,7 +32,7 @@ export default function HomePage() {
             <p className={styles.muted}>
               Demo passwords are for /lab only. Production mein Settings → Change password use karein.
             </p>
-            <Link href="/settings" className={styles.btn}>
+            <Link href="/settings" prefetch className={styles.btn}>
               Open settings
             </Link>
           </div>
@@ -62,10 +62,10 @@ export default function HomePage() {
           </div>
         )}
         <div className={styles.row} style={{ marginTop: "1rem" }}>
-          <Link href="/day-close" className={styles.btn}>
+          <Link href="/day-close" prefetch className={styles.btn}>
             Day close / shift
           </Link>
-          <Link href="/tables" className={styles.btnGhost}>
+          <Link href="/tables" prefetch className={styles.btnGhost}>
             Tables
           </Link>
         </div>

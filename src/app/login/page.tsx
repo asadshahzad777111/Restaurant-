@@ -29,7 +29,9 @@ export default function LoginPage() {
     const saved = localStorage.getItem(CODE_KEY);
     setCode(saved || (shell === "staff" ? "" : "DEMO"));
     setPassword(shell === "staff" ? "" : "admin123");
-  }, []);
+    router.prefetch("/home");
+    if (shell !== "staff") router.prefetch("/super");
+  }, [router]);
 
   const hideSuper = isStaffShell() || appShell === "staff";
 

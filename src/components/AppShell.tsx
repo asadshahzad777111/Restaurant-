@@ -14,7 +14,7 @@ export function AppShell({
   children: React.ReactNode;
   title?: string;
 }) {
-  const { loading, token, role, tenant, user, impersonating, logout } = useStore();
+  const { loading, token, role, tenant, user, impersonating, logout, refresh } = useStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -24,7 +24,12 @@ export function AppShell({
     }
   }, [loading, token, role, router]);
 
-  if (loading || !tenant || !user) {
+  useEffect(() => {
+    if (loading || !token || role === "super" || (tenant && user)) return;
+    void refresh();
+  }, [loading, token, role, tenant, user, refresh]);
+
+  if (!tenant || !user) {
     return <div className={styles.loading}>Loading…</div>;
   }
 

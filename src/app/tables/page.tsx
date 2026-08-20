@@ -37,7 +37,7 @@ export default function TablesPage() {
         {!tables.length && (
           <p className={styles.muted}>No tables configured — re-seed demo or add in future settings.</p>
         )}
-        <button type="button" className={styles.btnGhost} onClick={() => void refresh()}>
+        <button type="button" className={styles.btnGhost} onClick={() => void refresh({ force: true })}>
           Refresh
         </button>
       </div>
