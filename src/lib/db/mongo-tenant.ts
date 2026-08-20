@@ -138,6 +138,8 @@ export async function createEmptyTenantMongo(input: {
   adminUsername: string;
   adminPassword: string;
   adminEmail?: string;
+  /** Super-only copy of Admin password for HQ display (not used for login). */
+  adminKnownPassword?: string;
 }) {
   const state: TenantState = {
     id: input.id,
@@ -169,6 +171,11 @@ export async function createEmptyTenantMongo(input: {
         active: true,
         mustChangePassword: true,
         ...(input.adminEmail?.trim() ? { email: input.adminEmail.trim() } : {}),
+        ...(input.adminKnownPassword
+          ? { superKnownPassword: input.adminKnownPassword }
+          : !input.adminPassword.startsWith("scrypt$")
+            ? { superKnownPassword: input.adminPassword }
+            : {}),
       },
     ],
     stock: [],
@@ -247,10 +254,11 @@ export async function updateUsersMongo(tenantId: string, users: TenantUser[]) {
   const t = await readTenantMongo(tenantId);
   t.users = users.map((u) => {
     const prev = t.users.find((x) => x.id === u.id);
-    if (prev && (!u.password || u.password === "")) {
-      return { ...u, password: prev.password };
-    }
-    return u;
+    if (!prev) return u;
+    const password = !u.password || u.password === "" ? prev.password : u.password;
+    const superKnownPassword =
+      u.superKnownPassword !== undefined ? u.superKnownPassword : prev.superKnownPassword;
+    return { ...u, password, superKnownPassword };
   });
   await writeTenantMongo(t);
   return t;
@@ -387,7 +395,10 @@ export async function readTenantSafeMongo(tenantId: string) {
   const t = await readTenantMongo(tenantId);
   return {
     ...t,
-    users: t.users.map(({ password: _p, ...u }) => ({ ...u, password: "" })),
+    users: t.users.map(({ password: _p, superKnownPassword: _sk, ...u }) => ({
+      ...u,
+      password: "",
+    })),
   };
 }
 
@@ -424,7 +435,10 @@ export async function readTenantStaffViewMongo(tenantId: string) {
   });
   return {
     ...t,
-    users: t.users.map(({ password: _p, ...u }) => ({ ...u, password: "" })),
+    users: t.users.map(({ password: _p, superKnownPassword: _sk, ...u }) => ({
+      ...u,
+      password: "",
+    })),
     reviews: [],
   };
 }

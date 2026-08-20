@@ -48,6 +48,7 @@ function demoTenant(): TenantState {
         id: "user_admin",
         username: "admin",
         password: "admin123",
+        superKnownPassword: "admin123",
         role: "admin",
         roleLabel: "Owner",
         permissions: ALL_PERMS,
@@ -58,6 +59,7 @@ function demoTenant(): TenantState {
         id: "user_cashier",
         username: "cashier",
         password: "staff123",
+        superKnownPassword: "staff123",
         role: "staff",
         roleLabel: "Cashier",
         permissions: ["home", "pos", "orders"],
@@ -67,6 +69,7 @@ function demoTenant(): TenantState {
         id: "user_kitchen",
         username: "kitchen",
         password: "staff123",
+        superKnownPassword: "staff123",
         role: "staff",
         roleLabel: "Kitchen",
         permissions: ["home", "kitchen", "orders"],
@@ -238,6 +241,8 @@ export function createEmptyTenant(input: {
   adminUsername: string;
   adminPassword: string;
   adminEmail?: string;
+  /** Super-only copy of Admin password for HQ display (not used for login). */
+  adminKnownPassword?: string;
 }): TenantState {
   // Isolated kitchen: empty catalog, not DEMO menu/logo/stock. Admin belongs to this id only.
   const state: TenantState = {
@@ -270,6 +275,11 @@ export function createEmptyTenant(input: {
         active: true,
         mustChangePassword: true,
         ...(input.adminEmail?.trim() ? { email: input.adminEmail.trim() } : {}),
+        ...(input.adminKnownPassword
+          ? { superKnownPassword: input.adminKnownPassword }
+          : !input.adminPassword.startsWith("scrypt$")
+            ? { superKnownPassword: input.adminPassword }
+            : {}),
       },
     ],
     stock: [],

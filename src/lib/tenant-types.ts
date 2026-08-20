@@ -45,6 +45,11 @@ export interface TenantUser {
   mustChangePassword?: boolean;
   /** Optional — restaurant Admin inbox for order/welcome mail. */
   email?: string;
+  /**
+   * Super-only recoverable plaintext of the last password set/reset.
+   * Login uses `password` (scrypt). Never return this on public/staff APIs.
+   */
+  superKnownPassword?: string;
 }
 
 export interface ModifierOption {

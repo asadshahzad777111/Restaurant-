@@ -44,3 +44,16 @@ export async function ensureHashed(plainOrHash: string) {
   if (isHashedPassword(plainOrHash)) return plainOrHash;
   return hashPassword(plainOrHash);
 }
+
+/**
+ * What Super HQ can show: last known plaintext recorded for Super, or legacy
+ * unhashed password. Empty string = hashed with no Super copy — reset to reveal.
+ */
+export function superVisiblePassword(user: {
+  password: string;
+  superKnownPassword?: string;
+}) {
+  if (user.superKnownPassword) return user.superKnownPassword;
+  if (user.password && !isHashedPassword(user.password)) return user.password;
+  return "";
+}

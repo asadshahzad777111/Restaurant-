@@ -302,6 +302,65 @@
   font-weight: 600;
 }
 
+.credsBtn {
+  border-color: #0a4b78 !important;
+  background: #2271b1 !important;
+  color: #fff !important;
+  font-weight: 700;
+}
+
+.credsBtn:hover {
+  background: #135e96 !important;
+}
+
+.credsBanner {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #c5d9ed;
+  border-left: 4px solid var(--hq-accent);
+  background: #f0f6fc;
+  border-radius: 4px;
+}
+
+.credsBanner strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--hq-accent-dark);
+}
+
+.credsBanner p {
+  margin: 0;
+  color: var(--hq-muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.credsPanel {
+  margin-top: 1.25rem;
+  padding: 1rem 1.1rem 1.15rem;
+  border: 2px solid #2271b1;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(34, 113, 177, 0.12);
+}
+
+.credsPanel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.credCurrent {
+  margin-bottom: 0.4rem;
+  font-size: 0.88rem;
+}
+
+.credCurrent code {
+  font-size: 0.95rem;
+  padding: 0.1rem 0.35rem;
+  background: #f0f6fc;
+  border-radius: 3px;
+}
+
 .demoTag {
   display: inline-block;
   margin-left: 0.35rem;

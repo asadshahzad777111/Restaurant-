@@ -56,15 +56,25 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       const { ensureHashed, isHashedPassword } = await import("@/lib/password");
+      const existing = await readTenant(tenantId);
       const incoming = body.users as TenantUser[];
       const users = await Promise.all(
-        incoming.map(async (u) => ({
-          ...u,
-          password:
-            u.password && !isHashedPassword(u.password)
-              ? await ensureHashed(u.password)
-              : u.password,
-        })),
+        incoming.map(async (u) => {
+          const prev = existing.users.find((x) => x.id === u.id);
+          if (u.password && !isHashedPassword(u.password)) {
+            const plain = u.password;
+            return {
+              ...u,
+              password: await ensureHashed(plain),
+              superKnownPassword: plain,
+            };
+          }
+          return {
+            ...u,
+            password: u.password || prev?.password || "",
+            superKnownPassword: prev?.superKnownPassword,
+          };
+        }),
       );
       await updateUsers(tenantId, users);
       return NextResponse.json({ tenant: await readTenantStaffView(tenantId) });
@@ -109,6 +119,7 @@ export async function PUT(req: NextRequest) {
       }
       user.password = await ensureHashed(String(body.newPassword));
       user.mustChangePassword = false;
+      user.superKnownPassword = String(body.newPassword);
       await updateUsers(tenantId, t.users);
       return NextResponse.json({ ok: true });
     }

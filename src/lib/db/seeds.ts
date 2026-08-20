@@ -63,6 +63,7 @@ function baseTenant(id: string, code: string, name: string): TenantState {
         id: `user_admin_${id}`,
         username: "admin",
         password: "admin123",
+        superKnownPassword: "admin123",
         role: "admin",
         roleLabel: "Owner",
         permissions: ALL_PERMS,

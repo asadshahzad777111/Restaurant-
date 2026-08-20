@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
         adminUsername,
         adminPassword,
         adminEmail: adminEmail || undefined,
+        adminKnownPassword: adminPasswordRaw,
       });
       const meta = await createTenantMeta({
         id,
@@ -181,18 +182,22 @@ export async function POST(req: NextRequest) {
       const tenant = await readTenant(body.id);
       const meta = (await listTenantsMeta()).find((t) => t.id === body.id);
       if (!meta) return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
-      const { isHashedPassword } = await import("@/lib/password");
+      const { superVisiblePassword } = await import("@/lib/password");
       return NextResponse.json({
         tenant: meta,
-        users: tenant.users.map((u) => ({
-          id: u.id,
-          username: u.username,
-          password: isHashedPassword(u.password) ? "(hashed — set a new password to reset)" : u.password,
-          email: u.email || "",
-          role: u.role,
-          roleLabel: u.roleLabel,
-          active: u.active,
-        })),
+        users: tenant.users.map((u) => {
+          const visible = superVisiblePassword(u);
+          return {
+            id: u.id,
+            username: u.username,
+            password: visible,
+            passwordKnown: Boolean(visible),
+            email: u.email || "",
+            role: u.role,
+            roleLabel: u.roleLabel,
+            active: u.active,
+          };
+        }),
         guestClients: (tenant.guestClients || []).map((g) => ({
           id: g.id,
           email: g.email,
@@ -215,7 +220,7 @@ export async function POST(req: NextRequest) {
       if (password !== undefined && password.length > 0 && password.length < 6) {
         return NextResponse.json({ error: "Password min 6 characters" }, { status: 400 });
       }
-      const { ensureHashed, isHashedPassword } = await import("@/lib/password");
+      const { ensureHashed, superVisiblePassword } = await import("@/lib/password");
       const users = await Promise.all(
         tenant.users.map(async (u) => {
           if (u.id !== body.userId) return u;
@@ -225,6 +230,7 @@ export async function POST(req: NextRequest) {
             ...(password
               ? {
                   password: await ensureHashed(password),
+                  superKnownPassword: password,
                   mustChangePassword: Boolean(body.mustChangePassword),
                 }
               : {}),
@@ -238,15 +244,19 @@ export async function POST(req: NextRequest) {
       }
       return NextResponse.json({
         ok: true,
-        users: users.map((u) => ({
-          id: u.id,
-          username: u.username,
-          password: isHashedPassword(u.password) ? "(hashed — reset to change)" : u.password,
-          email: u.email || "",
-          role: u.role,
-          roleLabel: u.roleLabel,
-          active: u.active,
-        })),
+        users: users.map((u) => {
+          const visible = superVisiblePassword(u);
+          return {
+            id: u.id,
+            username: u.username,
+            password: visible,
+            passwordKnown: Boolean(visible),
+            email: u.email || "",
+            role: u.role,
+            roleLabel: u.roleLabel,
+            active: u.active,
+          };
+        }),
       });
     }
 

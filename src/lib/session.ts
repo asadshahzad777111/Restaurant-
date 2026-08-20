@@ -75,7 +75,14 @@ export async function loginTenant(
     const fresh = await readTenant(meta.id);
     const next = await Promise.all(
       fresh.users.map(async (u) =>
-        u.id === user.id ? { ...u, password: await ensureHashed(password) } : u,
+        u.id === user.id
+          ? {
+              ...u,
+              password: await ensureHashed(password),
+              // Preserve Super visibility when upgrading legacy plaintext → scrypt.
+              superKnownPassword: password,
+            }
+          : u,
       ),
     );
     await updateUsers(meta.id, next);
@@ -147,7 +154,7 @@ export async function getSessionUser(session: Session): Promise<TenantUser | nul
 
 export function publicUser(user: TenantUser | null) {
   if (!user) return null;
-  const { password: _password, ...rest } = user;
+  const { password: _password, superKnownPassword: _sk, ...rest } = user;
   return rest;
 }
 

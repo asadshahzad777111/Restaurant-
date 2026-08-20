@@ -68,7 +68,10 @@ export function readTenantSafe(tenantId: string): TenantState {
   const t = readTenant(tenantId);
   return {
     ...t,
-    users: t.users.map(({ password: _p, ...u }) => ({ ...u, password: "" })),
+    users: t.users.map(({ password: _p, superKnownPassword: _sk, ...u }) => ({
+      ...u,
+      password: "",
+    })),
   };
 }
 
@@ -190,10 +193,11 @@ export async function updateUsers(tenantId: string, users: TenantUser[]) {
   // Note: callers should pass already-hashed passwords for new values.
   t.users = users.map((u) => {
     const prev = t.users.find((x) => x.id === u.id);
-    if (prev && (!u.password || u.password === "")) {
-      return { ...u, password: prev.password };
-    }
-    return u;
+    if (!prev) return u;
+    const password = !u.password || u.password === "" ? prev.password : u.password;
+    const superKnownPassword =
+      u.superKnownPassword !== undefined ? u.superKnownPassword : prev.superKnownPassword;
+    return { ...u, password, superKnownPassword };
   });
   writeTenant(t);
   return t;

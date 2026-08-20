@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       reviews: tenant.reviews,
       dayCloses: tenant.dayCloses,
       users: tenant.users.map((u) => {
-        const { password: _pw, ...rest } = u;
+        const { password: _pw, superKnownPassword: _sk, ...rest } = u;
         return rest;
       }),
     };

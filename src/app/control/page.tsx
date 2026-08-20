@@ -51,6 +51,7 @@ function CredsRow({
     id: string;
     username: string;
     password: string;
+    passwordKnown?: boolean;
     email: string;
     role: string;
     roleLabel: string;
@@ -61,6 +62,7 @@ function CredsRow({
   const [email, setEmail] = useState(user.email || "");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const known = user.passwordKnown !== false && Boolean(user.password);
   return (
     <tr>
       <td>
@@ -71,8 +73,17 @@ function CredsRow({
         {user.roleLabel} ({user.role})
       </td>
       <td>
-        <div className={styles.muted} style={{ marginBottom: 4 }}>
-          Current: <code>{user.password || "—"}</code>
+        <div className={styles.credCurrent}>
+          {known ? (
+            <>
+              Visible to Super: <code>{user.password}</code>
+            </>
+          ) : (
+            <span className={styles.muted}>
+              Not recoverable (hashed before Super copy). Set a new password below — it stays
+              visible here after Save.
+            </span>
+          )}
         </div>
         <input
           type="text"
@@ -80,6 +91,7 @@ function CredsRow({
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           style={{ width: "100%" }}
+          autoComplete="off"
         />
       </td>
       <td>
@@ -89,6 +101,7 @@ function CredsRow({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           style={{ width: "100%" }}
+          autoComplete="off"
         />
       </td>
       <td>
@@ -133,6 +146,7 @@ export default function ControlPage() {
       id: string;
       username: string;
       password: string;
+      passwordKnown?: boolean;
       email: string;
       role: string;
       roleLabel: string;
@@ -310,6 +324,9 @@ export default function ControlPage() {
     setForm(emptyForm);
     await load();
     setTab("restaurants");
+    if (data.tenant?.id) {
+      void openCredentials(data.tenant.id);
+    }
   }
 
   async function setStatus(id: string, status: string) {
@@ -408,6 +425,12 @@ export default function ControlPage() {
       }
       setCredsUsers(data.users || []);
       setCredsGuests(data.guestClients || []);
+      window.setTimeout(() => {
+        document.getElementById("super-creds-panel")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 80);
     } finally {
       setCredsLoading(false);
     }
@@ -621,6 +644,10 @@ export default function ControlPage() {
                 <strong>How it works</strong>
                 <ol>
                   <li>Add a restaurant and its Admin (code, plan, username, password).</li>
+                  <li>
+                    Open <strong>Passwords &amp; Gmail</strong> on any restaurant row to see Admin
+                    username, password, and email anytime — Super-only.
+                  </li>
                   <li>They sign in at ordo.asfins.com/login with that code — they cannot open HQ.</li>
                   <li>Guests order with /order?tenant=CODE or table QR for that kitchen only.</li>
                   <li>
@@ -628,8 +655,8 @@ export default function ControlPage() {
                     restaurant code so kitchens never mix.
                   </li>
                   <li>
-                    <em>Help this restaurant</em> is the only way into their panel. Yellow banner + Back to
-                    ORDO HQ.
+                    <em>Open Admin (no password)</em> is Help mode into their panel. Yellow banner +
+                    Back to ORDO HQ.
                   </li>
                 </ol>
               </div>
@@ -663,6 +690,15 @@ export default function ControlPage() {
                 Each Admin belongs to one kitchen. Pause blocks their staff login. Billing renewals and
                 past-due flags live here — not inside restaurant Settings.
               </p>
+              <div className={styles.credsBanner}>
+                <strong>Passwords &amp; Gmail</strong>
+                <p>
+                  Click <em>Passwords &amp; Gmail</em> on any restaurant to see Admin (and staff)
+                  username, password, and Gmail. Only Super sees this.{" "}
+                  <em>Open Admin (no password)</em> still works for Help without needing the kitchen
+                  password.
+                </p>
+              </div>
               <form className={styles.create} onSubmit={createRestaurant}>
                 <h2>{editingId ? "Edit restaurant" : "Add restaurant + Admin"}</h2>
                 <div className={styles.grid}>
@@ -773,7 +809,11 @@ export default function ControlPage() {
                           >
                             Open Admin (no password)
                           </button>
-                          <button type="button" onClick={() => void openCredentials(t.id)}>
+                          <button
+                            type="button"
+                            className={styles.credsBtn}
+                            onClick={() => void openCredentials(t.id)}
+                          >
                             Passwords & Gmail
                           </button>
                           <button
@@ -838,14 +878,18 @@ export default function ControlPage() {
               </div>
 
               {credsTenantId && (
-                <div className={styles.create} style={{ marginTop: "1.25rem" }}>
+                <div id="super-creds-panel" className={styles.credsPanel}>
                   <h2>
                     Passwords & Gmail ·{" "}
                     {tenants.find((x) => x.id === credsTenantId)?.name || "Restaurant"}
+                    {" · "}
+                    <code>{tenants.find((x) => x.id === credsTenantId)?.code}</code>
                   </h2>
                   <p className={styles.muted}>
-                    Super-only view. Use <em>Open Admin (no password)</em> for Help mode. Edit Gmail so
-                    staff can Sign in with Google. Leave password blank to keep the current one.
+                    Super-only. Login passwords are hashed; Super keeps a recoverable copy when you
+                    create or reset here — refresh keeps them visible. Username + Gmail always show.
+                    If an older kitchen shows &quot;Not recoverable&quot;, set a new password once.
+                    Use <em>Open Admin (no password)</em> for Help mode without needing the password.
                   </p>
                   {credsLoading ? (
                     <p className={styles.muted}>Loading…</p>
@@ -854,7 +898,7 @@ export default function ControlPage() {
                       <table className={styles.table}>
                         <thead>
                           <tr>
-                            <th>User</th>
+                            <th>Username</th>
                             <th>Role</th>
                             <th>Password</th>
                             <th>Gmail</th>
@@ -863,7 +907,11 @@ export default function ControlPage() {
                         </thead>
                         <tbody>
                           {credsUsers.map((u) => (
-                            <CredsRow key={u.id} user={u} onSave={saveUserCreds} />
+                            <CredsRow
+                              key={`${u.id}:${u.password}:${u.email}`}
+                              user={u}
+                              onSave={saveUserCreds}
+                            />
                           ))}
                         </tbody>
                       </table>
