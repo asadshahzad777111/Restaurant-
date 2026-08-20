@@ -14,6 +14,7 @@ const NAV: { href: string; label: string; perm: Permission | "any" }[] = [
   { href: "/kitchen", label: "Kitchen", perm: "kitchen" },
   { href: "/tables", label: "Tables", perm: "pos" },
   { href: "/menu", label: "Menu", perm: "menu" },
+  { href: "/staff", label: "Staff", perm: "staff" },
   { href: "/day-close", label: "Day close", perm: "settings" },
   { href: "/settings", label: "Settings", perm: "settings" },
 ];

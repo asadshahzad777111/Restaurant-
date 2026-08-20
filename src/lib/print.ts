@@ -28,7 +28,7 @@ function when(iso: string) {
 }
 
 function serviceLine(order: Order) {
-  const bits = [order.serviceType];
+  const bits: string[] = [order.serviceType];
   if (order.tableNumber) bits.push(`T${order.tableNumber}`);
   if (order.channel === "pos") bits.push("POS");
   return bits.join(" · ");

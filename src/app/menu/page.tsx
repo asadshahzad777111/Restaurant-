@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useStore } from "@/lib/store";
+import { uploadTenantMedia } from "@/lib/media-client";
 import type { MenuItem } from "@/lib/tenant-types";
 import styles from "../staff.module.css";
 
 export default function MenuPage() {
-  const { tenant, api, applyTenant } = useStore();
+  const { tenant, api, applyTenant, token } = useStore();
   const [draft, setDraft] = useState({
     name: "",
     description: "",
@@ -105,6 +106,26 @@ export default function MenuPage() {
             value={draft.imageUrl}
             onChange={(e) => setDraft({ ...draft, imageUrl: e.target.value })}
           />
+          <label className={styles.muted}>
+            Or upload photo
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                setMsg("Uploading image…");
+                try {
+                  const saved = await uploadTenantMedia(token, "menu", file);
+                  setDraft((d) => ({ ...d, imageUrl: saved.url }));
+                  setMsg(`Image uploaded (${saved.storage})`);
+                } catch (err) {
+                  setMsg(err instanceof Error ? err.message : "Image upload failed");
+                }
+              }}
+            />
+          </label>
           <label>
             <input
               type="checkbox"

@@ -267,6 +267,12 @@
   width: 100%;
 }
 
+.form input[type="checkbox"],
+.form input[type="file"] {
+  width: auto;
+  padding: 0;
+}
+
 .stack {
   display: grid;
   gap: 1rem;

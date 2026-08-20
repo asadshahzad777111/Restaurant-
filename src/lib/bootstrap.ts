@@ -3,11 +3,13 @@ import path from "path";
 import type { PlatformState } from "./types";
 import type { TenantState } from "./tenant-types";
 import type { Permission } from "./types";
+import { PLATFORM_CONTACT_WHATSAPP } from "./contact";
 import { demoMenu, demoStock } from "./demo-catalog";
 
 const DATA_ROOT = path.join(process.cwd(), ".data");
 const PLATFORM_PATH = path.join(DATA_ROOT, "platform.json");
-const DATA_VERSION = 4;
+const DATA_VERSION = 5;
+const OLD_PLATFORM_WHATSAPP = ["+923001234567", "+923000000000", "03001234567"];
 const VERSION_PATH = path.join(DATA_ROOT, "version.json");
 
 const ALL_PERMS: Permission[] = [
@@ -143,7 +145,7 @@ export function launchPlans(): PlatformState["plans"] {
 function defaultPlatform(): PlatformState {
   return {
     superAdmin: { username: "super", password: "super123" },
-    contactWhatsapp: "+923001234567",
+    contactWhatsapp: PLATFORM_CONTACT_WHATSAPP,
     plans: launchPlans(),
     tenants: [
       {
@@ -182,6 +184,23 @@ function refreshDemoCatalogOnly() {
   }
 }
 
+function patchPlatform(platform: PlatformState) {
+  let dirty = false;
+  const starter = platform.plans?.find((p) => p.id === "starter");
+  if (starter && starter.pricePkr >= 2500) {
+    platform.plans = launchPlans();
+    dirty = true;
+  }
+  const wa = String(platform.contactWhatsapp || "").replace(/\s/g, "");
+  if (!wa || OLD_PLATFORM_WHATSAPP.includes(wa)) {
+    platform.contactWhatsapp = PLATFORM_CONTACT_WHATSAPP;
+    dirty = true;
+  }
+  if (dirty) {
+    fs.writeFileSync(PLATFORM_PATH, JSON.stringify(platform, null, 2));
+  }
+}
+
 let bootstrapped = false;
 
 export function ensureBootstrap() {
@@ -203,19 +222,11 @@ export function ensureBootstrap() {
     /* DEMO menu/stock only — keep orders, users, branding, and every other tenant. */
     refreshDemoCatalogOnly();
     const platform = JSON.parse(fs.readFileSync(PLATFORM_PATH, "utf8")) as PlatformState;
-    const starter = platform.plans?.find((p) => p.id === "starter");
-    if (starter && starter.pricePkr >= 2500) {
-      platform.plans = launchPlans();
-      fs.writeFileSync(PLATFORM_PATH, JSON.stringify(platform, null, 2));
-    }
+    patchPlatform(platform);
     fs.writeFileSync(VERSION_PATH, JSON.stringify({ v: DATA_VERSION }, null, 2));
   } else {
     const platform = JSON.parse(fs.readFileSync(PLATFORM_PATH, "utf8")) as PlatformState;
-    const starter = platform.plans?.find((p) => p.id === "starter");
-    if (starter && starter.pricePkr >= 2500) {
-      platform.plans = launchPlans();
-      fs.writeFileSync(PLATFORM_PATH, JSON.stringify(platform, null, 2));
-    }
+    patchPlatform(platform);
   }
   bootstrapped = true;
 }

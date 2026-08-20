@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useStore } from "@/lib/store";
+import { uploadTenantMedia } from "@/lib/media-client";
 import styles from "../staff.module.css";
 
 export default function SettingsPage() {
@@ -142,6 +143,30 @@ export default function SettingsPage() {
             onChange={(e) => setBranding({ ...branding, logoUrl: e.target.value })}
             placeholder="Logo URL"
           />
+          <label className={styles.muted}>
+            Or upload logo (R2 when configured, otherwise local file-store)
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                setMsg("Uploading logo…");
+                try {
+                  const saved = await uploadTenantMedia(token, "logo", file);
+                  setBranding((b) => ({ ...b, logoUrl: saved.url }));
+                  setMsg(`Logo uploaded (${saved.storage})`);
+                } catch (err) {
+                  setMsg(err instanceof Error ? err.message : "Logo upload failed");
+                }
+              }}
+            />
+          </label>
+          {branding.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={branding.logoUrl} alt="" style={{ maxWidth: 120, maxHeight: 80, objectFit: "contain" }} />
+          ) : null}
           <textarea
             value={branding.receiptFooter}
             onChange={(e) => setBranding({ ...branding, receiptFooter: e.target.value })}

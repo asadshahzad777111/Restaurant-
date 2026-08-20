@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TOKEN_KEY, useStore } from "@/lib/store";
+import { isCustomerShell, isStaffShell } from "@/lib/app-shell";
 import type { Lead, Plan, PlatformTenantMeta } from "@/lib/types";
 import styles from "./super.module.css";
 
@@ -88,8 +89,16 @@ export default function SuperPage() {
   }, [router]);
 
   useEffect(() => {
+    if (isStaffShell()) {
+      router.replace("/login?app=staff");
+      return;
+    }
+    if (isCustomerShell()) {
+      router.replace("/guest?app=customer");
+      return;
+    }
     void load();
-  }, [load]);
+  }, [load, router]);
 
   async function createRestaurant(e: React.FormEvent) {
     e.preventDefault();
@@ -314,7 +323,9 @@ export default function SuperPage() {
             <h1>Android apps</h1>
             <p className={styles.muted}>
               Two private Android APKs — only Super can download them. They are not on the public demo
-              (ordo.asfins.com home) and not on restaurant Admin. Super has no extra domain.
+              (ordo.asfins.com home) and not on restaurant Admin. Super has no extra domain. Files live in
+              `.data/apks/` as ORDO-Staff.apk and ORDO-Customer.apk. Build with `scripts/build-apks.ps1` or
+              Upload a file here.
             </p>
             <div className={styles.appGrid}>
               {apks.map((app) => (

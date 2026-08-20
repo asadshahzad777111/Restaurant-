@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import type { PlatformState, Session, Lead, PlatformTenantMeta, PlanId, TenantStatus } from "./types";
 import { ensureBootstrap } from "./bootstrap";
+import { PLATFORM_CONTACT_WHATSAPP } from "./contact";
 
 const DATA_ROOT = path.join(process.cwd(), ".data");
 const PLATFORM_PATH = path.join(DATA_ROOT, "platform.json");
@@ -122,5 +123,5 @@ export function listLeads() {
 }
 
 export function getContactWhatsapp() {
-  return getPlatform().contactWhatsapp;
+  return getPlatform().contactWhatsapp || PLATFORM_CONTACT_WHATSAPP;
 }

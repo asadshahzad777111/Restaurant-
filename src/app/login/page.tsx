@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TOKEN_KEY, useStore } from "@/lib/store";
-import { isStaffShell, readAppShell } from "@/lib/app-shell";
+import { isCustomerShell, isStaffShell, readAppShell } from "@/lib/app-shell";
 import styles from "./login.module.css";
 
 const CODE_KEY = "ordo_staff_tenant_code";
@@ -25,6 +25,10 @@ export default function LoginPage() {
   useEffect(() => {
     const shell = readAppShell();
     setAppShell(shell);
+    if (shell === "customer" || isCustomerShell()) {
+      router.replace("/guest?app=customer");
+      return;
+    }
     if (shell === "staff") setMode("tenant");
     const saved = localStorage.getItem(CODE_KEY);
     setCode(saved || (shell === "staff" ? "" : "DEMO"));
@@ -71,45 +75,51 @@ export default function LoginPage() {
   return (
     <div className={styles.page}>
       <form className={styles.card} onSubmit={onSubmit}>
-        <Link href="/" className={styles.brand}>
-          ORDO
-        </Link>
+        {hideSuper ? (
+          <span className={styles.brand}>ORDO</span>
+        ) : (
+          <Link href="/" className={styles.brand}>
+            ORDO
+          </Link>
+        )}
         <h1>Staff login</h1>
-        <p className={styles.guestStrip}>
-          Ordering food? This page is for kitchen staff.
-          <span>
-            <Link href="/guest">Enter as guest</Link>
-            {" · "}
-            <Link href="/scan">Scan table QR</Link>
-          </span>
-        </p>
         {hideSuper ? (
           <p className={styles.hint}>Use your restaurant code. Super Admin is not part of this app.</p>
         ) : (
-        <div className={styles.modes}>
-          <button
-            type="button"
-            className={mode === "tenant" ? styles.active : ""}
-            onClick={() => {
-              setMode("tenant");
-              setUsername("admin");
-              setPassword("admin123");
-            }}
-          >
-            Restaurant
-          </button>
-          <button
-            type="button"
-            className={mode === "super" ? styles.active : ""}
-            onClick={() => {
-              setMode("super");
-              setUsername("super");
-              setPassword("super123");
-            }}
-          >
-            Super Admin
-          </button>
-        </div>
+          <>
+            <p className={styles.guestStrip}>
+              Ordering food? This page is for kitchen staff.
+              <span>
+                <Link href="/guest">Enter as guest</Link>
+                {" · "}
+                <Link href="/scan">Scan table QR</Link>
+              </span>
+            </p>
+            <div className={styles.modes}>
+              <button
+                type="button"
+                className={mode === "tenant" ? styles.active : ""}
+                onClick={() => {
+                  setMode("tenant");
+                  setUsername("admin");
+                  setPassword("admin123");
+                }}
+              >
+                Restaurant
+              </button>
+              <button
+                type="button"
+                className={mode === "super" ? styles.active : ""}
+                onClick={() => {
+                  setMode("super");
+                  setUsername("super");
+                  setPassword("super123");
+                }}
+              >
+                Super Admin
+              </button>
+            </div>
+          </>
         )}
         {mode === "tenant" && (
           <label className={styles.field}>

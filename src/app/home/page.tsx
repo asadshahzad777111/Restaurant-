@@ -8,6 +8,9 @@ import styles from "../staff.module.css";
 
 export default function HomePage() {
   const { tenant, user } = useStore();
+  const perms = new Set(user?.permissions ?? []);
+  const isAdmin = user?.role === "admin";
+  const can = (perm: "pos" | "orders" | "kitchen" | "staff") => isAdmin || perms.has(perm);
   const orders = tenant?.orders ?? [];
   const today = orders.filter((o) => {
     const d = new Date(o.createdAt);
@@ -62,12 +65,34 @@ export default function HomePage() {
           </div>
         )}
         <div className={styles.row} style={{ marginTop: "1rem" }}>
-          <Link href="/day-close" prefetch className={styles.btn}>
+          {can("pos") && (
+            <Link href="/pos" prefetch className={styles.btn}>
+              POS / counter
+            </Link>
+          )}
+          {can("kitchen") && (
+            <Link href="/kitchen" prefetch className={styles.btn}>
+              Kitchen
+            </Link>
+          )}
+          {can("orders") && (
+            <Link href="/orders" prefetch className={styles.btnGhost}>
+              Orders / billing
+            </Link>
+          )}
+          {can("staff") && (
+            <Link href="/staff" prefetch className={styles.btnGhost}>
+              Staff
+            </Link>
+          )}
+          <Link href="/day-close" prefetch className={styles.btnGhost}>
             Day close / shift
           </Link>
-          <Link href="/tables" prefetch className={styles.btnGhost}>
-            Tables
-          </Link>
+          {can("pos") && (
+            <Link href="/tables" prefetch className={styles.btnGhost}>
+              Tables
+            </Link>
+          )}
         </div>
       </div>
     </AppShell>
