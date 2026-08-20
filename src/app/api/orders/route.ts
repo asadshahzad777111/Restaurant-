@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureStore, addOrder, readTenant, findTenantMetaByCode, findTenantMetaById } from "@/lib/db";
-import { AuthError, hasPermission, requireTenantSession } from "@/lib/session";
+import { AuthError, hasAnyPermission, hasPermission, requireTenantSession } from "@/lib/session";
 import { assertOrderRules } from "@/lib/guest";
 import { computeFees, lineUnitPrice } from "@/lib/fees";
 import type { LineModifier, OrderLine } from "@/lib/tenant-types";
@@ -23,11 +23,7 @@ export async function GET(req: NextRequest) {
   try {
     await ensureStore();
     const session = await requireTenantSession(req);
-    if (
-      !(await hasPermission(session, "orders")) &&
-      !(await hasPermission(session, "kitchen")) &&
-      !(await hasPermission(session, "pos"))
-    ) {
+    if (!(await hasAnyPermission(session, ["orders", "kitchen", "pos"]))) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     const tenant = await readTenant(session.tenantId!);
@@ -170,10 +166,15 @@ export async function POST(req: NextRequest) {
       total: fees.total,
     });
 
-    try {
-      const meta = await findTenantMetaById(tenantId);
-      const notifyTo = tenantAdminEmails(tenant, meta);
-      if (notifyTo.length) {
+    // Don't block the guest/POS response on Resend — free-tier latency killer.
+    void (async () => {
+      try {
+        const meta = await findTenantMetaById(tenantId);
+        const notifyTo = tenantAdminEmails(tenant, meta);
+        if (!notifyTo.length) {
+          console.info("[email] skip order notify: no Admin email for tenant", tenantId);
+          return;
+        }
         await sendNewOrderEmail({
           to: notifyTo,
           restaurantName: tenant.branding.name || meta?.name || tenant.code,
@@ -185,12 +186,10 @@ export async function POST(req: NextRequest) {
           subtotal: order.subtotal,
           currency: tenant.shop.currency || "PKR",
         });
-      } else {
-        console.info("[email] skip order notify: no Admin email for tenant", tenantId);
+      } catch (err) {
+        console.error("[email] order notify failed:", err instanceof Error ? err.message : err);
       }
-    } catch (err) {
-      console.error("[email] order notify failed:", err instanceof Error ? err.message : err);
-    }
+    })();
 
     return NextResponse.json({ order });
   } catch (e) {
