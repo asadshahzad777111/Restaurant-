@@ -427,7 +427,7 @@ export function MarketingHome() {
           <figure className={styles.productShot}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/thermal-printer.svg"
+              src="/pos58-thermal-printer.svg"
               alt="Compact 58mm thermal receipt printer printing an ORDO bill"
               width={640}
               height={760}
@@ -646,10 +646,11 @@ export function MarketingHome() {
             <figure className={styles.shopVisual}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/thermal-printer.svg"
+                src="/pos58-thermal-printer.svg"
                 alt="ORDO 58mm thermal printer with a printed kitchen receipt"
                 width={640}
                 height={760}
+                decoding="async"
               />
             </figure>
             <div className={styles.shopCopy}>
