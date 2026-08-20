@@ -338,9 +338,8 @@ export function MarketingHome() {
       <header className={styles.nav}>
         <div className={styles.navInner}>
           <Link href="/" className={styles.navBrand} onClick={closeMenu}>
-            <span className={styles.navMark} aria-hidden>
-              O
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ordo-icon.svg" alt="" className={styles.navMark} width={32} height={32} />
             ORDO
           </Link>
 
@@ -427,13 +426,13 @@ export function MarketingHome() {
           initial="hidden"
           animate="show"
         >
-          <p className={styles.eyebrow}>A restaurant technology company</p>
+          <p className={styles.eyebrow}>Modern tech for premium hospitality</p>
           <h1 className={styles.heroTitle}>
-            Digital systems built for <em>real kitchens.</em>
+            The floor, the pass, and the guest — <em>one ORDO.</em>
           </h1>
           <p className={styles.heroSub}>
-            ORDO creates connected products that turn guest orders, the pass, and the counter into one
-            operating system — isolated per restaurant, priced in PKR, ready to try without an account.
+            From the first QR order to the ticket in hand, ORDO keeps every kitchen connected, calm, and
+            isolated — so service looks as polished as the room it serves.
           </p>
           <div className={styles.heroCtas}>
             <Link href="/order?tenant=DEMO" className={styles.primary}>
@@ -447,9 +446,9 @@ export function MarketingHome() {
             </a>
           </div>
           <ul className={styles.chips}>
-            <li>Flagship product live</li>
+            <li>Live on the floor</li>
             <li>Built for Pakistan</li>
-            <li>Browser-first systems</li>
+            <li>Browser-first OS</li>
           </ul>
         </motion.div>
 
@@ -461,21 +460,20 @@ export function MarketingHome() {
           transition={{ delay: reduced || coarse ? 0 : 0.06 }}
         >
           <figure className={styles.productShot}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/pos58-thermal-printer.svg"
-              alt="Compact 58mm thermal receipt printer printing an ORDO bill"
-              width={640}
-              height={760}
-              decoding="async"
-              fetchPriority="high"
-            />
-            <div className={styles.osFloat} aria-hidden>
-              <span>ORDO OS</span>
-              <strong>Live</strong>
-            </div>
+            <picture>
+              <source srcSet="/ordo-lifestyle-hero.webp" type="image/webp" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/ordo-lifestyle-hero.jpg"
+                alt="ORDO on a restaurant table — phone dashboard beside a thermal printer and printed ticket"
+                width={1600}
+                height={1067}
+                decoding="async"
+                fetchPriority="high"
+              />
+            </picture>
           </figure>
-          <p className={styles.productCaption}>POS-58 · 58mm thermal · ORDO monthly package</p>
+          <p className={styles.productCaption}>ORDO OS · live dashboard · ticket in hand</p>
         </motion.div>
       </section>
 
@@ -483,7 +481,7 @@ export function MarketingHome() {
         <div className={styles.wrap}>
           <motion.div variants={section} initial="hidden" whileInView="show" viewport={viewOnce}>
             <p className={styles.kicker}>On the pass</p>
-            <h2>Built to look like the kitchen it serves.</h2>
+            <h2>Service that feels as considered as the dining room.</h2>
           </motion.div>
           <motion.div
             className={styles.stills}
@@ -580,11 +578,11 @@ export function MarketingHome() {
       <section className={styles.section} id="company">
         <div className={styles.wrap}>
           <p className={styles.kicker}>The company</p>
-          <h2>We build the layer that makes kitchen work make sense.</h2>
+          <h2>We build the quiet layer between guests and the kitchen.</h2>
           <p className={styles.leadWide}>
-            ORDO is bigger than a billing screen. We design practical digital systems around the way kitchens
-            actually operate: people, tickets, payments, stock, and decisions — connected inside one restaurant,
-            never scattered across someone else’s.
+            ORDO is hospitality tech with a floor-first story: the phone on the table, the ticket in the
+            printer, the owner glance at today’s numbers — one system, one kitchen at a time. We design for
+            real service pressure in Pakistan, not for a generic SaaS brochure.
           </p>
           <div className={styles.principles}>
             {PRINCIPLES.map((item) => (
@@ -694,31 +692,33 @@ export function MarketingHome() {
         <div className={styles.wrap}>
           <div className={styles.shopGrid}>
             <figure className={styles.shopVisual}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/pos58-thermal-printer.svg"
-                alt="ORDO 58mm thermal printer with a printed kitchen receipt"
-                width={640}
-                height={760}
-                decoding="async"
-              />
+              <picture>
+                <source srcSet="/ordo-lifestyle-hero.webp" type="image/webp" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/ordo-lifestyle-hero.jpg"
+                  alt="ORDO lifestyle shot — admin on phone, thermal ticket, reserved table"
+                  width={1600}
+                  height={1067}
+                  decoding="async"
+                />
+              </picture>
             </figure>
             <div className={styles.shopCopy}>
               <p className={styles.kicker}>ORDO shop</p>
-              <h2>Software and a 58mm thermal printer, on a monthly package.</h2>
+              <h2>Software that belongs on the table — with paper when you need it.</h2>
               <p>
-                Launch pricing for Pakistan kitchens. Month to month. No per-order cut. Confirm ORDO OS plus a
-                compact POS-58 printer on WhatsApp — no fake checkout on this page.
+                Month to month in PKR. No per-order cut. Confirm ORDO OS and a quoted thermal printer on
+                WhatsApp — the picture is the product story, not a fake checkout.
               </p>
-              <h3>POS software and paper, together.</h3>
+              <h3>From guest QR to ticket in hand.</h3>
               <p>
-                Guest QR, counter POS, and kitchen tickets on the plan you pick — plus a quoted 58mm thermal
-                printer when you want a bill in the hand. Browser print is included on every plan. Hardware,
-                paper width, and delivery are confirmed on WhatsApp.
+                Guests order, the counter runs POS, the pass gets tickets — on the plan you pick. Browser print
+                is included. Hardware width and delivery are confirmed in the same WhatsApp thread.
               </p>
               <ul className={styles.shopTags}>
                 <li>ORDO OS</li>
-                <li>POS-58 · 58mm</li>
+                <li>58mm thermal option</li>
                 <li>Setup guidance</li>
                 <li>Starter ₨999 / Pro ₨1,999 / Enterprise ₨4,499</li>
               </ul>
@@ -731,8 +731,8 @@ export function MarketingHome() {
                 </a>
               </div>
               <p className={styles.shopNote}>
-                The workspace on the printer picture demonstrates ORDO OS. A phone is not included unless we
-                agree separately.
+                Phone and table props in the photograph are for atmosphere. Hardware included in a quote is
+                confirmed with you on WhatsApp.
               </p>
             </div>
           </div>
@@ -1003,12 +1003,11 @@ export function MarketingHome() {
         <div className={styles.wrap}>
           <div className={styles.footerInner}>
             <div className={styles.footerBrand}>
-              <span className={styles.navMark} aria-hidden>
-                o
-              </span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/ordo-icon.svg" alt="" className={styles.navMark} width={36} height={36} />
               <div>
                 <strong>ORDO</strong>
-                <p>Restaurant OS for Pakistan kitchens — guest QR, counter POS, and the pass in one system.</p>
+                <p>Modern tech for premium hospitality — guest QR, counter POS, and the pass in one system.</p>
               </div>
             </div>
             <div className={styles.footerCols}>
