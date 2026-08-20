@@ -12,8 +12,17 @@ App labels: `{Restaurant Name} Staff` · `{Restaurant Name} Order`
 
 ## Build per restaurant (Windows / Mac with Android SDK)
 
+Needs **JDK 17+** (Android Studio’s `jbr`). Java 8 → Gradle “compatible with Java 11” failure.
+
+```cmd
+set ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk
+set JAVA_HOME=%ProgramFiles%\Android\Android Studio\jbr
+node scripts\build-tenant-apks.cjs --code=LAHORE1 --name="Lahore Grill"
+```
+
 ```bash
 # From repo root — configures Capacitor + builds when ANDROID_HOME is set
+# Script also auto-picks Android Studio JBR when present
 node scripts/build-tenant-apks.cjs --code=LAHORE1 --name="Lahore Grill"
 
 # Config only (this cloud VM has no SDK):

@@ -90,10 +90,53 @@ function hasSdk() {
   return home && fs.existsSync(path.join(home, "platforms"));
 }
 
+/** AGP 8.x needs JDK 17+. Prefer Android Studio's bundled JBR over old system Java 8. */
+function ensureJava17() {
+  const candidates = [];
+  if (process.env.JAVA_HOME) candidates.push(process.env.JAVA_HOME);
+  if (process.platform === "win32") {
+    const local = process.env.LOCALAPPDATA || "";
+    const pf = process.env["ProgramFiles"] || "C:\\Program Files";
+    const pf86 = process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)";
+    candidates.push(
+      path.join(pf, "Android", "Android Studio", "jbr"),
+      path.join(local, "Programs", "Android Studio", "jbr"),
+      path.join(pf86, "Android", "Android Studio", "jbr"),
+    );
+  } else if (process.platform === "darwin") {
+    candidates.push(
+      "/Applications/Android Studio.app/Contents/jbr/Contents/Home",
+      "/Applications/Android Studio.app/Contents/jre/Contents/Home",
+    );
+  } else {
+    candidates.push("/opt/android-studio/jbr", "/usr/lib/jvm/java-17-openjdk");
+  }
+  for (const home of candidates) {
+    if (!home) continue;
+    const javaBin = path.join(home, "bin", process.platform === "win32" ? "java.exe" : "java");
+    if (fs.existsSync(javaBin)) {
+      process.env.JAVA_HOME = home;
+      process.env.PATH = `${path.join(home, "bin")}${path.delimiter}${process.env.PATH || ""}`;
+      console.log(`Using JAVA_HOME=${home}`);
+      return;
+    }
+  }
+  console.warn(
+    "Warning: JDK 17+ not found. If Gradle fails with Java 8/11 errors, set JAVA_HOME to Android Studio\\jbr",
+  );
+}
+
 function run(cmd, args, cwd) {
-  const r = spawnSync(cmd, args, { cwd, stdio: "inherit", shell: process.platform === "win32" });
+  const r = spawnSync(cmd, args, {
+    cwd,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+    env: process.env,
+  });
   if (r.status !== 0) throw new Error(`${cmd} ${args.join(" ")} failed`);
 }
+
+ensureJava17();
 
 for (const shell of shells) {
   writeConfig(shell);
