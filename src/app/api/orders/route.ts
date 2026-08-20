@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureStore, addOrder, readTenant, findTenantMetaByCode } from "@/lib/db";
+import { ensureStore, addOrder, readTenant, findTenantMetaByCode, findTenantMetaById } from "@/lib/db";
 import { AuthError, hasPermission, requireTenantSession } from "@/lib/session";
 import { assertOrderRules } from "@/lib/guest";
 import { computeFees, lineUnitPrice } from "@/lib/fees";
 import type { LineModifier, OrderLine } from "@/lib/tenant-types";
 import type { PaymentMethod, PaymentStatus, ServiceType } from "@/lib/types";
+import { sendNewOrderEmail, tenantAdminEmails } from "@/lib/notify";
 
 export const runtime = "nodejs";
 
@@ -168,6 +169,28 @@ export async function POST(req: NextRequest) {
       subtotal: fees.subtotal,
       total: fees.total,
     });
+
+    try {
+      const meta = await findTenantMetaById(tenantId);
+      const notifyTo = tenantAdminEmails(tenant, meta);
+      if (notifyTo.length) {
+        await sendNewOrderEmail({
+          to: notifyTo,
+          restaurantName: tenant.branding.name || meta?.name || tenant.code,
+          restaurantCode: tenant.code,
+          orderId: order.id,
+          orderNumber: order.number,
+          serviceType: order.serviceType,
+          total: order.total,
+          subtotal: order.subtotal,
+          currency: tenant.shop.currency || "PKR",
+        });
+      } else {
+        console.info("[email] skip order notify: no Admin email for tenant", tenantId);
+      }
+    } catch (err) {
+      console.error("[email] order notify failed:", err instanceof Error ? err.message : err);
+    }
 
     return NextResponse.json({ order });
   } catch (e) {

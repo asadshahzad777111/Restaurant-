@@ -22,7 +22,8 @@ Backups use **Cloudflare R2**, not paid Vercel storage.
 2. Domains: ordo + control + api.ordo  
 3. R2 keys + `media.ordo`  
 4. `CONTACT_WHATSAPP`  
-5. Deploy branch `main` (Vercel Production)
+5. Resend: `RESEND_API_KEY` + `RESEND_FROM` (or `EMAIL_FROM`). Optional `RESEND_NOTIFY_TO`, `RESEND_WEBHOOK_SECRET`.  
+6. Deploy branch `main` (Vercel Production)
 
 ## Local
 `npm run dev` → http://localhost:3000/lab  

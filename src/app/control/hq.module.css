@@ -288,6 +288,14 @@
   max-width: 11rem;
 }
 
+.msgCell {
+  max-width: 22rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--hq-muted);
+  font-size: 0.82rem;
+}
+
 .helpBtn {
   border-color: var(--hq-accent) !important;
   color: var(--hq-accent);

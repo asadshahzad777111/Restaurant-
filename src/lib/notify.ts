@@ -1,5 +1,28 @@
-import { Resend } from "resend";
-import { contactWhatsapp, resendConfigured, whatsappApiConfigured } from "./env";
+import { contactWhatsapp, resendConfigured, resendFromAddress } from "./env";
+import { appUrl } from "./urls";
+import { sendResendEmail, uniqueEmails, type SendEmailResult } from "./email";
+import { guestWhatsappLink } from "./whatsapp";
+import type { PlatformTenantMeta, ServiceType } from "./types";
+import type { TenantState } from "./tenant-types";
+
+export type { SendEmailResult };
+export { sendWhatsappCloudApi } from "./whatsapp";
+export { guestWhatsappLink };
+
+export function serviceTypeLabel(serviceType: ServiceType) {
+  if (serviceType === "table") return "Dine-in";
+  if (serviceType === "pickup") return "Takeaway";
+  if (serviceType === "delivery") return "Delivery";
+  return "Counter";
+}
+
+/** Only this kitchen's Admin / contact email — never another tenant. */
+export function tenantAdminEmails(tenant: TenantState, meta?: PlatformTenantMeta | null) {
+  const fromUsers = tenant.users
+    .filter((u) => u.role === "admin" && u.active !== false)
+    .map((u) => u.email);
+  return uniqueEmails([meta?.adminEmail, ...fromUsers]);
+}
 
 export async function sendLeadEmail(input: {
   to?: string;
@@ -8,57 +31,82 @@ export async function sendLeadEmail(input: {
   restaurantName?: string;
   message?: string;
   planId?: string;
-}) {
+}): Promise<SendEmailResult> {
   if (!resendConfigured()) {
-    return { skipped: true as const, reason: "RESEND_API_KEY / RESEND_FROM not set" };
+    return { skipped: true, reason: "RESEND_API_KEY / from-address not set" };
   }
-  const resend = new Resend(process.env.RESEND_API_KEY!);
-  const to = input.to || process.env.RESEND_NOTIFY_TO || process.env.RESEND_FROM!;
-  const { error } = await resend.emails.send({
-    from: process.env.RESEND_FROM!,
-    to: [to],
+  const to = input.to || process.env.RESEND_NOTIFY_TO?.trim() || resendFromAddress();
+  const text = [
+    `Name: ${input.name}`,
+    `Email: ${input.email}`,
+    `Restaurant: ${input.restaurantName || "—"}`,
+    `Plan: ${input.planId || "—"}`,
+    `Message: ${input.message || "—"}`,
+    `WhatsApp contact: ${contactWhatsapp() || "—"}`,
+  ].join("\n");
+  return sendResendEmail({
+    to: to ? [to] : [],
     subject: `ORDO lead: ${input.name}${input.planId ? ` (${input.planId})` : ""}`,
-    text: [
-      `Name: ${input.name}`,
-      `Email: ${input.email}`,
-      `Restaurant: ${input.restaurantName || "—"}`,
-      `Plan: ${input.planId || "—"}`,
-      `Message: ${input.message || "—"}`,
-      `WhatsApp contact: ${contactWhatsapp() || "—"}`,
-    ].join("\n"),
+    text,
+    replyTo: input.email && input.email.includes("@") ? input.email : undefined,
   });
-  if (error) return { ok: false as const, error: error.message };
-  return { ok: true as const };
 }
 
-/** Click-to-chat always works. Cloud API only if WHATSAPP_* set. */
-export function guestWhatsappLink(text: string, phone?: string) {
-  const digits = (phone || contactWhatsapp() || "").replace(/\D/g, "");
-  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+export async function sendAdminWelcomeEmail(input: {
+  to: string;
+  restaurantName: string;
+  restaurantCode: string;
+  adminUsername: string;
+}): Promise<SendEmailResult> {
+  const loginUrl = `${appUrl()}/login`;
+  const wa = contactWhatsapp();
+  const waLine = wa
+    ? `Need help? WhatsApp ORDO: ${guestWhatsappLink(`Hello ORDO — new Admin for ${input.restaurantCode}`)}`
+    : "";
+  const text = [
+    `Your restaurant is on ORDO.`,
+    ``,
+    `Restaurant: ${input.restaurantName}`,
+    `Restaurant code: ${input.restaurantCode}`,
+    `Login: ${loginUrl}`,
+    `Username: ${input.adminUsername}`,
+    ``,
+    `Sign in with that code and username, then change your password.`,
+    waLine,
+  ]
+    .filter(Boolean)
+    .join("\n");
+  return sendResendEmail({
+    to: input.to,
+    subject: `ORDO: ${input.restaurantName} is ready (${input.restaurantCode})`,
+    text,
+  });
 }
 
-export async function sendWhatsappCloudApi(toE164: string, body: string) {
-  if (!whatsappApiConfigured()) {
-    return { skipped: true as const, reason: "WhatsApp Cloud API env not set — use wa.me link" };
-  }
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID!;
-  const token = process.env.WHATSAPP_API_TOKEN!;
-  const res = await fetch(`https://graph.facebook.com/v19.0/${phoneNumberId}/messages`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to: toE164.replace(/\D/g, ""),
-      type: "text",
-      text: { body },
-    }),
+export async function sendNewOrderEmail(input: {
+  to: string[];
+  restaurantName: string;
+  restaurantCode: string;
+  orderId: string;
+  orderNumber: number;
+  serviceType: ServiceType;
+  total: number;
+  subtotal: number;
+  currency: string;
+}): Promise<SendEmailResult> {
+  const money = (n: number) => `${input.currency} ${n.toFixed(0)}`;
+  const text = [
+    `New order at ${input.restaurantName} (${input.restaurantCode}).`,
+    ``,
+    `Order id: ${input.orderId}`,
+    `Order #: ${input.orderNumber}`,
+    `Type: ${serviceTypeLabel(input.serviceType)}`,
+    `Subtotal: ${money(input.subtotal)}`,
+    `Total: ${money(input.total)}`,
+  ].join("\n");
+  return sendResendEmail({
+    to: input.to,
+    subject: `ORDO order #${input.orderNumber} — ${serviceTypeLabel(input.serviceType)} — ${input.restaurantName}`,
+    text,
   });
-  if (!res.ok) {
-    const err = await res.text();
-    return { ok: false as const, error: err.slice(0, 200) };
-  }
-  return { ok: true as const };
 }

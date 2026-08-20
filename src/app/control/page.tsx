@@ -35,6 +35,7 @@ export default function ControlPage() {
     planId: "starter",
     adminUsername: "admin",
     adminPassword: "admin123",
+    adminEmail: "",
   });
 
   const api = useCallback(
@@ -127,6 +128,7 @@ export default function ControlPage() {
       planId: "starter",
       adminUsername: "admin",
       adminPassword: "admin123",
+      adminEmail: "",
     });
     await load();
     setTab("restaurants");
@@ -321,6 +323,12 @@ export default function ControlPage() {
                     value={form.adminPassword}
                     onChange={(e) => setForm({ ...form, adminPassword: e.target.value })}
                   />
+                  <input
+                    type="email"
+                    placeholder="Admin email (optional)"
+                    value={form.adminEmail}
+                    onChange={(e) => setForm({ ...form, adminEmail: e.target.value })}
+                  />
                 </div>
                 {error && <p className={styles.error}>{error}</p>}
                 <button type="submit" className={styles.primaryBtn}>
@@ -333,6 +341,7 @@ export default function ControlPage() {
                     <tr>
                       <th>Code</th>
                       <th>Name</th>
+                      <th>Admin email</th>
                       <th>Plan / billing</th>
                       <th>Renews</th>
                       <th>Status</th>
@@ -347,6 +356,7 @@ export default function ControlPage() {
                           {t.code === "DEMO" && <span className={styles.demoTag}>Demo</span>}
                         </td>
                         <td>{t.name}</td>
+                        <td>{t.adminEmail || "—"}</td>
                         <td>
                           <select
                             value={t.planId}
@@ -415,7 +425,10 @@ export default function ControlPage() {
           {tab === "leads" && (
             <section>
               <h1>Messages</h1>
-              <p className={styles.lead}>Contact requests from the marketing site. Viewing them stays on HQ.</p>
+              <p className={styles.lead}>
+                Contact form requests and inbound email (Resend webhook). Viewing them stays on HQ —
+                restaurant Admins do not see this list.
+              </p>
               {leads.length === 0 ? (
                 <p className={styles.muted}>No messages yet.</p>
               ) : (
@@ -428,6 +441,7 @@ export default function ControlPage() {
                         <th>Restaurant</th>
                         <th>Plan</th>
                         <th>Source</th>
+                        <th>Message</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -437,7 +451,8 @@ export default function ControlPage() {
                           <td>{l.email}</td>
                           <td>{l.restaurantName || "—"}</td>
                           <td>{l.planId || "—"}</td>
-                          <td>{l.source}</td>
+                          <td>{l.source === "inbound_email" ? "Email in" : l.source}</td>
+                          <td className={styles.msgCell}>{l.message || "—"}</td>
                         </tr>
                       ))}
                     </tbody>

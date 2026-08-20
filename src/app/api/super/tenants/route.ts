@@ -11,6 +11,8 @@ import {
 } from "@/lib/db";
 import { AuthError, impersonateTenant, requireSuper } from "@/lib/session";
 import type { PlanId, TenantStatus } from "@/lib/types";
+import { looksLikeEmail } from "@/lib/email";
+import { sendAdminWelcomeEmail } from "@/lib/notify";
 
 export const runtime = "nodejs";
 
@@ -44,13 +46,46 @@ export async function POST(req: NextRequest) {
       const planId = (body.planId || "starter") as PlanId;
       const adminUsername = String(body.adminUsername || "admin");
       const adminPassword = String(body.adminPassword || "admin123");
+      const adminEmail = String(body.adminEmail || "").trim();
       if (!code || !name) {
         return NextResponse.json({ error: "code and name required" }, { status: 400 });
       }
+      if (adminEmail && !looksLikeEmail(adminEmail)) {
+        return NextResponse.json({ error: "Invalid Admin email" }, { status: 400 });
+      }
       // New kitchen + its Admin only. Super session is unchanged — do not impersonate.
-      await createEmptyTenantState({ id, code, name, adminUsername, adminPassword });
-      const meta = await createTenantMeta({ id, code, name, planId });
-      return NextResponse.json({ tenant: meta });
+      await createEmptyTenantState({
+        id,
+        code,
+        name,
+        adminUsername,
+        adminPassword,
+        adminEmail: adminEmail || undefined,
+      });
+      const meta = await createTenantMeta({
+        id,
+        code,
+        name,
+        planId,
+        adminEmail: adminEmail || undefined,
+      });
+      let email: Awaited<ReturnType<typeof sendAdminWelcomeEmail>> | undefined;
+      if (adminEmail) {
+        try {
+          email = await sendAdminWelcomeEmail({
+            to: adminEmail,
+            restaurantName: name,
+            restaurantCode: meta.code,
+            adminUsername,
+          });
+        } catch (err) {
+          console.error("[email] Admin welcome failed:", err instanceof Error ? err.message : err);
+          email = { ok: false, error: "send failed" };
+        }
+      } else {
+        console.info("[email] skip Admin welcome: no adminEmail for", meta.code);
+      }
+      return NextResponse.json({ tenant: meta, email });
     }
 
     if (action === "status") {

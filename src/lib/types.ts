@@ -48,6 +48,8 @@ export interface PlatformTenantMeta {
   name: string;
   planId: PlanId;
   status: TenantStatus;
+  /** Restaurant Admin contact — used for welcome + new-order mail. */
+  adminEmail?: string;
   renewsAt: string;
   createdAt: string;
 }
@@ -69,7 +71,7 @@ export interface Lead {
   restaurantName?: string;
   planId?: PlanId;
   message?: string;
-  source: "contact" | "plans";
+  source: "contact" | "plans" | "inbound_email";
   createdAt: string;
 }
 

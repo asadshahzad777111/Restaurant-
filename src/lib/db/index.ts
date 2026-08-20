@@ -59,6 +59,7 @@ export async function createTenantMeta(input: {
   code: string;
   name: string;
   planId: PlanId;
+  adminEmail?: string;
 }): Promise<PlatformTenantMeta> {
   await ensureStore();
   return useMongo()
@@ -68,7 +69,7 @@ export async function createTenantMeta(input: {
 
 export async function updateTenantMeta(
   id: string,
-  patch: Partial<Pick<PlatformTenantMeta, "name" | "planId" | "status" | "renewsAt">>,
+  patch: Partial<Pick<PlatformTenantMeta, "name" | "planId" | "status" | "renewsAt" | "adminEmail">>,
 ) {
   await ensureStore();
   return useMongo()
@@ -150,6 +151,7 @@ export async function createEmptyTenantState(input: {
   name: string;
   adminUsername: string;
   adminPassword: string;
+  adminEmail?: string;
 }) {
   await ensureStore();
   return useMongo()

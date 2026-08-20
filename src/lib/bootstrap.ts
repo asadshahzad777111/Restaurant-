@@ -237,6 +237,7 @@ export function createEmptyTenant(input: {
   name: string;
   adminUsername: string;
   adminPassword: string;
+  adminEmail?: string;
 }): TenantState {
   // Isolated kitchen: empty catalog, not DEMO menu/logo/stock. Admin belongs to this id only.
   const state: TenantState = {
@@ -268,6 +269,7 @@ export function createEmptyTenant(input: {
         permissions: ALL_PERMS,
         active: true,
         mustChangePassword: true,
+        ...(input.adminEmail?.trim() ? { email: input.adminEmail.trim() } : {}),
       },
     ],
     stock: [],

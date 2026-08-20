@@ -36,6 +36,8 @@ export interface TenantUser {
   permissions: Permission[];
   active: boolean;
   mustChangePassword?: boolean;
+  /** Optional — restaurant Admin inbox for order/welcome mail. */
+  email?: string;
 }
 
 export interface ModifierOption {

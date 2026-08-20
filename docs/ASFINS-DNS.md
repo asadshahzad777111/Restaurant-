@@ -53,7 +53,14 @@ R2_SECRET_ACCESS_KEY=...
 R2_BUCKET=ordo-media
 R2_PUBLIC_URL=https://media.ordo.asfins.com
 R2_PUBLIC_BASE_URL=https://media.ordo.asfins.com
+RESEND_API_KEY=
+RESEND_FROM=ORDO <noreply@ordo.asfins.com>
+RESEND_DOMAIN=ordo.asfins.com
+RESEND_NOTIFY_TO=
+RESEND_WEBHOOK_SECRET=
 ```
+
+Inbound Resend (optional): webhook `https://api.ordo.asfins.com/api/webhooks/resend`. MX for receiving belongs on a Resend subdomain such as `inbound.ordo` — **never change asfins.com apex DNS**.
 
 ## R2 backup
 

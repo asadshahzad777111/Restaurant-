@@ -109,17 +109,20 @@ export async function createTenantMetaMongo(input: {
   code: string;
   name: string;
   planId: PlanId;
+  adminEmail?: string;
 }): Promise<PlatformTenantMeta> {
   const platform = await getPlatformMongo();
   if (platform.tenants.some((t) => t.code.toUpperCase() === input.code.toUpperCase())) {
     throw new Error("Restaurant code already exists");
   }
+  const adminEmail = input.adminEmail?.trim() || undefined;
   const meta: PlatformTenantMeta = {
     id: input.id,
     code: input.code.toUpperCase(),
     name: input.name,
     planId: input.planId,
     status: "active",
+    ...(adminEmail ? { adminEmail } : {}),
     renewsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     createdAt: new Date().toISOString(),
   };
@@ -130,7 +133,7 @@ export async function createTenantMetaMongo(input: {
 
 export async function updateTenantMetaMongo(
   id: string,
-  patch: Partial<Pick<PlatformTenantMeta, "name" | "planId" | "status" | "renewsAt">>,
+  patch: Partial<Pick<PlatformTenantMeta, "name" | "planId" | "status" | "renewsAt" | "adminEmail">>,
 ) {
   const platform = await getPlatformMongo();
   const idx = platform.tenants.findIndex((t) => t.id === id);

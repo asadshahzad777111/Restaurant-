@@ -21,8 +21,32 @@ export function contactWhatsapp() {
   return process.env.CONTACT_WHATSAPP?.trim() || "";
 }
 
+export function resendApiKey() {
+  return process.env.RESEND_API_KEY?.trim() || "";
+}
+
+/**
+ * From address: RESEND_FROM or EMAIL_FROM. If both empty, use
+ * `ORDO <noreply@{RESEND_DOMAIN|NEXT_PUBLIC_APP_HOST}>` only when that host is a
+ * real domain (not localhost). Otherwise outbound is not configured.
+ */
+export function resendFromAddress() {
+  const explicit = process.env.RESEND_FROM?.trim() || process.env.EMAIL_FROM?.trim();
+  if (explicit) return explicit;
+  const domain = (process.env.RESEND_DOMAIN?.trim() || process.env.NEXT_PUBLIC_APP_HOST?.trim() || "")
+    .replace(/^https?:\/\//, "")
+    .split("/")[0]
+    .toLowerCase();
+  if (!domain || domain === "localhost" || domain.startsWith("127.")) return "";
+  return `ORDO <noreply@${domain}>`;
+}
+
 export function resendConfigured() {
-  return Boolean(process.env.RESEND_API_KEY?.trim() && process.env.RESEND_FROM?.trim());
+  return Boolean(resendApiKey() && resendFromAddress());
+}
+
+export function resendWebhookSecret() {
+  return process.env.RESEND_WEBHOOK_SECRET?.trim() || "";
 }
 
 /** Accept both names used across live docs / Vercel. */

@@ -80,6 +80,7 @@ export async function createEmptyTenantMongo(input: {
   name: string;
   adminUsername: string;
   adminPassword: string;
+  adminEmail?: string;
 }) {
   const state: TenantState = {
     id: input.id,
@@ -110,6 +111,7 @@ export async function createEmptyTenantMongo(input: {
         permissions: ALL_PERMS,
         active: true,
         mustChangePassword: true,
+        ...(input.adminEmail?.trim() ? { email: input.adminEmail.trim() } : {}),
       },
     ],
     stock: [],
