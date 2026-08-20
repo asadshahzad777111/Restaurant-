@@ -41,6 +41,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# file-backed store
+.data/
+
 # local gradle / APK build caches
 .gradle-home/
 .tmp-build/
