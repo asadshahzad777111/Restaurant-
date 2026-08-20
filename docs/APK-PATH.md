@@ -1,54 +1,33 @@
-# APK shells — Super only
+# APK shells — Super only · per restaurant
 
-ORDO ships **two** Android WebView shells. They are **not** on the public marketing page and **not** on restaurant Admin. Super downloads them from **Super → Apps** (per restaurant).
+ORDO ships **two** Capacitor Android WebView shells. Super uploads **named** binaries per kitchen so clients never mix restaurants.
 
-| App | Capacitor folder | Loads | Isolation |
+| App | Folder | Deep link | Isolation |
 |---|---|---|---|
-| ORDO Staff | `mobile/ordo-pos` | `/login?app=staff&tenant=CODE` | Kitchen **code** required. POS, kitchen, orders/billing, staff. Super never opens. |
-| ORDO Customer | `mobile/ordo-guest` | `/guest?app=customer&tenant=CODE` (+ `/scan`) | Kitchen **code** or table **QR**. Dining, pickup, delivery, COD. |
+| **Staff** | `mobile/ordo-pos` | `/login?app=staff&tenant=CODE` | That kitchen’s POS, kitchen, orders only. Never Super HQ. |
+| **Customer** | `mobile/ordo-guest` | `/guest?app=customer&tenant=CODE` | That kitchen’s menu & orders only. |
 
-Per-restaurant binaries: `.data/apks/tenants/{tenantId}/` → `ORDO-{CODE}-Staff.apk` / `ORDO-{CODE}-Customer.apk`.
+Filenames: `ORDO-{CODE}-Staff.apk` · `ORDO-{CODE}-Customer.apk`  
+App labels: `{Restaurant Name} Staff` · `{Restaurant Name} Order`
 
-## APK experience (web shell)
+## Build per restaurant (Windows / Mac with Android SDK)
 
-When `?app=staff` or `?app=customer` is set, ORDO turns on:
+```bash
+# From repo root — configures Capacitor + builds when ANDROID_HOME is set
+node scripts/build-tenant-apks.mjs --code=LAHORE1 --name="Lahore Grill"
 
-- Delayed **notification permission** popup
-- Tip messages (scanner stays available during pause billing)
-- Staff order popups via Web Notifications + sound
-- Customer: scanner → menu even when kitchen billing is paused (orders blocked only when fully suspended)
-
-## Google / Gmail
-
-Set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (and matching OAuth client for `ordo.asfins.com`).
-
-- **Staff**: Gmail must already be saved on that user (Super → Passwords & Gmail, or Admin Settings).
-- **Customer**: Sign in with Google registers a guest client for that restaurant **code** only.
-
-## Super → Admin without password
-
-**Open Admin (no password)** = Help mode. Yellow banner + Back to ORDO HQ. Never shares the Super session with the kitchen.
-
-## Build debug APKs (Windows)
-
-Needs Android SDK + JDK 17+.
-
-```powershell
-$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
-$env:ANDROID_SDK_ROOT = $env:ANDROID_HOME
-$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
-$env:Path = "$env:JAVA_HOME\bin;$env:ANDROID_HOME\platform-tools;$env:Path"
-
-cd mobile/ordo-pos
-npm install
-npx cap add android
-npx cap sync android
-cd android
-.\gradlew.bat assembleDebug
-# Upload via Super → Apps for that restaurant
+# Config only (this cloud VM has no SDK):
+node scripts/build-tenant-apks.mjs --code=LAHORE1 --name="Lahore Grill" --skip-gradle
 ```
 
-Repeat for `mobile/ordo-guest`. Or `scripts/build-apks.ps1`.
+Then **Super → Apps → select restaurant → Upload** Staff + Customer.
 
-Bake tenant into Capacitor `server.url` when packaging a kitchen-specific APK, e.g.  
-`https://ordo.asfins.com/login?app=staff&tenant=LAHORE1`.
+Legacy template build (Windows): `scripts/build-apks.ps1` → `.data/apks/ORDO-Staff.apk`.
+
+## Rules
+- Tenant code is baked into the start URL — guests/staff of Kitchen A cannot land on Kitchen B.
+- APKs never open `/super` or `/control`.
+- Same live catalog & order API as the website.
+
+## APK UX (web shell)
+Notification permission prompt, tip messages, scanner during pause billing, Staff order popups.

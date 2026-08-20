@@ -227,8 +227,17 @@ export async function deleteSessionMongo(token: string) {
 }
 
 export async function verifySuperMongo(username: string, password: string) {
-  const { superAdmin } = await getPlatformMongo();
-  return superAdmin.username === username && superAdmin.password === password;
+  const platform = await getPlatformMongo();
+  const { superAdmin } = platform;
+  if (superAdmin.username !== username) return false;
+  const { verifyPassword, ensureHashed } = await import("../password");
+  const result = await verifyPassword(password, superAdmin.password);
+  if (!result.ok) return false;
+  if (result.needsRehash) {
+    platform.superAdmin.password = await ensureHashed(password);
+    await savePlatformMongo(platform);
+  }
+  return true;
 }
 
 export async function addLeadMongo(lead: Omit<Lead, "id" | "createdAt"> & { id?: string }) {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { modeLabel, trackSteps } from "@/lib/guest";
+import { guestWhatsappLink } from "@/lib/whatsapp";
 import {
   listContainer,
   listItem,
@@ -119,6 +120,18 @@ export default function TrackPage() {
           {LABELS[current] || current}
         </p>
         <p className={styles.live}>Updates every few seconds from this kitchen.</p>
+        <p className={styles.meta} style={{ marginTop: "0.75rem" }}>
+          <a
+            href={guestWhatsappLink(
+              `ORDO order #${data.order.number} at ${data.branding.name} — status: ${LABELS[current] || current}. Track: ${typeof window !== "undefined" ? window.location.href : ""}`,
+              data.shop.phone,
+            )}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Share status on WhatsApp
+          </a>
+        </p>
       </header>
 
       <motion.ol

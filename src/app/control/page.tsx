@@ -874,7 +874,9 @@ export default function ControlPage() {
               <h1>Apps · per restaurant</h1>
               <p className={styles.lead}>
                 Every kitchen gets its own named Staff and Customer APKs. Filenames and deep links include
-                the restaurant code so there is no mix-up. APKs never open Super HQ.
+                the restaurant code so there is no mix-up. APKs never open Super HQ. Build:{" "}
+                <code>node scripts/build-tenant-apks.cjs --code=CODE --name=&quot;Kitchen Name&quot;</code>{" "}
+                then upload here.
               </p>
               <div className={styles.create}>
                 <h2>Restaurant</h2>
@@ -1055,8 +1057,10 @@ export default function ControlPage() {
                 <strong>Android apps</strong>
                 <p>
                   Upload finished Staff and Customer APKs under the Apps tab — one pair per restaurant,
-                  named <code>ORDO-CODE-Staff.apk</code> / <code>ORDO-CODE-Customer.apk</code>. Download
-                  stays hidden until a real file exists. APKs never open /super or /control.
+                  named <code>ORDO-CODE-Staff.apk</code> / <code>ORDO-CODE-Customer.apk</code>, labels{" "}
+                  <em>Restaurant Staff</em> / <em>Restaurant Order</em>. Build on a machine with Android
+                  SDK: <code>node scripts/build-tenant-apks.cjs --code=CODE --name=&quot;Name&quot;</code>.
+                  Download stays hidden until a real file exists. APKs never open /super or /control.
                 </p>
               </div>
             </section>

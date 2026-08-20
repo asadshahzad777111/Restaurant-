@@ -66,7 +66,20 @@ export async function loginTenant(
   if (!meta) throw new AuthError("Restaurant code not found", 404);
   if (meta.status === "suspended") throw new AuthError("Restaurant is suspended", 403);
   const user = await findUser(meta.id, username);
-  if (!user || user.password !== password) throw new AuthError("Invalid credentials", 401);
+  if (!user) throw new AuthError("Invalid credentials", 401);
+  const { verifyPassword, ensureHashed } = await import("./password");
+  const { updateUsers } = await import("./db");
+  const check = await verifyPassword(password, user.password);
+  if (!check.ok) throw new AuthError("Invalid credentials", 401);
+  if (check.needsRehash) {
+    const fresh = await readTenant(meta.id);
+    const next = await Promise.all(
+      fresh.users.map(async (u) =>
+        u.id === user.id ? { ...u, password: await ensureHashed(password) } : u,
+      ),
+    );
+    await updateUsers(meta.id, next);
+  }
   const role: SessionRole = user.role === "admin" ? "tenant_admin" : "staff";
   return addSession({
     token: newToken(),

@@ -117,6 +117,21 @@ export function verifySuper(username: string, password: string) {
   return superAdmin.username === username && superAdmin.password === password;
 }
 
+/** Async verify with scrypt + one-time plaintext → hash upgrade. */
+export async function verifySuperSecure(username: string, password: string) {
+  const platform = readPlatform();
+  const { superAdmin } = platform;
+  if (superAdmin.username !== username) return false;
+  const { verifyPassword, ensureHashed } = await import("./password");
+  const result = await verifyPassword(password, superAdmin.password);
+  if (!result.ok) return false;
+  if (result.needsRehash) {
+    platform.superAdmin.password = await ensureHashed(password);
+    writePlatform(platform);
+  }
+  return true;
+}
+
 export function addLead(lead: Omit<Lead, "id" | "createdAt"> & { id?: string }) {
   const platform = readPlatform();
   const full: Lead = {

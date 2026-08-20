@@ -365,7 +365,7 @@ function OrderInner() {
 
   function addItem(item: MenuItem) {
     if (!item.available) {
-      setToast(`${item.name} is unavailable`);
+      setToast(`${item.name} is 86 / unavailable`);
       return;
     }
     if (item.modifiers?.length) {
@@ -632,8 +632,11 @@ function OrderInner() {
               {(orderingClosed || billingPastDue) && (
                 <p className={styles.error} role="status">
                   {orderingClosed
-                    ? "Billing paused — browse the menu; placing orders is closed until Super renews."
-                    : "Billing past due — you can still order. Scanner → menu always works."}
+                    ? "Billing paused — browse the menu; placing orders is closed until Super renews. Scanner still opens this kitchen."
+                    : "Billing past due — you can still order. Scanner → menu always works."}{" "}
+                  <a href="/scan" className={styles.textLink}>
+                    Open scanner
+                  </a>
                 </p>
               )}
               {loading && <p className={styles.muted}>Loading this kitchen’s menu…</p>}

@@ -51,7 +51,9 @@ export async function POST(req: NextRequest) {
       const name = String(body.name || "");
       const planId = (body.planId || "starter") as PlanId;
       const adminUsername = String(body.adminUsername || "admin");
-      const adminPassword = String(body.adminPassword || "admin123");
+      const adminPasswordRaw = String(body.adminPassword || "admin123");
+      const { ensureHashed } = await import("@/lib/password");
+      const adminPassword = await ensureHashed(adminPasswordRaw);
       const adminEmail = String(body.adminEmail || "").trim();
       if (!code || !name) {
         return NextResponse.json({ error: "code and name required" }, { status: 400 });
@@ -179,12 +181,13 @@ export async function POST(req: NextRequest) {
       const tenant = await readTenant(body.id);
       const meta = (await listTenantsMeta()).find((t) => t.id === body.id);
       if (!meta) return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
+      const { isHashedPassword } = await import("@/lib/password");
       return NextResponse.json({
         tenant: meta,
         users: tenant.users.map((u) => ({
           id: u.id,
           username: u.username,
-          password: u.password,
+          password: isHashedPassword(u.password) ? "(hashed — set a new password to reset)" : u.password,
           email: u.email || "",
           role: u.role,
           roleLabel: u.roleLabel,
@@ -212,14 +215,22 @@ export async function POST(req: NextRequest) {
       if (password !== undefined && password.length > 0 && password.length < 6) {
         return NextResponse.json({ error: "Password min 6 characters" }, { status: 400 });
       }
-      const users = tenant.users.map((u) => {
-        if (u.id !== body.userId) return u;
-        return {
-          ...u,
-          ...(email !== undefined ? { email } : {}),
-          ...(password ? { password, mustChangePassword: Boolean(body.mustChangePassword) } : {}),
-        };
-      });
+      const { ensureHashed, isHashedPassword } = await import("@/lib/password");
+      const users = await Promise.all(
+        tenant.users.map(async (u) => {
+          if (u.id !== body.userId) return u;
+          return {
+            ...u,
+            ...(email !== undefined ? { email } : {}),
+            ...(password
+              ? {
+                  password: await ensureHashed(password),
+                  mustChangePassword: Boolean(body.mustChangePassword),
+                }
+              : {}),
+          };
+        }),
+      );
       await updateUsers(body.id, users);
       const admin = users.find((u) => u.role === "admin");
       if (admin?.email) {
@@ -230,7 +241,7 @@ export async function POST(req: NextRequest) {
         users: users.map((u) => ({
           id: u.id,
           username: u.username,
-          password: u.password,
+          password: isHashedPassword(u.password) ? "(hashed — reset to change)" : u.password,
           email: u.email || "",
           role: u.role,
           roleLabel: u.roleLabel,

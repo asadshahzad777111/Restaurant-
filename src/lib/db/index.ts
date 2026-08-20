@@ -121,7 +121,7 @@ export async function verifySuper(username: string, password: string) {
   await ensureStore();
   return useMongo()
     ? mongoPlatform.verifySuperMongo(username, password)
-    : filePlatform.verifySuper(username, password);
+    : filePlatform.verifySuperSecure(username, password);
 }
 
 export async function addLead(lead: Omit<Lead, "id" | "createdAt"> & { id?: string }) {

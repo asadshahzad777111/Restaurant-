@@ -185,8 +185,9 @@ export function updateStock(tenantId: string, stock: StockItem[]) {
   return t;
 }
 
-export function updateUsers(tenantId: string, users: TenantUser[]) {
+export async function updateUsers(tenantId: string, users: TenantUser[]) {
   const t = readTenant(tenantId);
+  // Note: callers should pass already-hashed passwords for new values.
   t.users = users.map((u) => {
     const prev = t.users.find((x) => x.id === u.id);
     if (prev && (!u.password || u.password === "")) {

@@ -123,7 +123,17 @@ export async function POST(req: NextRequest) {
       const item = tenant.menu.find((m) => m.id === line.itemId);
       if (!item || !item.available) {
         return NextResponse.json(
-          { error: `${line.name || "Item"} is unavailable (86)` },
+          { error: `${line.name || "Item"} is 86 / unavailable` },
+          { status: 400 },
+        );
+      }
+      // Stock 86: if a stock row shares this item name and qty is 0, block sale.
+      const stockHit = (tenant.stock || []).find(
+        (s) => s.name.trim().toLowerCase() === item.name.trim().toLowerCase(),
+      );
+      if (stockHit && stockHit.quantity <= 0) {
+        return NextResponse.json(
+          { error: `${item.name} is out of stock (86)` },
           { status: 400 },
         );
       }

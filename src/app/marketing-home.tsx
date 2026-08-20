@@ -18,6 +18,8 @@ import styles from "./marketing.module.css";
 const NAV = [
   { href: "#company", label: "Company" },
   { href: "#products", label: "Products" },
+  { href: "#tour", label: "Tour" },
+  { href: "#plans", label: "Plans" },
   { href: "#os", label: "ORDO OS" },
   { href: "#shop", label: "Shop" },
   { href: "#insights", label: "Insights" },
@@ -576,6 +578,51 @@ export function MarketingHome() {
                 <span>On the page</span>
               </li>
             </ul>
+          </motion.div>
+        </div>
+      </section>
+
+      <section className={styles.section} id="tour">
+        <div className={styles.wrap}>
+          <motion.div variants={section} initial="hidden" whileInView="show" viewport={viewOnce}>
+            <p className={styles.kicker}>Product tour</p>
+            <h2>From table phone to kitchen ticket to owner glance.</h2>
+            <p className={styles.leadWide}>
+              Four stations. One kitchen catalog. Staff and Customer APKs lock to that restaurant code so
+              orders never mix.
+            </p>
+          </motion.div>
+          <motion.div
+            className={styles.plans}
+            variants={listContainer(0.06)}
+            initial="hidden"
+            whileInView="show"
+            viewport={viewOnce}
+            style={{ marginTop: "1.5rem" }}
+          >
+            {[
+              {
+                t: "1 · Guest",
+                d: "Scan table QR or open the Customer APK — menu, modifiers, cart, track status.",
+              },
+              {
+                t: "2 · Counter POS",
+                d: "Staff APK / POS bills, prints 58mm, same catalog. 86 blocks sales instantly.",
+              },
+              {
+                t: "3 · Kitchen",
+                d: "Tickets move placed → preparing → ready. Sound + notify on new guest orders.",
+              },
+              {
+                t: "4 · Owner",
+                d: "Sales & Profit, day close, Super HQ billing and named Staff/Customer APKs.",
+              },
+            ].map((step) => (
+              <motion.article key={step.t} className={styles.planCard} variants={listItem(reduced, coarse)}>
+                <h3>{step.t}</h3>
+                <p>{step.d}</p>
+              </motion.article>
+            ))}
           </motion.div>
         </div>
       </section>

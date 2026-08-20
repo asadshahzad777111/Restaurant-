@@ -55,7 +55,18 @@ export async function PUT(req: NextRequest) {
       if (!(await hasPermission(session, "staff"))) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
-      await updateUsers(tenantId, body.users as TenantUser[]);
+      const { ensureHashed, isHashedPassword } = await import("@/lib/password");
+      const incoming = body.users as TenantUser[];
+      const users = await Promise.all(
+        incoming.map(async (u) => ({
+          ...u,
+          password:
+            u.password && !isHashedPassword(u.password)
+              ? await ensureHashed(u.password)
+              : u.password,
+        })),
+      );
+      await updateUsers(tenantId, users);
       return NextResponse.json({ tenant: await readTenantStaffView(tenantId) });
     }
 
@@ -86,13 +97,17 @@ export async function PUT(req: NextRequest) {
       const t = await readTenant(tenantId);
       const user = t.users.find((u) => u.id === session.userId);
       if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
-      if (body.currentPassword && user.password !== body.currentPassword) {
-        return NextResponse.json({ error: "Current password wrong" }, { status: 400 });
+      const { verifyPassword, ensureHashed } = await import("@/lib/password");
+      if (body.currentPassword) {
+        const cur = await verifyPassword(String(body.currentPassword), user.password);
+        if (!cur.ok) {
+          return NextResponse.json({ error: "Current password wrong" }, { status: 400 });
+        }
       }
       if (!body.newPassword || String(body.newPassword).length < 6) {
         return NextResponse.json({ error: "New password too short" }, { status: 400 });
       }
-      user.password = String(body.newPassword);
+      user.password = await ensureHashed(String(body.newPassword));
       user.mustChangePassword = false;
       await updateUsers(tenantId, t.users);
       return NextResponse.json({ ok: true });

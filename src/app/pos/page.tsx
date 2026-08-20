@@ -79,6 +79,13 @@ export default function PosPage() {
       setMsg(`${item.name} is 86 / unavailable`);
       return;
     }
+    const stockHit = (tenant?.stock ?? []).find(
+      (s) => s.name.trim().toLowerCase() === item.name.trim().toLowerCase(),
+    );
+    if (stockHit && stockHit.quantity <= 0) {
+      setMsg(`${item.name} is out of stock (86)`);
+      return;
+    }
     if (item.modifiers?.length) {
       const init: Record<string, string[]> = {};
       item.modifiers.forEach((g) => {
@@ -141,7 +148,10 @@ export default function PosPage() {
           <div className={styles.card} style={{ marginBottom: "0.75rem", borderColor: "#ffb020" }}>
             <strong>Low stock warning</strong>
             <p className={styles.muted}>
-              {lowStock.map((s) => `${s.name} (${s.quantity})`).join(" · ")} — POS still works
+              {lowStock.map((s) => `${s.name} (${s.quantity})`).join(" · ")}
+              {lowStock.some((s) => s.quantity <= 0)
+                ? " — items at 0 stock are blocked (86)"
+                : " — low warning; POS still works until 0"}
             </p>
           </div>
         )}

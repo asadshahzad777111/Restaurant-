@@ -64,7 +64,7 @@ export default function SalesPage() {
             Same catalog as POS and guest. No refund ledger.
           </p>
 
-          <div className={styles.row} style={{ marginBottom: "1rem" }}>
+            <div className={styles.row} style={{ marginBottom: "1rem" }}>
             {(
               [
                 ["1", "Today"],
@@ -84,6 +84,41 @@ export default function SalesPage() {
             <button type="button" className={styles.btnGhost} onClick={() => void load()}>
               Refresh
             </button>
+            {data && (
+              <button
+                type="button"
+                className={styles.btnGhost}
+                onClick={() => {
+                  const rows = [
+                    ["range_from", data.from],
+                    ["range_to", data.to],
+                    ["gross", String(data.summary.gross)],
+                    ["cogs", String(data.summary.cogs)],
+                    ["estimated_profit", String(data.summary.estimatedProfit)],
+                    ["margin_pct", String(data.summary.marginPct)],
+                    ["orders", String(data.summary.orderCount)],
+                    [],
+                    ["item", "qty", "revenue", "cost", "margin"],
+                    ...data.topItems.map((i) => [
+                      i.name,
+                      String(i.qty),
+                      String(i.revenue),
+                      String(i.cost),
+                      String(i.margin),
+                    ]),
+                  ];
+                  const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+                  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+                  const a = document.createElement("a");
+                  a.href = URL.createObjectURL(blob);
+                  a.download = `${tenant?.code || "kitchen"}-sales.csv`;
+                  a.click();
+                  URL.revokeObjectURL(a.href);
+                }}
+              >
+                Download CSV
+              </button>
+            )}
           </div>
 
           {error && <p className={styles.muted}>{error}</p>}
