@@ -186,7 +186,7 @@ function GuestInner() {
             <h1>{brand.name}</h1>
             <p className={styles.lead}>
               Opening this kitchen’s menu only — code {preset || code}. Other restaurants cannot open inside this
-              APK.
+              Customer app / Home Screen shortcut.
             </p>
             {brand.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
