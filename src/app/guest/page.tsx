@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { LAST_GUEST_TENANT_KEY, guestOrderPath, isTenantCode, parseGuestQr } from "@/lib/guest";
+import { isCustomerShell, readAppShell } from "@/lib/app-shell";
 import styles from "./guest.module.css";
 
 function GuestInner() {
@@ -16,10 +17,20 @@ function GuestInner() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const [lastKitchen, setLastKitchen] = useState("");
+  const [appShell, setAppShell] = useState(() =>
+    typeof window === "undefined" ? "web" : readAppShell(),
+  );
+
   useEffect(() => {
+    const shell = readAppShell();
+    setAppShell(shell);
     if (preset) return;
     const last = localStorage.getItem(LAST_GUEST_TENANT_KEY);
-    if (last) setCode(last);
+    if (last) {
+      setCode(last);
+      setLastKitchen(last);
+    }
   }, [preset]);
 
   async function openRestaurant(tenant: string, extra?: { table?: string; mode?: "pickup" | "delivery" | "table" }) {
@@ -30,14 +41,8 @@ function GuestInner() {
     }
     setBusy(true);
     setError("");
-    const res = await fetch(`/api/state?tenant=${encodeURIComponent(next)}`);
-    const data = await res.json();
-    setBusy(false);
-    if (!res.ok) {
-      setError(data.error || "Restaurant not found");
-      return;
-    }
     localStorage.setItem(LAST_GUEST_TENANT_KEY, next);
+    setLastKitchen(next);
     router.push(guestOrderPath({ tenant: next, table: extra?.table, mode: extra?.mode }));
   }
 
@@ -59,12 +64,20 @@ function GuestInner() {
   return (
     <div className={styles.page}>
       <header className={styles.top}>
-        <Link href="/" className={styles.brand}>
-          ORDO
-        </Link>
-        <Link href="/login" className={styles.staff}>
-          Staff login
-        </Link>
+        {appShell === "customer" || isCustomerShell() ? (
+          <span className={styles.brand}>ORDO</span>
+        ) : (
+          <Link href="/" className={styles.brand}>
+            ORDO
+          </Link>
+        )}
+        {appShell === "customer" || isCustomerShell() ? (
+          <span className={styles.staff}>This kitchen only</span>
+        ) : (
+          <Link href="/login" className={styles.staff}>
+            Staff login
+          </Link>
+        )}
       </header>
 
       <main className={styles.main}>
@@ -74,6 +87,14 @@ function GuestInner() {
           Enter the kitchen code from your receipt or staff, scan a table QR, or paste the link. Each restaurant stays
           isolated — you only see that menu.
         </p>
+        <ul className={styles.cuisines}>
+          <li>Burgers</li>
+          <li>Pizza</li>
+          <li>Karahi</li>
+          <li>Grill</li>
+          <li>Biryani</li>
+          <li>Pasta</li>
+        </ul>
 
         <form className={styles.card} onSubmit={(e) => void onCode(e)}>
           <label className={styles.field}>
@@ -90,20 +111,32 @@ function GuestInner() {
           <button type="submit" className={styles.primary} disabled={busy}>
             {busy ? "Opening…" : "Open menu"}
           </button>
+          {lastKitchen && lastKitchen !== code.trim().toUpperCase() && (
+            <button
+              type="button"
+              className={styles.secondary}
+              disabled={busy}
+              onClick={() => void openRestaurant(lastKitchen)}
+            >
+              Continue at {lastKitchen}
+            </button>
+          )}
         </form>
 
         <div className={styles.actions}>
           <Link href="/scan" className={styles.scan}>
             Scan table QR
           </Link>
-          <button
-            type="button"
-            className={styles.ghost}
-            disabled={busy}
-            onClick={() => void openRestaurant("DEMO")}
-          >
-            Open Demo Kitchen
-          </button>
+          {appShell === "customer" ? null : (
+            <button
+              type="button"
+              className={styles.ghost}
+              disabled={busy}
+              onClick={() => void openRestaurant("DEMO")}
+            >
+              Open Demo Kitchen
+            </button>
+          )}
         </div>
 
         <form className={styles.paste} onSubmit={(e) => void onPaste(e)}>

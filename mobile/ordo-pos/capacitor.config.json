@@ -1,9 +1,9 @@
 {
   "appId": "com.ordo.pos",
-  "appName": "ORDO POS",
+  "appName": "ORDO Staff",
   "webDir": "www",
   "server": {
-    "url": "https://ordo.asfins.com/login?app=pos",
+    "url": "https://ordo.asfins.com/login?app=staff",
     "cleartext": false,
     "allowNavigation": ["ordo.asfins.com", "localhost", "127.0.0.1"]
   },

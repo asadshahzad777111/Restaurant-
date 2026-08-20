@@ -3,7 +3,7 @@ import { ensureBootstrap } from "@/lib/bootstrap";
 import { AuthError, hasPermission, requireTenantSession } from "@/lib/session";
 import {
   readTenant,
-  readTenantSafe,
+  readTenantStaffView,
   updateBranding,
   updateMenu,
   updateStock,
@@ -27,8 +27,8 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       const menu = body.menu as MenuItem[];
-      const tenant = updateMenu(tenantId, menu);
-      return NextResponse.json({ tenant: readTenantSafe(tenantId) });
+      updateMenu(tenantId, menu);
+      return NextResponse.json({ tenant: readTenantStaffView(tenantId) });
     }
 
     if (action === "toggle86") {
@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest) {
         m.id === body.itemId ? { ...m, available: !m.available } : m,
       );
       updateMenu(tenantId, menu);
-      return NextResponse.json({ tenant: readTenantSafe(tenantId) });
+      return NextResponse.json({ tenant: readTenantStaffView(tenantId) });
     }
 
     if (action === "stock") {
@@ -49,7 +49,7 @@ export async function PUT(req: NextRequest) {
       }
       const stock = body.stock as StockItem[];
       updateStock(tenantId, stock);
-      return NextResponse.json({ tenant: readTenantSafe(tenantId) });
+      return NextResponse.json({ tenant: readTenantStaffView(tenantId) });
     }
 
     if (action === "staff") {
@@ -58,7 +58,7 @@ export async function PUT(req: NextRequest) {
       }
       const users = body.users as TenantUser[];
       updateUsers(tenantId, users);
-      return NextResponse.json({ tenant: readTenantSafe(tenantId) });
+      return NextResponse.json({ tenant: readTenantStaffView(tenantId) });
     }
 
     if (action === "tables") {
@@ -67,7 +67,7 @@ export async function PUT(req: NextRequest) {
       }
       const tables = body.tables as DiningTable[];
       updateTables(tenantId, tables);
-      return NextResponse.json({ tenant: readTenantSafe(tenantId) });
+      return NextResponse.json({ tenant: readTenantStaffView(tenantId) });
     }
 
     if (action === "branding" || action === "fees") {
@@ -75,7 +75,7 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
       updateBranding(tenantId, body.branding ?? {}, body.shop);
-      return NextResponse.json({ tenant: readTenantSafe(tenantId) });
+      return NextResponse.json({ tenant: readTenantStaffView(tenantId) });
     }
 
     if (action === "changePassword") {
@@ -95,7 +95,7 @@ export async function PUT(req: NextRequest) {
     }
 
     if (action === "get") {
-      return NextResponse.json({ tenant: readTenantSafe(tenantId) });
+      return NextResponse.json({ tenant: readTenantStaffView(tenantId) });
     }
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });

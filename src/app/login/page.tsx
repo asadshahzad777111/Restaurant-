@@ -4,30 +4,34 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TOKEN_KEY, useStore } from "@/lib/store";
+import { isStaffShell, readAppShell } from "@/lib/app-shell";
 import styles from "./login.module.css";
+
+const CODE_KEY = "ordo_staff_tenant_code";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setToken, refresh } = useStore();
+  const { hydrate } = useStore();
   const [mode, setMode] = useState<"tenant" | "super">("tenant");
-  const [appShell, setAppShell] = useState<string | null>(null);
-  const [code, setCode] = useState("DEMO");
+  const [appShell, setAppShell] = useState<string>(() =>
+    typeof window === "undefined" ? "web" : readAppShell(),
+  );
+  const [code, setCode] = useState("");
   const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("admin123");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const app = new URLSearchParams(window.location.search).get("app");
-    setAppShell(app);
-    if (app === "pos" || app === "client") {
-      setMode("tenant");
-      setUsername("admin");
-      setPassword("admin123");
-    }
+    const shell = readAppShell();
+    setAppShell(shell);
+    if (shell === "staff") setMode("tenant");
+    const saved = localStorage.getItem(CODE_KEY);
+    setCode(saved || (shell === "staff" ? "" : "DEMO"));
+    setPassword(shell === "staff" ? "" : "admin123");
   }, []);
 
-  const hideSuper = appShell === "pos" || appShell === "client";
+  const hideSuper = isStaffShell() || appShell === "staff";
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,11 +52,17 @@ export default function LoginPage() {
       setError(data.error || "Login failed");
       return;
     }
+    if (mode === "tenant" && code) {
+      localStorage.setItem(CODE_KEY, code.trim().toUpperCase());
+    }
     localStorage.setItem(TOKEN_KEY, data.token);
-    setToken(data.token);
-    await refresh();
-    if (appShell === "pos") router.push("/pos");
-    else if (mode === "super") router.push("/super");
+    hydrate({
+      token: data.token,
+      session: data.session,
+      user: data.user ?? null,
+      tenant: data.tenant ?? null,
+    });
+    if (mode === "super") router.push("/super");
     else router.push("/home");
   }
 
@@ -62,7 +72,7 @@ export default function LoginPage() {
         <Link href="/" className={styles.brand}>
           ORDO
         </Link>
-        <h1>{appShell === "pos" ? "POS login" : appShell === "client" ? "Client login" : "Staff login"}</h1>
+        <h1>Staff login</h1>
         <p className={styles.guestStrip}>
           Ordering food? This page is for kitchen staff.
           <span>
@@ -105,7 +115,10 @@ export default function LoginPage() {
             <input
               className={styles.input}
               value={code}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              autoCapitalize="characters"
+              autoComplete="off"
+              placeholder="Kitchen code"
               required
             />
           </label>
@@ -135,7 +148,7 @@ export default function LoginPage() {
         </button>
         <p className={styles.hint}>
           {hideSuper
-            ? "Demo kitchen code DEMO · admin / admin123"
+            ? "Restaurant code required. Demo kitchen: DEMO · admin / admin123"
             : "Demo: code DEMO · admin/admin123 · or Super super/super123"}
           <br />
           Lab demos only — production pe passwords change karein (Settings).

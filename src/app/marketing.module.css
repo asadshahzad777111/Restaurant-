@@ -2,6 +2,7 @@
   background: var(--guest-bg);
   color: var(--guest-text);
   min-height: 100vh;
+  --page-pad: clamp(1.25rem, 5vw, 4rem);
 }
 
 .srOnly {
@@ -74,14 +75,17 @@
 
 .hero {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 3rem;
-  align-items: center;
-  padding: 5.5rem var(--page-pad) 4.5rem;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 2.5rem;
+  align-items: stretch;
+  max-width: 80rem;
+  margin-inline: auto;
+  width: 100%;
+  padding: 4.5rem var(--page-pad) 3.5rem;
 }
 
 .heroInner {
-  max-width: 38rem;
+  max-width: none;
 }
 
 .kicker {
@@ -183,7 +187,8 @@
 
 .heroVisual {
   display: flex;
-  justify-content: flex-end;
+  justify-content: stretch;
+  min-height: 100%;
 }
 
 .heroPanel {
@@ -217,7 +222,8 @@
 }
 
 .workspace {
-  width: min(100%, 28rem);
+  width: 100%;
+  min-height: 100%;
   border: 1px solid var(--guest-line);
   border-radius: var(--radius-lg);
   background: var(--guest-elevated);
@@ -278,6 +284,9 @@
 .section,
 .sectionAlt {
   padding: 4.75rem var(--page-pad);
+  max-width: 80rem;
+  margin-inline: auto;
+  width: 100%;
 }
 
 .section h2,
@@ -295,7 +304,7 @@
 
 .lead {
   color: var(--guest-muted);
-  max-width: 40rem;
+  max-width: none;
   margin: 0 0 1.85rem;
   line-height: 1.6;
 }
@@ -345,6 +354,9 @@
 
 .principles {
   padding: 0 var(--page-pad) 3rem;
+  max-width: 80rem;
+  margin-inline: auto;
+  width: 100%;
 }
 
 .principleGrid,
@@ -576,7 +588,13 @@
 .faq {
   border-top: 1px solid var(--guest-line);
   padding: 1.05rem 0;
-  max-width: 44rem;
+  max-width: none;
+}
+
+.faqs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 2.5rem;
 }
 
 .faq summary {
@@ -668,6 +686,80 @@
   color: var(--guest-text);
 }
 
+.demoBand {
+  max-width: 80rem;
+  margin: 0 auto 2rem;
+  padding: 0 var(--page-pad);
+}
+
+.demoCard {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1.75rem 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--guest-line);
+  background: linear-gradient(135deg, var(--guest-elevated), #2c241c);
+  animation: ordo-rise 0.6s ease both;
+}
+
+.demoCard h2 {
+  margin: 0 0 0.4rem;
+  font-family: var(--display);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+.demoCard p {
+  margin: 0 0 1rem;
+  color: var(--guest-muted);
+}
+
+.phones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.phone {
+  border: 10px solid #1a1714;
+  border-radius: 28px;
+  min-height: 20rem;
+  padding: 1.2rem 1.3rem;
+  background: var(--guest-bg);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.28);
+  animation: ordo-rise 0.7s ease both;
+}
+
+.phone span {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ember-bright);
+}
+
+.phone h3 {
+  margin: 0.45rem 0 0.7rem;
+  font-size: 1.2rem;
+}
+
+.phone ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.4rem;
+  color: var(--guest-muted);
+}
+
+.phoneNote {
+  margin: 1rem 0 0;
+  font-size: 0.85rem;
+  color: var(--guest-muted);
+}
+
 @media (max-width: 900px) {
   .navBurger {
     display: inline-flex;
@@ -702,7 +794,10 @@
   .printSteps,
   .timeline,
   .roleSplit,
-  .contactGrid {
+  .contactGrid,
+  .phones,
+  .faqs,
+  .demoCard {
     grid-template-columns: 1fr;
   }
 }

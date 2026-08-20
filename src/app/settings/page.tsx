@@ -6,12 +6,14 @@ import { useStore } from "@/lib/store";
 import styles from "../staff.module.css";
 
 export default function SettingsPage() {
-  const { tenant, api, refresh, user, token } = useStore();
+  const { tenant, api, applyTenant, user, token } = useStore();
   const [msg, setMsg] = useState("");
   const [branding, setBranding] = useState({
     name: "",
     logoUrl: "",
     receiptFooter: "",
+    address: "",
+    phone: "",
   });
   const [fees, setFees] = useState({
     deliveryFee: 0,
@@ -27,6 +29,8 @@ export default function SettingsPage() {
       name: tenant.branding.name,
       logoUrl: tenant.branding.logoUrl,
       receiptFooter: tenant.branding.receiptFooter,
+      address: tenant.shop.address || "",
+      phone: tenant.shop.phone || "",
     });
     setFees({
       deliveryFee: tenant.shop.deliveryFee || 0,
@@ -40,10 +44,21 @@ export default function SettingsPage() {
     e.preventDefault();
     const res = await api("/api/admin", {
       method: "PUT",
-      body: JSON.stringify({ action: "branding", branding }),
+      body: JSON.stringify({
+        action: "branding",
+        branding: {
+          name: branding.name,
+          logoUrl: branding.logoUrl,
+          receiptFooter: branding.receiptFooter,
+        },
+        shop: { address: branding.address, phone: branding.phone },
+      }),
     });
+    const data = await res.json().catch(() => ({}));
     setMsg(res.ok ? "Branding saved" : "Failed");
-    await refresh();
+    if (res.ok && (data as { tenant?: typeof tenant }).tenant) {
+      applyTenant((data as { tenant: NonNullable<typeof tenant> }).tenant);
+    }
   }
 
   async function saveFees(e: React.FormEvent) {
@@ -52,8 +67,11 @@ export default function SettingsPage() {
       method: "PUT",
       body: JSON.stringify({ action: "fees", shop: fees }),
     });
+    const data = await res.json().catch(() => ({}));
     setMsg(res.ok ? "Fees saved" : "Failed");
-    await refresh();
+    if (res.ok && (data as { tenant?: typeof tenant }).tenant) {
+      applyTenant((data as { tenant: NonNullable<typeof tenant> }).tenant);
+    }
   }
 
   async function changePassword(e: React.FormEvent) {
@@ -70,7 +88,6 @@ export default function SettingsPage() {
     setMsg(res.ok ? "Password updated" : data.error || "Failed");
     if (res.ok) {
       setPw({ current: "", next: "" });
-      await refresh();
     }
   }
 
@@ -128,8 +145,18 @@ export default function SettingsPage() {
           <textarea
             value={branding.receiptFooter}
             onChange={(e) => setBranding({ ...branding, receiptFooter: e.target.value })}
-            placeholder="Receipt footer"
+            placeholder="Receipt footer (English or Urdu)"
             rows={2}
+          />
+          <input
+            value={branding.address}
+            onChange={(e) => setBranding({ ...branding, address: e.target.value })}
+            placeholder="Shop address (prints on 58mm bill)"
+          />
+          <input
+            value={branding.phone}
+            onChange={(e) => setBranding({ ...branding, phone: e.target.value })}
+            placeholder="Shop phone (prints on 58mm footer)"
           />
           <button type="submit" className={styles.btn}>
             Save branding
@@ -226,8 +253,57 @@ export default function SettingsPage() {
         </div>
 
         <div className={styles.card}>
+          <h3 style={{ marginTop: 0 }}>Staff on this kitchen</h3>
+          <p className={styles.muted}>Users belong to {tenant?.code} only — never another restaurant.</p>
+          <ul className={styles.mobileCards}>
+            {(tenant?.users ?? []).map((u) => (
+              <li key={u.id} className={styles.mobileCard}>
+                <strong>{u.username}</strong>
+                <p className={styles.muted}>
+                  {u.roleLabel} · {u.active ? "active" : "off"}
+                </p>
+              </li>
+            ))}
+          </ul>
+          <div className={`${styles.tableScroll} ${styles.tableScrollDesktop}`}>
+            <table className={`${styles.table} ${styles.tableDesktop}`}>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(tenant?.users ?? []).map((u) => (
+                  <tr key={u.id}>
+                    <td>{u.username}</td>
+                    <td>{u.roleLabel}</td>
+                    <td>{u.active ? "active" : "off"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className={styles.card}>
           <h3 style={{ marginTop: 0 }}>Stock</h3>
-          <table className={styles.table}>
+          <ul className={styles.mobileCards}>
+            {(tenant?.stock ?? []).map((s) => (
+              <li key={s.id} className={styles.mobileCard}>
+                <strong>
+                  {s.name} ({s.unit})
+                  {s.quantity <= s.lowThreshold ? " ⚠" : ""}
+                </strong>
+                <p className={styles.muted}>
+                  Qty {s.quantity} · low at {s.lowThreshold}
+                </p>
+              </li>
+            ))}
+          </ul>
+          <div className={`${styles.tableScroll} ${styles.tableScrollDesktop}`}>
+          <table className={`${styles.table} ${styles.tableDesktop}`}>
             <thead>
               <tr>
                 <th>Item</th>
@@ -245,9 +321,10 @@ export default function SettingsPage() {
                   <td>{s.quantity}</td>
                   <td>{s.lowThreshold}</td>
                 </tr>
-              ))}
-            </tbody>
+            ))}
+          </tbody>
           </table>
+          </div>
         </div>
 
         {msg && <p className={styles.muted}>{msg}</p>}

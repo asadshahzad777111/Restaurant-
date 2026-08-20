@@ -1,10 +1,10 @@
-# ORDO POS (Android)
+# ORDO Staff (Android)
 
-Capacitor shell for **staff counter**. Live URL: `https://ordo.asfins.com/pos`
+Capacitor shell for **POS, billing, kitchen, and staff**. Live URL: `https://ordo.asfins.com/login?app=staff`
 
-- Does **not** open Super Admin (`/super`). Super has no separate domain.
-- Staff log in with **restaurant code** on the POS/login screen.
-- Built APK is uploaded on Super → **Apps** (not on restaurant admin).
+- Does **not** open Super Admin (`/super`). Super has no extra domain.
+- Login requires a **restaurant code**. After login you stay on that tenant.
+- One of two Super-only APKs (the other is Customer). Not on the public marketing page.
 
 ```bash
 cd mobile/ordo-pos
@@ -15,4 +15,4 @@ cd android
 ./gradlew assembleRelease
 ```
 
-Copy the APK into Super Apps upload as `ORDO-POS.apk`.
+Upload the file in Super → Apps as `ORDO-Staff.apk`.

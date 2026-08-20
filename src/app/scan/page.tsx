@@ -68,16 +68,8 @@ export default function ScanPage() {
                 lock.current = true;
                 setStatus(`Opening ${parsed.tenant}…`);
                 localStorage.setItem(LAST_GUEST_TENANT_KEY, parsed.tenant);
-                const check = await fetch(`/api/state?tenant=${encodeURIComponent(parsed.tenant)}`);
-                if (!check.ok) {
-                  lock.current = false;
-                  const d = await check.json();
-                  setError(d.error || "Restaurant not found");
-                  setStatus("Point the camera at a table QR");
-                } else {
-                  router.push(guestOrderPath(parsed));
-                  return;
-                }
+                router.push(guestOrderPath(parsed));
+                return;
               }
             }
           }
@@ -102,12 +94,6 @@ export default function ScanPage() {
     const parsed = parseGuestQr(manual);
     if (!parsed) {
       setError("Use a restaurant code or an /order?tenant=… URL.");
-      return;
-    }
-    const check = await fetch(`/api/state?tenant=${encodeURIComponent(parsed.tenant)}`);
-    const data = await check.json();
-    if (!check.ok) {
-      setError(data.error || "Restaurant not found");
       return;
     }
     localStorage.setItem(LAST_GUEST_TENANT_KEY, parsed.tenant);

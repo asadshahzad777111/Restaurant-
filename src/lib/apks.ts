@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-export type ApkId = "pos" | "customer" | "client";
+export type ApkId = "staff" | "customer";
 
 export interface ApkApp {
   id: ApkId;
@@ -14,9 +14,8 @@ export interface ApkApp {
 }
 
 const DATA_ROOT = path.join(process.cwd(), ".data", "apks");
-const PUBLIC_DIR = path.join(process.cwd(), "public", "downloads");
 
-/** Public restaurant OS host the APKs open. Super `/super` is never the WebView target. */
+/** Restaurant OS host. Super `/super` is never the WebView target and has no extra domain. */
 export function apkAppHost() {
   const raw = process.env.NEXT_PUBLIC_APP_URL || "https://ordo.asfins.com";
   return raw.replace(/\/$/, "");
@@ -24,44 +23,29 @@ export function apkAppHost() {
 
 export const APK_APPS: ApkApp[] = [
   {
-    id: "pos",
-    title: "ORDO POS",
-    filename: "ORDO-POS.apk",
-    audience: "Kitchen counter staff",
-    loadsPath: "/login?app=pos",
+    id: "staff",
+    title: "ORDO Staff",
+    filename: "ORDO-Staff.apk",
+    audience: "Admin / POS / billing / kitchen / staff",
+    loadsPath: "/login?app=staff",
     version: "1.0.0",
-    note: "Download only on Super. Opens restaurant POS — not the Super panel, and not a Super domain.",
+    note: "Restaurant floor app. After kitchen-code login: Home, POS, orders, kitchen, menu, staff. Super panel is not inside this APK. Download only from Super → Apps.",
   },
   {
     id: "customer",
     title: "ORDO Customer",
     filename: "ORDO-Customer.apk",
-    audience: "Diners / guests",
-    loadsPath: "/guest",
+    audience: "Diners — dining, pickup, delivery, COD, QR scan",
+    loadsPath: "/guest?app=customer",
     version: "1.0.0",
-    note: "Public order app: dining, takeaway, delivery, QR. Super Admin is never the start screen.",
-  },
-  {
-    id: "client",
-    title: "ORDO Client",
-    filename: "ORDO-Client.apk",
-    audience: "Restaurant owner / client",
-    loadsPath: "/login?app=client",
-    version: "1.0.0",
-    note: "For your restaurant clients. Login with kitchen code. Super Admin toggle is hidden in this app.",
+    note: "Guest app: find kitchen, scan table QR, dine-in, pickup, delivery / cash on delivery. No Super download, no public demo download.",
   },
 ];
 
 export function apkFilePath(id: ApkId) {
   const app = APK_APPS.find((a) => a.id === id);
   if (!app) throw new Error("Unknown APK");
-  const inData = path.join(DATA_ROOT, app.filename);
-  if (fs.existsSync(inData)) return inData;
-  return path.join(PUBLIC_DIR, app.filename);
-}
-
-export function apkExists(id: ApkId) {
-  return fs.existsSync(apkFilePath(id));
+  return path.join(DATA_ROOT, app.filename);
 }
 
 export function listApkStatus() {

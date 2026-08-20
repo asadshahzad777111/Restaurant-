@@ -11,7 +11,7 @@ type Tab = "dashboard" | "restaurants" | "apps" | "plans" | "leads";
 
 export default function SuperPage() {
   const router = useRouter();
-  const { setToken, logout } = useStore();
+  const { setToken, logout, refresh } = useStore();
   const [tab, setTab] = useState<Tab>("dashboard");
   const [token, setLocalToken] = useState<string | null>(null);
   const [tenants, setTenants] = useState<PlatformTenantMeta[]>([]);
@@ -59,21 +59,19 @@ export default function SuperPage() {
       return;
     }
     setLocalToken(t);
-    const auth = await fetch("/api/auth", { headers: { Authorization: `Bearer ${t}` } });
-    if (!auth.ok) {
-      router.replace("/login");
-      return;
-    }
-    const session = await auth.json();
-    if (session.session?.role !== "super") {
-      router.replace("/home");
-      return;
-    }
     const [tenRes, leadRes, apkRes] = await Promise.all([
       fetch("/api/super/tenants", { headers: { Authorization: `Bearer ${t}` } }),
       fetch("/api/leads", { headers: { Authorization: `Bearer ${t}` } }),
       fetch("/api/super/apks", { headers: { Authorization: `Bearer ${t}` } }),
     ]);
+    if (tenRes.status === 401) {
+      router.replace("/login");
+      return;
+    }
+    if (tenRes.status === 403) {
+      router.replace("/home");
+      return;
+    }
     if (tenRes.ok) {
       const d = await tenRes.json();
       setTenants(d.tenants);
@@ -166,6 +164,7 @@ export default function SuperPage() {
     }
     localStorage.setItem(TOKEN_KEY, data.token);
     setToken(data.token);
+    await refresh();
     router.push("/home");
   }
 
@@ -268,6 +267,7 @@ export default function SuperPage() {
               {error && <p className={styles.error}>{error}</p>}
               <button type="submit">Create</button>
             </form>
+            <div className={styles.tableWrap}>
             <table className={styles.table}>
               <thead>
                 <tr>
@@ -305,6 +305,7 @@ export default function SuperPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </section>
         )}
 
@@ -312,8 +313,8 @@ export default function SuperPage() {
           <section>
             <h1>Android apps</h1>
             <p className={styles.muted}>
-              Three Android APKs — POS, Customer, and Client. Download is only here on Super, never on restaurant
-              Admin. Super has no extra domain: apps open <code>ordo.asfins.com</code> kitchen/guest URLs only.
+              Two private Android APKs — only Super can download them. They are not on the public demo
+              (ordo.asfins.com home) and not on restaurant Admin. Super has no extra domain.
             </p>
             <div className={styles.appGrid}>
               {apks.map((app) => (
@@ -385,6 +386,7 @@ export default function SuperPage() {
             {leads.length === 0 ? (
               <p className={styles.muted}>No leads yet. Marketing contact form writes here.</p>
             ) : (
+              <div className={styles.tableWrap}>
               <table className={styles.table}>
                 <thead>
                   <tr>
@@ -407,6 +409,7 @@ export default function SuperPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </section>
         )}

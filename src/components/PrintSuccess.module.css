@@ -1,0 +1,89 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(18, 11, 7, 0.38);
+  pointer-events: none;
+}
+
+.card {
+  pointer-events: auto;
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  min-width: min(18rem, 92vw);
+  padding: 1.35rem 1.5rem 1.2rem;
+  border-radius: 16px;
+  background: #fffaf4;
+  border: 1px solid #e6ddd2;
+  box-shadow: 0 18px 40px rgba(18, 11, 7, 0.18);
+  color: #1c1916;
+  text-align: center;
+  animation: ordo-print-in 280ms ease;
+}
+
+.mark {
+  width: 52px;
+  height: 52px;
+}
+
+.ring {
+  fill: none;
+  stroke: #e8d7c6;
+  stroke-width: 3;
+}
+
+.tick {
+  fill: none;
+  stroke: #2f9e6b;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 36;
+  stroke-dashoffset: 36;
+  animation: ordo-tick 420ms 80ms ease forwards;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.sub {
+  margin: 0;
+  color: #6b635a;
+  font-size: 0.88rem;
+}
+
+@keyframes ordo-print-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ordo-tick {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+  }
+
+  .tick {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+}

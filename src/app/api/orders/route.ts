@@ -32,7 +32,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     const tenant = readTenant(session.tenantId!);
-    return NextResponse.json({ orders: tenant.orders });
+    const poll = new URL(req.url).searchParams.get("poll");
+    if (poll) {
+      const cutoff = Date.now() - 2 * 60 * 1000;
+      const orders = tenant.orders.filter((o) => {
+        if (!["completed", "cancelled"].includes(o.status)) return true;
+        return new Date(o.updatedAt).getTime() >= cutoff;
+      });
+      return NextResponse.json({ orders: orders.slice(0, 80) });
+    }
+    return NextResponse.json({ orders: tenant.orders.slice(0, 200) });
   } catch (e) {
     if (e instanceof AuthError) {
       return NextResponse.json({ error: e.message }, { status: e.status });

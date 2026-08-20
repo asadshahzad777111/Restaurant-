@@ -3,7 +3,7 @@
   "appName": "ORDO Customer",
   "webDir": "www",
   "server": {
-    "url": "https://ordo.asfins.com/guest",
+    "url": "https://ordo.asfins.com/guest?app=customer",
     "cleartext": false,
     "allowNavigation": ["ordo.asfins.com", "localhost", "127.0.0.1"]
   },

@@ -78,7 +78,7 @@ const MODULES = [
   },
   {
     title: "Receipts",
-    body: "Browser print today with that restaurant’s name and footer. 58mm / 80mm thermal hardware is a quoted add-on — not a fake Windows driver.",
+    body: "58mm browser bill: shop name, items, qty, rates, totals, and footer. Tick animation after a successful print. Thermal hardware is a quoted add-on — not a fake Windows driver.",
   },
 ] as const;
 
@@ -168,6 +168,10 @@ const FAQS = [
   {
     q: "Is JazzCash or a card gateway included?",
     a: "Not in this release. Paid in advance is a recorded status, not a fake checkout SDK. Counter POS can mark cash, card, or wallet after you take the money in the real world.",
+  },
+  {
+    q: "Where do I get the Android APKs?",
+    a: "Only from Super → Apps after you are a restaurant on ORDO. Staff APK (POS, billing, kitchen, staff) and Customer APK (dining, pickup, delivery, QR scan) are not on this public demo page, so random visitors cannot install them.",
   },
 ] as const;
 
@@ -313,6 +317,63 @@ export function MarketingHome() {
         </div>
       </section>
 
+      <section className={styles.demoBand} id="demo">
+        <div className={styles.demoCard}>
+          <div>
+            <p className={styles.kicker}>ordo.asfins.com</p>
+            <h2>Live demo. No account needed.</h2>
+            <p>
+              Open Demo Kitchen as a guest: dining, pickup, delivery, cash on delivery, and table QR scan. Staff tools
+              stay behind login. Android APKs are not here — Super hands those to restaurants only.
+            </p>
+            <div className={styles.heroCtas}>
+              <Link href="/order?tenant=DEMO" className={styles.primary}>
+                Open live demo
+              </Link>
+              <Link href="/scan" className={styles.secondary}>
+                Try table scanner
+              </Link>
+            </div>
+          </div>
+          <div>
+            <p className={styles.kicker}>Browser preview</p>
+            <p>Same guest path the Customer APK opens. Camera scan needs Chrome/Edge on HTTPS; paste always works.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.section} id="apps">
+        <p className={styles.kicker}>Two apps · Super only</p>
+        <h2>How the APKs look — download is not on this page</h2>
+        <p className={styles.lead}>
+          Public visitors see a preview. Real install files live in Super → Apps, never on this demo home.
+        </p>
+        <div className={styles.phones}>
+          <article className={styles.phone}>
+            <span>Staff APK</span>
+            <h3>Floor: POS, billing, kitchen, staff</h3>
+            <ul>
+              <li>Login with restaurant code</li>
+              <li>POS + orders + kitchen tickets</li>
+              <li>Menu, stock, staff roles</li>
+              <li>Not the Super control panel</li>
+            </ul>
+            <p className={styles.phoneNote}>Install: Super login only.</p>
+          </article>
+          <article className={styles.phone}>
+            <span>Customer APK</span>
+            <h3>Dining, pickup, delivery, QR</h3>
+            <ul>
+              <li>Scan table QR for dine-in</li>
+              <li>Pickup or pay at counter</li>
+              <li>Delivery + cash on delivery</li>
+              <li>Track ticket, then review</li>
+            </ul>
+            <p className={styles.phoneNote}>Install: Super login only.</p>
+          </article>
+        </div>
+      </section>
+
       <section className={styles.principles}>
         <h2 className={styles.srOnly}>Why ORDO</h2>
         <div className={styles.principleGrid}>
@@ -452,9 +513,9 @@ export function MarketingHome() {
         <p className={styles.kicker}>Printer package</p>
         <h2>Software first. Hardware only if you ask.</h2>
         <p className={styles.lead}>
-          Browser receipt print is included — restaurant name and footer, never another tenant’s branding. Compact
-          58mm / 80mm thermal (ESC/POS) is a quoted add-on: we confirm model, paper width, and delivery on
-          WhatsApp. The phone in screenshots is not in the box.
+          Browser receipt print is included — 58mm layout with that restaurant’s name, items, qty, rates,
+          totals, and footer. Compact thermal hardware (ESC/POS) is a quoted add-on: we confirm model, paper
+          width, and delivery on WhatsApp. No fake Windows kernel driver.
         </p>
         <div className={styles.printSteps}>
           <article>
@@ -478,12 +539,14 @@ export function MarketingHome() {
       <section className={styles.section} id="faq">
         <p className={styles.kicker}>Questions</p>
         <h2>Clear answers</h2>
+        <div className={styles.faqs}>
         {FAQS.map((item) => (
           <details key={item.q} className={styles.faq}>
             <summary>{item.q}</summary>
             <p>{item.a}</p>
           </details>
         ))}
+        </div>
       </section>
 
       <section className={styles.sectionAlt} id="contact">
@@ -560,7 +623,6 @@ export function MarketingHome() {
         <Link href="/guest">Guest</Link>
         <Link href="/scan">Scan</Link>
         <Link href="/login">Staff</Link>
-        <Link href="/super">Super</Link>
       </footer>
     </div>
   );

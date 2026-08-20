@@ -65,9 +65,22 @@
     flex-direction: row;
     align-items: center;
     overflow-x: auto;
+    gap: 0.75rem;
+    padding: 0.85rem 0.9rem;
+  }
+
+  .logoWrap {
+    flex-shrink: 0;
   }
 
   .nav {
     flex-direction: row;
+    flex: 1;
+  }
+
+  .link,
+  .active {
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 }

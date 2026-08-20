@@ -1,10 +1,9 @@
-# ORDO Guest (Android)
+# ORDO Customer (Android)
 
-Capacitor shell for **customers / clients**. Live URL: `https://ordo.asfins.com/guest`
+Capacitor shell for **dining, pickup, delivery, COD, and QR scan**. Live URL: `https://ordo.asfins.com/guest?app=customer`
 
-- Does **not** open Super Admin (`/super`). Super has no separate domain.
-- Guest uses restaurant code or QR.
-- Built APK is uploaded on Super → **Apps** (not on restaurant admin).
+- Guests enter a restaurant code or scan a table QR, then stay on that kitchen.
+- Does **not** open Super Admin. Download only from Super → Apps.
 
 ```bash
 cd mobile/ordo-guest
@@ -15,4 +14,4 @@ cd android
 ./gradlew assembleRelease
 ```
 
-Copy the APK into Super Apps upload as `ORDO-Guest.apk`.
+Upload the file in Super → Apps as `ORDO-Customer.apk`.

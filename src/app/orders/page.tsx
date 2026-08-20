@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
 import { money } from "@/lib/fees";
-import { customerReceiptHtml, kitchenTicketHtml, openPrintWindow } from "@/lib/print";
+import { printCustomerReceipt, printKitchenTicket } from "@/lib/print";
 import { copyText, statusMessage, whatsappShareUrl } from "@/lib/status-messages";
 import type { OrderStatus } from "@/lib/types";
 import styles from "../staff.module.css";
@@ -18,35 +19,39 @@ const NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
 };
 
 export default function OrdersPage() {
-  const { tenant, api, refresh } = useStore();
+  const { tenant, api, applyOrder } = useStore();
   const [cancelId, setCancelId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [msg, setMsg] = useState("");
+  const [printKind, setPrintKind] = useState<"bill" | "kitchen" | null>(null);
 
   async function advance(id: string, status: OrderStatus) {
     const next = NEXT[status];
     if (!next) return;
-    await api(`/api/orders/${id}`, {
+    const res = await api(`/api/orders/${id}`, {
       method: "PATCH",
       body: JSON.stringify({ status: next }),
     });
-    await refresh();
+    const data = await res.json();
+    if (res.ok && data.order) applyOrder(data.order, { tables: data.tables });
   }
 
   async function markPaid(id: string) {
-    await api(`/api/orders/${id}`, {
+    const res = await api(`/api/orders/${id}`, {
       method: "PATCH",
       body: JSON.stringify({ paymentStatus: "paid" }),
     });
-    await refresh();
+    const data = await res.json();
+    if (res.ok && data.order) applyOrder(data.order, { tables: data.tables });
   }
 
   async function complete(id: string) {
-    await api(`/api/orders/${id}`, {
+    const res = await api(`/api/orders/${id}`, {
       method: "PATCH",
       body: JSON.stringify({ status: "completed" }),
     });
-    await refresh();
+    const data = await res.json();
+    if (res.ok && data.order) applyOrder(data.order, { tables: data.tables });
   }
 
   async function cancelOrder() {
@@ -63,7 +68,7 @@ export default function OrdersPage() {
     setCancelId(null);
     setReason("");
     setMsg("Order voided (no refund flow)");
-    await refresh();
+    if (data.order) applyOrder(data.order, { tables: data.tables });
   }
 
   function share(orderId: string, kind: string) {
@@ -75,25 +80,89 @@ export default function OrdersPage() {
     window.open(whatsappShareUrl(order.customerPhone || tenant.shop.whatsapp, text), "_blank");
   }
 
-  function printBill(orderId: string) {
+  async function printBill(orderId: string) {
     if (!tenant) return;
     const order = tenant.orders.find((o) => o.id === orderId);
     if (!order) return;
-    openPrintWindow(customerReceiptHtml(tenant, order));
+    const printed = await printCustomerReceipt(tenant, order);
+    if (printed) setPrintKind("bill");
   }
 
-  function printKitchen(orderId: string) {
+  async function printKitchen(orderId: string) {
     if (!tenant) return;
     const order = tenant.orders.find((o) => o.id === orderId);
     if (!order) return;
-    openPrintWindow(kitchenTicketHtml(tenant, order));
+    const printed = await printKitchenTicket(tenant, order);
+    if (printed) setPrintKind("kitchen");
   }
+
+  const dismissPrint = useCallback(() => setPrintKind(null), []);
 
   return (
     <AppShell title="Orders">
+      <PrintSuccess kind={printKind} onDone={dismissPrint} />
       <div className={styles.page}>
         {msg && <p className={styles.muted}>{msg}</p>}
-        <table className={styles.table}>
+        <ul className={styles.mobileCards}>
+          {(tenant?.orders ?? []).map((o) => (
+            <li key={o.id} className={styles.mobileCard}>
+              <div>
+                <strong>
+                  #{o.number} · {o.status}
+                </strong>
+                <p className={styles.muted}>
+                  {o.channel}/{o.serviceType}
+                  {o.tableNumber ? ` · T${o.tableNumber}` : ""} · {o.paymentStatus} ·{" "}
+                  {tenant ? money(tenant.shop.currency, o.total) : o.total}
+                </p>
+              </div>
+              <div className={styles.cardActions}>
+                {NEXT[o.status] && (
+                  <button
+                    type="button"
+                    className={styles.btnGhost}
+                    onClick={() => void advance(o.id, o.status)}
+                  >
+                    → {NEXT[o.status]}
+                  </button>
+                )}
+                {o.paymentStatus !== "paid" && o.status !== "cancelled" && (
+                  <button type="button" className={styles.btnGhost} onClick={() => void markPaid(o.id)}>
+                    Mark paid
+                  </button>
+                )}
+                {o.status !== "completed" && o.status !== "cancelled" && (
+                  <>
+                    <button type="button" className={styles.btn} onClick={() => void complete(o.id)}>
+                      Done
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.btnGhost}
+                      onClick={() => {
+                        setCancelId(o.id);
+                        setReason("");
+                      }}
+                    >
+                      Void
+                    </button>
+                  </>
+                )}
+                <button type="button" className={styles.btnGhost} onClick={() => void printBill(o.id)}>
+                  Bill
+                </button>
+                <button type="button" className={styles.btnGhost} onClick={() => void printKitchen(o.id)}>
+                  Kitchen
+                </button>
+                <a href={`/track/${o.trackToken}`} target="_blank" rel="noreferrer">
+                  Track
+                </a>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className={`${styles.tableScroll} ${styles.tableScrollDesktop}`}>
+        <table className={`${styles.table} ${styles.tableDesktop}`}>
           <thead>
             <tr>
               <th>#</th>
@@ -166,13 +235,13 @@ export default function OrdersPage() {
                       </button>
                     </>
                   )}
-                  <button type="button" className={styles.btnGhost} onClick={() => printBill(o.id)}>
+                  <button type="button" className={styles.btnGhost} onClick={() => void printBill(o.id)}>
                     Bill
                   </button>
                   <button
                     type="button"
                     className={styles.btnGhost}
-                    onClick={() => printKitchen(o.id)}
+                    onClick={() => void printKitchen(o.id)}
                   >
                     Kitchen print
                   </button>
@@ -209,6 +278,7 @@ export default function OrdersPage() {
             ))}
           </tbody>
         </table>
+        </div>
 
         {cancelId && (
           <div className={styles.card} style={{ marginTop: "1rem" }}>

@@ -185,6 +185,11 @@
   color: var(--guest-muted);
 }
 
+.cat,
+.deals {
+  scroll-margin-top: 0.75rem;
+}
+
 .dealRail {
   display: grid;
   grid-auto-flow: column;
@@ -195,15 +200,79 @@
   margin-bottom: 1.6rem;
 }
 
+.tile {
+  border: 1px solid var(--guest-line);
+  background: var(--guest-elevated);
+  border-radius: var(--radius-lg);
+  padding: 0;
+  overflow: hidden;
+  min-width: 0;
+  animation: ordo-rise 0.4s ease both;
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.tilePhoto,
+.dealPhoto {
+  width: 100%;
+  height: 148px;
+  object-fit: cover;
+  background: var(--guest-soft);
+}
+
+.dealPhoto {
+  height: 120px;
+  border-radius: 10px;
+}
+
+.tile .tileTop,
+.tile .tileBottom {
+  padding-left: 0.95rem;
+  padding-right: 0.95rem;
+}
+
+.tile .tileTop {
+  padding-top: 0.85rem;
+}
+
+.tile .tileBottom {
+  padding-bottom: 0.9rem;
+}
+
+.catNav {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  margin: 0 0 1.15rem;
+  padding-bottom: 0.25rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.catChip {
+  flex-shrink: 0;
+  border: 1px solid var(--guest-line);
+  background: var(--guest-elevated);
+  color: var(--guest-text);
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.catChip:hover {
+  border-color: rgba(196, 92, 38, 0.5);
+  color: var(--ember-bright);
+}
+
 .deal {
   text-align: left;
   border: 1px solid rgba(196, 92, 38, 0.4);
   background: var(--guest-elevated);
   border-radius: var(--radius-lg);
-  padding: 0.95rem;
+  padding: 0.7rem;
   color: inherit;
   display: grid;
   gap: 0.3rem;
+  min-width: 0;
 }
 
 .deal em {
@@ -231,15 +300,6 @@
   margin-bottom: 1.5rem;
 }
 
-.tile {
-  border: 1px solid var(--guest-line);
-  background: var(--guest-elevated);
-  border-radius: var(--radius-lg);
-  padding: 0.95rem;
-  animation: ordo-rise 0.4s ease both;
-  transition: transform 0.18s ease, border-color 0.18s ease;
-}
-
 .tile:hover,
 .deal:hover {
   transform: translateY(-2px);
@@ -256,6 +316,10 @@
   color: var(--guest-muted);
   font-size: 0.85rem;
   line-height: 1.4;
+}
+
+.tileTop strong {
+  overflow-wrap: anywhere;
 }
 
 .tileBottom {
@@ -509,6 +573,10 @@
 
   .grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .tilePhoto {
+    height: 168px;
   }
 
   .dealRail {

@@ -426,6 +426,12 @@ function OrderInner() {
                   : `${tenantCode}${shop?.openHours ? ` · ${shop.openHours}` : ""}`}
               </p>
               {shop?.address && <p className={styles.addr}>{shop.address}</p>}
+              {shop?.phone && showMenu && (
+                <p className={styles.addr}>
+                  {shop.openHours ? `${shop.openHours} · ` : ""}
+                  {shop.phone}
+                </p>
+              )}
             </div>
           </header>
 
@@ -494,7 +500,7 @@ function OrderInner() {
               )}
               <p className={styles.gateLinks}>
                 <Link href="/scan">Scan a QR instead</Link>
-                <Link href="/guest">Different restaurant</Link>
+                <Link href="/guest">Change restaurant</Link>
               </p>
             </section>
           )}
@@ -519,14 +525,19 @@ function OrderInner() {
               )}
 
               {deals.length > 0 && (
-                <section className={styles.deals}>
+                <section className={styles.deals} id="cat-Deals">
                   <h2>Deals</h2>
                   <div className={styles.dealRail}>
                     {deals.map((d) => (
                       <button key={d.id} type="button" className={styles.deal} onClick={() => addItem(d)}>
-                        <span className={styles.letter} aria-hidden>
-                          {d.name.slice(0, 1)}
-                        </span>
+                        {d.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={d.imageUrl} alt="" className={styles.dealPhoto} loading="lazy" />
+                        ) : (
+                          <span className={styles.letter} aria-hidden>
+                            {d.name.slice(0, 1)}
+                          </span>
+                        )}
                         <strong>{d.name}</strong>
                         {d.dealLabel && <em>{d.dealLabel}</em>}
                         <span className={styles.price}>
@@ -539,16 +550,32 @@ function OrderInner() {
                 </section>
               )}
 
+              {categories.length > 0 && (
+                <nav className={styles.catNav} aria-label="Menu sections">
+                  {categories.map(([cat]) => (
+                    <a key={cat} href={`#cat-${cat}`} className={styles.catChip}>
+                      {cat}
+                    </a>
+                  ))}
+                </nav>
+              )}
+
               {categories.map(([cat, items]) => (
-                <section key={cat} className={styles.cat}>
+                <section key={cat} className={styles.cat} id={`cat-${cat}`}>
                   <h2>{cat}</h2>
                   <div className={styles.grid}>
                     {items.map((item) => (
                       <article key={item.id} className={styles.tile}>
+                        {item.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={item.imageUrl} alt="" className={styles.tilePhoto} loading="lazy" />
+                        ) : null}
                         <div className={styles.tileTop}>
-                          <span className={styles.letter} aria-hidden>
-                            {item.name.slice(0, 1)}
-                          </span>
+                          {!item.imageUrl && (
+                            <span className={styles.letter} aria-hidden>
+                              {item.name.slice(0, 1)}
+                            </span>
+                          )}
                           <div>
                             <strong>{item.name}</strong>
                             <p>{item.description}</p>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ensureBootstrap } from "@/lib/bootstrap";
 import { AuthError, getSessionUser, publicUser, requireSession } from "@/lib/session";
 import { findTenantMetaByCode, findTenantMetaById, listPlans } from "@/lib/platform-store";
-import { getPublicMenu, readTenantSafe } from "@/lib/tenant-store";
+import { getPublicMenu, readTenantStaffView } from "@/lib/tenant-store";
 
 export const runtime = "nodejs";
 
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({ error: "No tenant" }, { status: 400 });
         }
         const meta = findTenantMetaById(session.tenantId);
-        const tenant = readTenantSafe(session.tenantId);
+        const tenant = readTenantStaffView(session.tenantId);
         const user = publicUser(getSessionUser(session));
         return NextResponse.json({
           session,

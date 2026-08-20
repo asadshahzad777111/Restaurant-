@@ -1,5 +1,6 @@
 .page {
   color: var(--staff-text);
+  min-width: 0;
 }
 
 .grid {
@@ -13,6 +14,7 @@
   border: 1px solid #e8e4de;
   border-radius: 12px;
   padding: 1rem;
+  min-width: 0;
 }
 
 .card strong {
@@ -24,6 +26,7 @@
 .muted {
   color: var(--staff-muted);
   font-size: 0.9rem;
+  overflow-wrap: anywhere;
 }
 
 .row {
@@ -48,12 +51,59 @@
   font-weight: 700;
 }
 
+.tableScroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
   background: #fff;
   border-radius: 12px;
   overflow: hidden;
+}
+
+.mobileCards {
+  display: none;
+}
+
+.mobileCard {
+  list-style: none;
+  background: #fff;
+  border: 1px solid #e8e4de;
+  border-radius: 12px;
+  padding: 0.85rem 0.95rem;
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.mobileCard strong,
+.mobileCard p {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.mobileCard strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.cardActions a,
+.cardActions button {
+  min-width: 0;
+  white-space: normal;
 }
 
 .table th,
@@ -76,10 +126,28 @@
   border-radius: 10px;
   padding: 0.75rem;
   text-align: left;
+  min-width: 0;
 }
 
 .item strong {
   display: block;
+  overflow-wrap: anywhere;
+}
+
+.itemImg {
+  width: 100%;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  background: #f3eee8;
+}
+
+.catRow {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
 }
 
 .kitchen {
@@ -88,15 +156,95 @@
   gap: 0.75rem;
 }
 
+.kitchenBoard {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.lane {
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid #e8e4de;
+  border-radius: 14px;
+  padding: 0.65rem;
+}
+
+.laneHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.55rem;
+  gap: 0.5rem;
+}
+
+.laneHead h2 {
+  margin: 0;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--staff-muted);
+}
+
+.laneHead span {
+  font-weight: 700;
+  color: var(--staff-accent);
+}
+
+.laneStack {
+  display: grid;
+  gap: 0.55rem;
+}
+
 .ticket {
   background: #fff;
   border: 1px solid #e8e4de;
   border-radius: 12px;
   padding: 0.9rem;
+  min-width: 0;
+  border-left: 4px solid #d4c9bb;
+}
+
+.ticket_placed {
+  border-left-color: var(--staff-accent);
+}
+
+.ticket_accepted {
+  border-left-color: #c9922a;
+}
+
+.ticket_preparing {
+  border-left-color: #8b3d14;
+}
+
+.ticket_ready {
+  border-left-color: #2f9e6b;
 }
 
 .ticket h3 {
   margin: 0 0 0.5rem;
+  overflow-wrap: anywhere;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: baseline;
+  font-size: 1.05rem;
+}
+
+.ticketTime {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--staff-muted);
+}
+
+.ticketLines {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.ticketLines strong {
+  overflow-wrap: anywhere;
 }
 
 .form {
@@ -115,15 +263,82 @@
   border: 1px solid #ddd6cc;
   border-radius: 8px;
   padding: 0.55rem 0.65rem;
+  min-width: 0;
+  width: 100%;
 }
 
 .stack {
   display: grid;
   gap: 1rem;
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .kitchenBoard {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 801px) {
+  .mobileCards {
+    display: none;
+  }
+
+  .tableScroll {
+    overflow: visible;
+  }
 }
 
 @media (max-width: 800px) {
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  .kitchen,
+  .kitchenBoard {
+    grid-template-columns: 1fr;
+  }
+
+  .menuGrid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+
+  .tableDesktop,
+  .tableScrollDesktop {
+    display: none;
+  }
+
+  .mobileCards {
+    display: grid;
+    gap: 0.65rem;
+    margin: 0;
+    padding: 0;
+  }
+
+  .mobileCard > button {
+    width: 100%;
+    white-space: normal;
+  }
+
+  .cardActions button,
+  .cardActions a {
+    width: auto;
+    flex: 1 1 42%;
+    text-align: center;
+    padding: 0.5rem 0.65rem;
+    border-radius: 8px;
+    border: 1px solid #ddd6cc;
+    background: #fff;
+    color: inherit;
+    font-size: 0.88rem;
+  }
+
+  .form {
+    max-width: none;
+  }
+
+  .page,
+  .stack {
+    min-width: 0;
   }
 }

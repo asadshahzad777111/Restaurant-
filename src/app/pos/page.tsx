@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
 import { computeFees, lineUnitPrice, money } from "@/lib/fees";
-import { customerReceiptHtml, openPrintWindow } from "@/lib/print";
+import { printCustomerReceipt } from "@/lib/print";
 import type { LineModifier, MenuItem, ModifierGroup, Order } from "@/lib/tenant-types";
 import type { PaymentMethod } from "@/lib/types";
 import styles from "../staff.module.css";
@@ -37,21 +38,37 @@ function toMods(groups: ModifierGroup[], selected: Record<string, string[]>): Li
 }
 
 export default function PosPage() {
-  const { tenant, api, refresh } = useStore();
+  const { tenant, api, applyOrder } = useStore();
   const [cart, setCart] = useState<CartLine[]>([]);
   const [pay, setPay] = useState<PaymentMethod>("cash");
   const [msg, setMsg] = useState("");
   const [modItem, setModItem] = useState<MenuItem | null>(null);
   const [modSel, setModSel] = useState<Record<string, string[]>>({});
+  const [printKind, setPrintKind] = useState<"bill" | "kitchen" | null>(null);
+  const [cat, setCat] = useState("All");
 
   const lowStock = (tenant?.stock ?? []).filter((s) => s.quantity <= s.lowThreshold);
-  const lines = cart.map((c) => ({
-    itemId: c.item.id,
-    name: c.item.name,
-    qty: c.qty,
-    unitPrice: c.unitPrice,
-    modifiers: c.modifiers,
-  }));
+  const categories = useMemo(() => {
+    const set = new Set((tenant?.menu ?? []).map((m) => (m.isDeal ? "Deals" : m.category)));
+    return ["All", ...[...set]];
+  }, [tenant?.menu]);
+  const visibleMenu = useMemo(() => {
+    const all = tenant?.menu ?? [];
+    if (cat === "All") return all;
+    if (cat === "Deals") return all.filter((m) => m.isDeal || m.category === "Deals");
+    return all.filter((m) => !m.isDeal && m.category === cat);
+  }, [tenant?.menu, cat]);
+  const lines = useMemo(
+    () =>
+      cart.map((c) => ({
+        itemId: c.item.id,
+        name: c.item.name,
+        qty: c.qty,
+        unitPrice: c.unitPrice,
+        modifiers: c.modifiers,
+      })),
+    [cart],
+  );
   const fees = useMemo(() => {
     if (!tenant) return null;
     return computeFees(tenant.shop, "counter", lines);
@@ -108,13 +125,17 @@ export default function PosPage() {
       return;
     }
     setMsg(`Order #${data.order.number} placed`);
-    openPrintWindow(customerReceiptHtml(tenant, data.order as Order));
+    applyOrder(data.order as Order);
     setCart([]);
-    await refresh();
+    const printed = await printCustomerReceipt(tenant, data.order as Order);
+    if (printed) setPrintKind("bill");
   }
+
+  const dismissPrint = useCallback(() => setPrintKind(null), []);
 
   return (
     <AppShell title="POS">
+      <PrintSuccess kind={printKind} onDone={dismissPrint} />
       <div className={styles.page}>
         {lowStock.length > 0 && (
           <div className={styles.card} style={{ marginBottom: "0.75rem", borderColor: "#ffb020" }}>
@@ -124,8 +145,20 @@ export default function PosPage() {
             </p>
           </div>
         )}
+        <div className={styles.catRow}>
+          {categories.map((c) => (
+            <button
+              key={c}
+              type="button"
+              className={cat === c ? styles.btn : styles.btnGhost}
+              onClick={() => setCat(c)}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
         <div className={styles.menuGrid}>
-          {(tenant?.menu ?? []).map((m) => (
+          {visibleMenu.map((m) => (
             <button
               key={m.id}
               type="button"
@@ -135,17 +168,7 @@ export default function PosPage() {
             >
               {m.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={m.imageUrl}
-                  alt=""
-                  style={{
-                    width: "100%",
-                    height: 72,
-                    objectFit: "cover",
-                    borderRadius: 8,
-                    marginBottom: 6,
-                  }}
-                />
+                <img src={m.imageUrl} alt="" loading="lazy" className={styles.itemImg} />
               ) : null}
               <strong>
                 {m.name}
@@ -199,6 +222,7 @@ export default function PosPage() {
               Charge
             </button>
           </div>
+          <p className={styles.muted}>Charge prints a 58mm bill. Choose POS-58 / 58mm if the dialog asks.</p>
           {msg && <p className={styles.muted}>{msg}</p>}
         </div>
 

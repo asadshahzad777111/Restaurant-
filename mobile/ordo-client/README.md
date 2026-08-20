@@ -1,5 +1,8 @@
-# ORDO Client (Android)
+# Retired — not a third APK
 
-For restaurant owners (your clients). Live URL: `https://ordo.asfins.com/login?app=client`
+ORDO ships **two** Android apps only:
 
-Super Admin URL / domain is **not** used. Download this APK from Super → Apps only.
+- `mobile/ordo-pos` → **ORDO Staff** (POS / billing / kitchen / staff)
+- `mobile/ordo-guest` → **ORDO Customer** (dining / pickup / delivery / COD / scanner)
+
+This folder is leftover from an older “client” shell. Do not upload a third APK. Super → Apps only lists Staff and Customer.

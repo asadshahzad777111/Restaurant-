@@ -10,6 +10,7 @@ import {
 } from "@/lib/session";
 import { findSession } from "@/lib/platform-store";
 import { ensureBootstrap } from "@/lib/bootstrap";
+import { readTenantStaffView } from "@/lib/tenant-store";
 
 export const runtime = "nodejs";
 
@@ -33,7 +34,8 @@ export async function POST(req: NextRequest) {
     if (!code) return NextResponse.json({ error: "Restaurant code required" }, { status: 400 });
     const session = loginTenant(code, username, password);
     const user = publicUser(getSessionUser(session));
-    return NextResponse.json({ token: session.token, session, user });
+    const tenant = session.tenantId ? readTenantStaffView(session.tenantId) : null;
+    return NextResponse.json({ token: session.token, session, user, tenant });
   } catch (e) {
     if (e instanceof AuthError) {
       return NextResponse.json({ error: e.message }, { status: e.status });

@@ -13,6 +13,7 @@ import type {
 import { ensureBootstrap } from "./bootstrap";
 
 const DATA_ROOT = path.join(process.cwd(), ".data");
+const tenantCache = new Map<string, { mtime: number; data: TenantState }>();
 
 function tenantDir(tenantId: string) {
   return path.join(DATA_ROOT, "tenants", tenantId);
@@ -53,7 +54,12 @@ export function readTenant(tenantId: string): TenantState {
   ensureBootstrap();
   const file = tenantPath(tenantId);
   if (!fs.existsSync(file)) throw new Error("Tenant not found");
-  return normalizeTenant(JSON.parse(fs.readFileSync(file, "utf8")) as TenantState);
+  const mtime = fs.statSync(file).mtimeMs;
+  const hit = tenantCache.get(tenantId);
+  if (hit && hit.mtime === mtime) return hit.data;
+  const data = normalizeTenant(JSON.parse(fs.readFileSync(file, "utf8")) as TenantState);
+  tenantCache.set(tenantId, { mtime, data });
+  return data;
 }
 
 export function readTenantSafe(tenantId: string): TenantState {
@@ -64,10 +70,28 @@ export function readTenantSafe(tenantId: string): TenantState {
   };
 }
 
+/** Staff SPA payload — same tenant only, no review dump, recent tickets. */
+export function readTenantStaffView(tenantId: string): TenantState {
+  const t = readTenantSafe(tenantId);
+  return {
+    ...t,
+    reviews: [],
+    orders: t.orders.slice(0, 200),
+    dayCloses: (t.dayCloses || []).slice(0, 30),
+  };
+}
+
 export function writeTenant(state: TenantState) {
   const dir = tenantDir(state.id);
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(tenantPath(state.id), JSON.stringify(state, null, 2));
+  const file = tenantPath(state.id);
+  const normalized = normalizeTenant(state);
+  fs.writeFileSync(file, JSON.stringify(normalized));
+  try {
+    tenantCache.set(state.id, { mtime: fs.statSync(file).mtimeMs, data: normalized });
+  } catch {
+    tenantCache.delete(state.id);
+  }
 }
 
 export function createTenantState(state: TenantState) {
@@ -231,11 +255,13 @@ export function findOrderByTrackToken(token: string): { tenant: TenantState; ord
   const tenantsRoot = path.join(DATA_ROOT, "tenants");
   if (!fs.existsSync(tenantsRoot)) return null;
   for (const id of fs.readdirSync(tenantsRoot)) {
-    const file = tenantPath(id);
-    if (!fs.existsSync(file)) continue;
-    const t = normalizeTenant(JSON.parse(fs.readFileSync(file, "utf8")) as TenantState);
-    const order = t.orders.find((o) => o.trackToken === token);
-    if (order) return { tenant: t, order };
+    try {
+      const t = readTenant(id);
+      const order = t.orders.find((o) => o.trackToken === token);
+      if (order) return { tenant: t, order };
+    } catch {
+      /* skip broken tenant folders */
+    }
   }
   return null;
 }
