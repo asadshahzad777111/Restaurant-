@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { PlanGate } from "@/components/PlanGate";
 import { useStore } from "@/lib/store";
 import { money } from "@/lib/fees";
 import styles from "../staff.module.css";
@@ -54,6 +55,7 @@ export default function DayClosePage() {
 
   return (
     <AppShell title="Day close">
+      <PlanGate need="dayClose">
       <div className={styles.page}>
         <p className={styles.muted}>
           End-of-day / shift summary — totals by payment. Cancel/voids counted separately. No refund
@@ -87,6 +89,7 @@ export default function DayClosePage() {
           {JSON.stringify(history.slice(0, 5), null, 2)}
         </pre>
       </div>
+      </PlanGate>
     </AppShell>
   );
 }

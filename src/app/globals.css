@@ -42,6 +42,13 @@ body {
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Staff / restaurant shell: keep beige full-bleed (no black gutters on mobile) */
+body:has([data-staff-shell="1"]) {
+  background: var(--staff-bg);
+  color: var(--staff-text);
 }
 
 a {

@@ -196,11 +196,12 @@ export default function ControlPage() {
               <div className={styles.how}>
                 <strong>How it works</strong>
                 <ol>
-                  <li>Add a restaurant below (or in Your restaurants).</li>
-                  <li>They sign in at the restaurant site with their code.</li>
+                  <li>Add a restaurant (they get their own name + login — not DEMO).</li>
+                  <li>They sign in at ordo.asfins.com/login with their code.</li>
                   <li>Guests order with /order?tenant=CODE.</li>
                   <li>
-                    Need to help them? Use <em>Help this restaurant</em> — no password needed.
+                    <em>Help this restaurant</em> opens <strong>their</strong> panel (or DEMO as a
+                    sample). Yellow banner = you are helping, not in ORDO HQ.
                   </li>
                 </ol>
               </div>

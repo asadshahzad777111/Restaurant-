@@ -16,11 +16,14 @@ export async function ensureMongoBootstrap() {
     const platform = defaultPlatformSeed();
     if (contactFromEnv()) platform.contactWhatsapp = contactFromEnv();
     await pcol.insertOne({ _id: PLATFORM_ID, ...platform } as never);
-  } else if (contactFromEnv() && !(existing as unknown as PlatformState).contactWhatsapp) {
-    await pcol.updateOne(
-      { _id: PLATFORM_ID } as never,
-      { $set: { contactWhatsapp: contactFromEnv() } },
-    );
+  } else {
+    const patch: Record<string, unknown> = {
+      plans: defaultPlatformSeed().plans,
+    };
+    if (contactFromEnv() && !(existing as unknown as PlatformState).contactWhatsapp) {
+      patch.contactWhatsapp = contactFromEnv();
+    }
+    await pcol.updateOne({ _id: PLATFORM_ID } as never, { $set: patch });
   }
 
   if (!demoSeedEnabled()) return;

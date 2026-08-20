@@ -1,6 +1,7 @@
 "use client";
 
 import { AppShell } from "@/components/AppShell";
+import { PlanGate } from "@/components/PlanGate";
 import { useStore } from "@/lib/store";
 import { kitchenTicketHtml, openPrintWindow } from "@/lib/print";
 import type { OrderStatus } from "@/lib/types";
@@ -30,6 +31,7 @@ export default function KitchenPage() {
 
   return (
     <AppShell title="Kitchen">
+      <PlanGate need="kitchen">
       <div className={styles.kitchen}>
         {tickets.map((o) => (
           <article key={o.id} className={styles.ticket}>
@@ -79,6 +81,7 @@ export default function KitchenPage() {
         ))}
         {tickets.length === 0 && <p className={styles.muted}>No open kitchen tickets</p>}
       </div>
+      </PlanGate>
     </AppShell>
   );
 }

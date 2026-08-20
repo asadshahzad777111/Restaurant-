@@ -46,21 +46,21 @@ const PLANS = [
   {
     id: "starter",
     name: "Starter",
-    price: "₨2,500",
-    blurb: "One branch · QR + kitchen",
+    price: "₨800",
+    blurb: "POS billing only — forced upgrade path",
   },
   {
     id: "pro",
     name: "Pro",
-    price: "₨6,000",
-    blurb: "Deals, reviews, staff roles",
+    price: "₨2,500",
+    blurb: "Sales, logo, staff, kitchen — most kitchens",
     featured: true,
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    price: "₨15,000",
-    blurb: "Groups · printers · support",
+    price: "₨8,000",
+    blurb: "Groups · printers · priority support",
   },
 ] as const;
 

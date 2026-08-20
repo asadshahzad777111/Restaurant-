@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import type { PlatformState, Session, Lead, PlatformTenantMeta, PlanId, TenantStatus } from "./types";
 import { ensureBootstrap } from "./bootstrap";
+import { CANONICAL_PLANS } from "./plans";
 
 const DATA_ROOT = path.join(process.cwd(), ".data");
 const PLATFORM_PATH = path.join(DATA_ROOT, "platform.json");
@@ -9,7 +10,9 @@ const PLATFORM_PATH = path.join(DATA_ROOT, "platform.json");
 function readPlatform(): PlatformState {
   ensureBootstrap();
   const raw = fs.readFileSync(PLATFORM_PATH, "utf8");
-  return JSON.parse(raw) as PlatformState;
+  const state = JSON.parse(raw) as PlatformState;
+  state.plans = CANONICAL_PLANS.map((p) => ({ ...p }));
+  return state;
 }
 
 function writePlatform(state: PlatformState) {

@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureStore, readTenant, readTenantSafe, updateBranding, updateMenu, updateStock, updateTables, updateUsers } from "@/lib/db";
+import {
+  ensureStore,
+  findTenantMetaById,
+  readTenant,
+  readTenantSafe,
+  updateBranding,
+  updateMenu,
+  updateStock,
+  updateTables,
+  updateUsers,
+} from "@/lib/db";
 import { AuthError, hasPermission, requireTenantSession } from "@/lib/session";
+import { CANONICAL_PLANS, planAllows } from "@/lib/plans";
 import type { DiningTable, MenuItem, StockItem, TenantUser } from "@/lib/tenant-types";
 
 export const runtime = "nodejs";
@@ -12,8 +23,13 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const { action } = body as { action: string };
     const tenantId = session.tenantId!;
+    const meta = await findTenantMetaById(tenantId);
+    const planId = meta?.planId ?? "starter";
 
     if (action === "menu") {
+      if (!planAllows(planId, "menu")) {
+        return NextResponse.json({ error: "Upgrade to Pro for menu editing" }, { status: 403 });
+      }
       if (!(await hasPermission(session, "menu"))) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
@@ -22,6 +38,9 @@ export async function PUT(req: NextRequest) {
     }
 
     if (action === "toggle86") {
+      if (!planAllows(planId, "menu")) {
+        return NextResponse.json({ error: "Upgrade to Pro for menu editing" }, { status: 403 });
+      }
       if (!(await hasPermission(session, "menu"))) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
@@ -34,6 +53,9 @@ export async function PUT(req: NextRequest) {
     }
 
     if (action === "stock") {
+      if (!planAllows(planId, "stock")) {
+        return NextResponse.json({ error: "Upgrade to Pro for stock" }, { status: 403 });
+      }
       if (!(await hasPermission(session, "stock"))) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
@@ -42,14 +64,25 @@ export async function PUT(req: NextRequest) {
     }
 
     if (action === "staff") {
+      if (!planAllows(planId, "staff")) {
+        return NextResponse.json({ error: "Upgrade to Pro for staff logins" }, { status: 403 });
+      }
       if (!(await hasPermission(session, "staff"))) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
-      await updateUsers(tenantId, body.users as TenantUser[]);
+      const users = body.users as TenantUser[];
+      const max = CANONICAL_PLANS.find((p) => p.id === planId)?.maxStaff ?? 20;
+      if (users.length > max) {
+        return NextResponse.json({ error: `Plan allows up to ${max} staff` }, { status: 400 });
+      }
+      await updateUsers(tenantId, users);
       return NextResponse.json({ tenant: await readTenantSafe(tenantId) });
     }
 
     if (action === "tables") {
+      if (!planAllows(planId, "tables")) {
+        return NextResponse.json({ error: "Upgrade to Pro for tables" }, { status: 403 });
+      }
       if (!(await hasPermission(session, "settings")) && !(await hasPermission(session, "pos"))) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
@@ -60,6 +93,12 @@ export async function PUT(req: NextRequest) {
     if (action === "branding" || action === "fees") {
       if (!(await hasPermission(session, "settings"))) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      if (action === "branding" && body.branding?.logoUrl && !planAllows(planId, "logo")) {
+        const current = await readTenant(tenantId);
+        if (body.branding.logoUrl !== current.branding.logoUrl) {
+          return NextResponse.json({ error: "Upgrade to Pro to set a logo" }, { status: 403 });
+        }
       }
       await updateBranding(tenantId, body.branding ?? {}, body.shop);
       return NextResponse.json({ tenant: await readTenantSafe(tenantId) });

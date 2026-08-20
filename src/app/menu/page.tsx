@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { PlanGate } from "@/components/PlanGate";
 import { useStore } from "@/lib/store";
 import type { MenuItem } from "@/lib/tenant-types";
 import styles from "../staff.module.css";
@@ -74,6 +75,7 @@ export default function MenuPage() {
 
   return (
     <AppShell title="Menu">
+      <PlanGate need="menu">
       <div className={styles.stack}>
         <form className={styles.form} onSubmit={addItem}>
           <h3 style={{ margin: 0 }}>Add item / deal</h3>
@@ -168,6 +170,7 @@ export default function MenuPage() {
           </tbody>
         </table>
       </div>
+      </PlanGate>
     </AppShell>
   );
 }

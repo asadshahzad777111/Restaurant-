@@ -1,5 +1,8 @@
 .page {
   color: var(--staff-text);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .grid {
@@ -13,12 +16,14 @@
   border: 1px solid #e8e4de;
   border-radius: 12px;
   padding: 1rem;
+  min-width: 0;
 }
 
 .card strong {
   display: block;
-  font-size: 1.6rem;
+  font-size: 1.45rem;
   margin-top: 0.35rem;
+  word-break: break-word;
 }
 
 .muted {
@@ -36,9 +41,10 @@
 .btn,
 .btnGhost {
   border-radius: 8px;
-  padding: 0.45rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   border: 1px solid #ddd6cc;
   background: #fff;
+  font-size: 0.88rem;
 }
 
 .btn {
@@ -48,12 +54,20 @@
   font-weight: 700;
 }
 
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+  border: 1px solid #e8e4de;
+  background: #fff;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
   background: #fff;
-  border-radius: 12px;
-  overflow: hidden;
+  min-width: 520px;
 }
 
 .table th,
@@ -61,12 +75,13 @@
   text-align: left;
   padding: 0.7rem;
   border-bottom: 1px solid #eee8e0;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  vertical-align: top;
 }
 
 .menuGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 0.55rem;
 }
 
@@ -76,6 +91,7 @@
   border-radius: 10px;
   padding: 0.75rem;
   text-align: left;
+  min-width: 0;
 }
 
 .item strong {
@@ -84,7 +100,7 @@
 
 .kitchen {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
   gap: 0.75rem;
 }
 
@@ -93,6 +109,7 @@
   border: 1px solid #e8e4de;
   border-radius: 12px;
   padding: 0.9rem;
+  min-width: 0;
 }
 
 .ticket h3 {
@@ -103,6 +120,7 @@
   display: grid;
   gap: 0.55rem;
   max-width: 420px;
+  width: 100%;
   background: #fff;
   border: 1px solid #e8e4de;
   border-radius: 12px;
@@ -115,6 +133,8 @@
   border: 1px solid #ddd6cc;
   border-radius: 8px;
   padding: 0.55rem 0.65rem;
+  width: 100%;
+  max-width: 100%;
 }
 
 .stack {
@@ -122,8 +142,58 @@
   gap: 1rem;
 }
 
-@media (max-width: 800px) {
+.orderCards {
+  display: none;
+}
+
+.upgrade {
+  background: #fff8f1;
+  border: 1px dashed #e2a36a;
+  border-radius: 12px;
+  padding: 1rem;
+  color: #7a3e0c;
+}
+
+@media (max-width: 860px) {
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  .menuGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kitchen {
+    grid-template-columns: 1fr;
+  }
+
+  .desktopOnly {
+    display: none !important;
+  }
+
+  .orderCards {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .orderCard {
+    background: #fff;
+    border: 1px solid #e8e4de;
+    border-radius: 12px;
+    padding: 0.85rem;
+  }
+
+  .orderCard header {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .orderActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.65rem;
   }
 }

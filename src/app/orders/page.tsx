@@ -89,126 +89,120 @@ export default function OrdersPage() {
     openPrintWindow(kitchenTicketHtml(tenant, order));
   }
 
+  function actions(o: { id: string; status: OrderStatus; paymentStatus: string }) {
+    return (
+      <>
+        {NEXT[o.status] && (
+          <button
+            type="button"
+            className={styles.btnGhost}
+            onClick={() => void advance(o.id, o.status)}
+          >
+            → {NEXT[o.status]}
+          </button>
+        )}
+        {o.paymentStatus !== "paid" && o.status !== "cancelled" && (
+          <button type="button" className={styles.btnGhost} onClick={() => void markPaid(o.id)}>
+            Mark paid
+          </button>
+        )}
+        {o.status !== "completed" && o.status !== "cancelled" && (
+          <>
+            <button type="button" className={styles.btn} onClick={() => void complete(o.id)}>
+              Completed
+            </button>
+            <button
+              type="button"
+              className={styles.btnGhost}
+              onClick={() => {
+                setCancelId(o.id);
+                setReason("");
+              }}
+            >
+              Void
+            </button>
+          </>
+        )}
+        <button type="button" className={styles.btnGhost} onClick={() => printBill(o.id)}>
+          Bill
+        </button>
+        <button type="button" className={styles.btnGhost} onClick={() => printKitchen(o.id)}>
+          Kitchen
+        </button>
+        <button type="button" className={styles.btnGhost} onClick={() => share(o.id, "confirmed")}>
+          Msg
+        </button>
+      </>
+    );
+  }
+
+  const orders = tenant?.orders ?? [];
+
   return (
     <AppShell title="Orders">
       <div className={styles.page}>
         {msg && <p className={styles.muted}>{msg}</p>}
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Channel</th>
-              <th>Status</th>
-              <th>Pay</th>
-              <th>Total</th>
-              <th>Track</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {(tenant?.orders ?? []).map((o) => (
-              <tr key={o.id}>
-                <td>{o.number}</td>
-                <td>
-                  {o.channel}/{o.serviceType}
-                  {o.tableNumber ? ` · T${o.tableNumber}` : ""}
-                </td>
-                <td>
-                  {o.status}
-                  {o.cancelReason ? ` · ${o.cancelReason}` : ""}
-                </td>
-                <td>{o.paymentStatus}</td>
-                <td>
-                  {tenant ? money(tenant.shop.currency, o.total) : o.total}
-                </td>
-                <td>
-                  <a href={`/track/${o.trackToken}`} target="_blank" rel="noreferrer">
-                    open
-                  </a>
-                </td>
-                <td className={styles.row}>
-                  {NEXT[o.status] && (
-                    <button
-                      type="button"
-                      className={styles.btnGhost}
-                      onClick={() => void advance(o.id, o.status)}
-                    >
-                      → {NEXT[o.status]}
-                    </button>
-                  )}
-                  {o.paymentStatus !== "paid" && o.status !== "cancelled" && (
-                    <button
-                      type="button"
-                      className={styles.btnGhost}
-                      onClick={() => void markPaid(o.id)}
-                    >
-                      Mark paid
-                    </button>
-                  )}
-                  {o.status !== "completed" && o.status !== "cancelled" && (
-                    <>
-                      <button
-                        type="button"
-                        className={styles.btn}
-                        onClick={() => void complete(o.id)}
-                      >
-                        Completed
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.btnGhost}
-                        onClick={() => {
-                          setCancelId(o.id);
-                          setReason("");
-                        }}
-                      >
-                        Cancel/Void
-                      </button>
-                    </>
-                  )}
-                  <button type="button" className={styles.btnGhost} onClick={() => printBill(o.id)}>
-                    Bill
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.btnGhost}
-                    onClick={() => printKitchen(o.id)}
-                  >
-                    Kitchen print
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.btnGhost}
-                    onClick={() => share(o.id, "confirmed")}
-                  >
-                    Msg: confirmed
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.btnGhost}
-                    onClick={() => share(o.id, "preparing")}
-                  >
-                    Msg: preparing
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.btnGhost}
-                    onClick={() => share(o.id, "ready")}
-                  >
-                    Msg: ready
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.btnGhost}
-                    onClick={() => share(o.id, "out")}
-                  >
-                    Msg: out
-                  </button>
-                </td>
+
+        <div className={`${styles.tableWrap} ${styles.desktopOnly}`}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Channel</th>
+                <th>Status</th>
+                <th>Pay</th>
+                <th>Total</th>
+                <th>Track</th>
+                <th />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {orders.map((o) => (
+                <tr key={o.id}>
+                  <td>{o.number}</td>
+                  <td>
+                    {o.channel}/{o.serviceType}
+                    {o.tableNumber ? ` · T${o.tableNumber}` : ""}
+                  </td>
+                  <td>
+                    {o.status}
+                    {o.cancelReason ? ` · ${o.cancelReason}` : ""}
+                  </td>
+                  <td>{o.paymentStatus}</td>
+                  <td>{tenant ? money(tenant.shop.currency, o.total) : o.total}</td>
+                  <td>
+                    <a href={`/track/${o.trackToken}`} target="_blank" rel="noreferrer">
+                      open
+                    </a>
+                  </td>
+                  <td>
+                    <div className={styles.row} style={{ marginTop: 0 }}>
+                      {actions(o)}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className={styles.orderCards}>
+          {orders.map((o) => (
+            <article key={o.id} className={styles.orderCard}>
+              <header>
+                <strong>
+                  #{o.number} · {o.status}
+                </strong>
+                <span>{tenant ? money(tenant.shop.currency, o.total) : o.total}</span>
+              </header>
+              <p className={styles.muted} style={{ margin: 0 }}>
+                {o.channel}/{o.serviceType}
+                {o.tableNumber ? ` · T${o.tableNumber}` : ""} · {o.paymentStatus}
+              </p>
+              <div className={styles.orderActions}>{actions(o)}</div>
+            </article>
+          ))}
+        </div>
 
         {cancelId && (
           <div className={styles.card} style={{ marginTop: "1rem" }}>

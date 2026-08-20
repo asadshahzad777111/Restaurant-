@@ -9,7 +9,7 @@ import React, {
   useState,
   startTransition,
 } from "react";
-import type { Permission, SessionRole } from "./types";
+import type { Permission, PlanId, PlatformTenantMeta, SessionRole } from "./types";
 import type { TenantState, MenuItem, Order, StockItem, TenantUser } from "./tenant-types";
 import { apiUrl } from "./urls";
 
@@ -33,6 +33,8 @@ export interface AuthState {
   impersonating: boolean;
   user: AuthUser | null;
   tenant: TenantState | null;
+  meta: PlatformTenantMeta | null;
+  planId: PlanId | null;
   loading: boolean;
 }
 
@@ -52,6 +54,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [impersonating, setImpersonating] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [tenant, setTenant] = useState<TenantState | null>(null);
+  const [meta, setMeta] = useState<PlatformTenantMeta | null>(null);
   const [loading, setLoading] = useState(true);
 
   const setToken = useCallback((t: string | null) => {
@@ -80,6 +83,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setTenantId(null);
       setUser(null);
       setTenant(null);
+      setMeta(null);
       setImpersonating(false);
       setLoading(false);
       return;
@@ -93,6 +97,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setTokenState(null);
       setRole(null);
       setTenant(null);
+      setMeta(null);
       setUser(null);
       setLoading(false);
       return;
@@ -104,6 +109,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setImpersonating(!!data.session?.impersonating);
       setUser(data.user ?? null);
       setTenant(data.tenant ?? null);
+      setMeta(data.meta ?? null);
       setLoading(false);
     });
   }, []);
@@ -121,12 +127,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setTenantId(null);
     setUser(null);
     setTenant(null);
+    setMeta(null);
     setImpersonating(false);
   }, [setToken]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  const planId = meta?.planId ?? null;
 
   const value = useMemo(
     () => ({
@@ -136,13 +145,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       impersonating,
       user,
       tenant,
+      meta,
+      planId,
       loading,
       setToken,
       refresh,
       logout,
       api,
     }),
-    [token, role, tenantId, impersonating, user, tenant, loading, setToken, refresh, logout, api],
+    [
+      token,
+      role,
+      tenantId,
+      impersonating,
+      user,
+      tenant,
+      meta,
+      planId,
+      loading,
+      setToken,
+      refresh,
+      logout,
+      api,
+    ],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

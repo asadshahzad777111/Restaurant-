@@ -3,6 +3,7 @@ import path from "path";
 import type { PlatformState } from "./types";
 import type { TenantState } from "./tenant-types";
 import type { Permission } from "./types";
+import { CANONICAL_PLANS } from "./plans";
 
 const DATA_ROOT = path.join(process.cwd(), ".data");
 const PLATFORM_PATH = path.join(DATA_ROOT, "platform.json");
@@ -214,44 +215,7 @@ function defaultPlatform(): PlatformState {
   return {
     superAdmin: { username: "super", password: "super123" },
     contactWhatsapp: "+923001234567",
-    plans: [
-      {
-        id: "starter",
-        name: "Starter",
-        pricePkr: 2500,
-        maxStaff: 5,
-        description: "One branch · QR ordering · kitchen display",
-        features: ["Guest QR + pickup", "POS & kitchen", "Basic stock", "Up to 5 staff"],
-      },
-      {
-        id: "pro",
-        name: "Pro",
-        pricePkr: 6000,
-        maxStaff: 20,
-        description: "Multi-shift teams · deals · reviews",
-        features: [
-          "Everything in Starter",
-          "Deals & reviews",
-          "Staff roles",
-          "Up to 20 staff",
-          "Receipt branding",
-        ],
-      },
-      {
-        id: "enterprise",
-        name: "Enterprise",
-        pricePkr: 15000,
-        maxStaff: 100,
-        description: "Groups · dedicated support · custom printers",
-        features: [
-          "Everything in Pro",
-          "Multi-outlet roadmap",
-          "Priority support",
-          "Printer package",
-          "Up to 100 staff",
-        ],
-      },
-    ],
+    plans: CANONICAL_PLANS.map((p) => ({ ...p })),
     tenants: [
       {
         id: "tenant_demo",

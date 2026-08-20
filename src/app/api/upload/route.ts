@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureStore } from "@/lib/db";
+import { ensureStore, findTenantMetaById } from "@/lib/db";
 import { AuthError, hasPermission, requireTenantSession } from "@/lib/session";
 import { r2Configured } from "@/lib/env";
 import { uploadPublicAsset } from "@/lib/r2";
+import { planAllows } from "@/lib/plans";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "file required" }, { status: 400 });
     }
     const kind = String(form.get("kind") || "menu");
+    const meta = session.tenantId ? await findTenantMetaById(session.tenantId) : null;
+    if (kind === "logo" && !planAllows(meta?.planId, "logo")) {
+      return NextResponse.json({ error: "Upgrade to Pro to upload a logo" }, { status: 403 });
+    }
     const buf = Buffer.from(await file.arrayBuffer());
     if (buf.length > 5 * 1024 * 1024) {
       return NextResponse.json({ error: "Max 5MB" }, { status: 400 });
