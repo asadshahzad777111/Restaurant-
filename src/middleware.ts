@@ -92,9 +92,9 @@ export function middleware(req: NextRequest) {
     return withSecurity(NextResponse.next());
   }
 
-  // Restaurant app host (and production app): never expose owner panel
+  // Restaurant app host: owner HQ stays on control.asfins.com. Super APKs stay on /super.
   if (isAppHost(host) && !isLocalHost(host)) {
-    if (pathname.startsWith("/super") || pathname.startsWith("/control")) {
+    if (pathname.startsWith("/control")) {
       return withSecurity(
         NextResponse.json(
           { error: "Not available on restaurant host" },
@@ -102,13 +102,6 @@ export function middleware(req: NextRequest) {
         ),
       );
     }
-  }
-
-  // Localhost: /super → /control (same panel, no “Super” URL)
-  if (isLocalHost(host) && pathname === "/super") {
-    const url = req.nextUrl.clone();
-    url.pathname = "/control";
-    return withSecurity(NextResponse.redirect(url));
   }
 
   return withSecurity(NextResponse.next());

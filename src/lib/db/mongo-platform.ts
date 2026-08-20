@@ -2,6 +2,7 @@ import type { PlatformState, Session, Lead, PlatformTenantMeta, PlanId, TenantSt
 import { getDb } from "../mongo";
 import { demoSeedEnabled } from "../env";
 import { defaultPlatformSeed, demoTenantSeed, secondTenantSeed } from "./seeds";
+import { demoMenu, demoStock } from "../demo-catalog";
 
 const PLATFORM_ID = "platform";
 
@@ -33,6 +34,11 @@ export async function ensureMongoBootstrap() {
   if (!demo) {
     const d = demoTenantSeed();
     await tcol.insertOne({ _id: d.id, ...d } as never);
+  } else {
+    await tcol.updateOne(
+      { _id: "tenant_demo" } as never,
+      { $set: { menu: demoMenu(), stock: demoStock() } },
+    );
   }
   const second = await tcol.findOne({ _id: "tenant_iso2" } as never);
   if (!second) {

@@ -43,3 +43,16 @@ next-env.d.ts
 
 # file-backed store
 .data/
+
+# local gradle / APK build caches
+.gradle-home/
+.tmp-build/
+
+# capacitor / android
+mobile/**/node_modules/
+mobile/**/android/app/build/
+mobile/**/android/.gradle/
+mobile/**/android/local.properties
+mobile/**/android/captures/
+*.apk
+*.aab

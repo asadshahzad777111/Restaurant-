@@ -292,3 +292,13 @@ export async function readTenantSafeMongo(tenantId: string) {
     users: t.users.map(({ password: _p, ...u }) => ({ ...u, password: "" })),
   };
 }
+
+export async function readTenantStaffViewMongo(tenantId: string) {
+  const t = await readTenantSafeMongo(tenantId);
+  return {
+    ...t,
+    reviews: [],
+    orders: t.orders.slice(0, 200),
+    dayCloses: (t.dayCloses || []).slice(0, 30),
+  };
+}

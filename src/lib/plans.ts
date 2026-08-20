@@ -14,9 +14,7 @@ export type PlanCapability =
   | "stock"
   | "reviews";
 
-const STARTER_CAPS: PlanCapability[] = ["pos", "orders"];
-
-const PRO_CAPS: PlanCapability[] = [
+const STARTER_CAPS: PlanCapability[] = [
   "pos",
   "orders",
   "kitchen",
@@ -26,9 +24,9 @@ const PRO_CAPS: PlanCapability[] = [
   "sales",
   "logo",
   "staff",
-  "stock",
-  "reviews",
 ];
+
+const PRO_CAPS: PlanCapability[] = [...STARTER_CAPS, "stock", "reviews"];
 
 const ENTERPRISE_CAPS: PlanCapability[] = [...PRO_CAPS];
 
@@ -38,47 +36,51 @@ const CAPS: Record<PlanId, PlanCapability[]> = {
   enterprise: ENTERPRISE_CAPS,
 };
 
-/** Canonical plans — Starter is bare POS to push Pro. */
+/** Canonical plans — Starter ₨999 with guest QR + kitchen. */
 export const CANONICAL_PLANS: Plan[] = [
   {
     id: "starter",
     name: "Starter",
-    pricePkr: 800,
-    maxStaff: 1,
-    description: "Simple counter billing only — upgrade when you need more",
+    pricePkr: 999,
+    maxStaff: 5,
+    description: "One kitchen · guest QR · kitchen tickets",
     features: [
-      "POS billing (cash / card / wallet)",
-      "Basic order list",
-      "1 owner login only",
-      "No logo, staff, or sales reports",
+      "Guest dining, takeaway, delivery",
+      "QR / scan entry",
+      "Counter POS + kitchen display",
+      "Public menu in sync with POS",
+      "Browser receipts",
+      "Up to 5 staff",
     ],
   },
   {
     id: "pro",
     name: "Pro",
-    pricePkr: 2500,
-    maxStaff: 20,
-    description: "Full restaurant tools — the plan most kitchens need",
+    pricePkr: 1999,
+    maxStaff: 15,
+    description: "Staff roles · stock · reviews",
     features: [
-      "Everything useful for one branch",
-      "Sales & daily profit strip",
-      "Logo + receipt branding",
-      "Staff logins & roles",
-      "Kitchen, tables, menu, day close",
+      "Everything in Starter",
+      "Staff roles & permissions",
+      "Stock alerts",
+      "Guest tracking + reviews",
+      "Receipt branding",
+      "Up to 15 staff",
     ],
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    pricePkr: 8000,
-    maxStaff: 100,
-    description: "Groups · priority help · printer package",
+    pricePkr: 4499,
+    maxStaff: 40,
+    description: "Multi-kitchen Super desk · printer quote",
     features: [
       "Everything in Pro",
-      "Higher staff limit",
-      "Priority support",
-      "Multi-outlet roadmap",
-      "Printer package",
+      "Super Admin: create / suspend kitchens",
+      "Open restaurant (help without mixing data)",
+      "Thermal printer package on request",
+      "Priority onboarding",
+      "Up to 40 staff",
     ],
   },
 ];
@@ -97,7 +99,7 @@ export function planAllows(
 
 export function upgradeHint(planId: PlanId | string | null | undefined): string {
   if (planId === "starter") {
-    return "Starter is billing-only. Pro (₨2,500) unlocks sales, logo, staff, kitchen, and menu.";
+    return "Starter covers one kitchen. Pro (₨1,999) adds stock alerts and reviews.";
   }
   if (planId === "pro") {
     return "Need more staff seats or priority support? Talk to ORDO about Enterprise.";

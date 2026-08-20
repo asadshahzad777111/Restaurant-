@@ -1,17 +1,24 @@
 import Link from "next/link";
 import styles from "./lab.module.css";
 
-/** Internal / local demo hub — not linked from public marketing. */
-const GUEST = [
-  { href: "/order?tenant=DEMO", label: "Guest menu", note: "Main demo" },
-  { href: "/order?tenant=DEMO&table=3", label: "Table 3 QR", note: "Dine-in" },
-  { href: "/order?tenant=DEMO&mode=pickup", label: "Pickup", note: "Counter collect" },
-  { href: "/order?tenant=DEMO&mode=delivery", label: "Delivery", note: "Address + COD" },
-];
-
-const PRIVATE = [
-  { href: "/staff", label: "Restaurant staff access", note: "Separate login page — share privately" },
-  { href: "/login?owner=1", label: "ORDO HQ (owner)", note: "You only — not for clients" },
+const LINKS = [
+  { href: "/", label: "Marketing home", note: "ORDO landing" },
+  { href: "/guest", label: "Guest entry", note: "Code · paste QR · Demo Kitchen" },
+  { href: "/scan", label: "QR scanner", note: "Camera + paste fallback" },
+  { href: "/super", label: "Super Admin", note: "super / super123" },
+  { href: "/login", label: "Staff login", note: "DEMO · admin / admin123 (change in prod)" },
+  { href: "/order?tenant=DEMO", label: "Guest hub", note: "Dining / takeaway / delivery" },
+  { href: "/order?tenant=DEMO&table=7", label: "Table 7 QR", note: "Pay at counter" },
+  { href: "/order?tenant=DEMO&mode=pickup", label: "Takeaway", note: "Counter or paid in advance" },
+  { href: "/order?tenant=DEMO&mode=delivery", label: "Delivery", note: "COD or paid in advance" },
+  { href: "/home", label: "Staff Home", note: "Low stock + day close" },
+  { href: "/pos", label: "POS", note: "Counter sales" },
+  { href: "/orders", label: "Orders", note: "Advance status" },
+  { href: "/kitchen", label: "Kitchen", note: "Tickets" },
+  { href: "/tables", label: "Tables", note: "empty / occupied / bill" },
+  { href: "/menu", label: "Menu admin", note: "Deals + items" },
+  { href: "/day-close", label: "Day close", note: "Shift summary" },
+  { href: "/settings", label: "Settings", note: "Logo · staff · stock · QR" },
 ];
 
 export default function LabPage() {
@@ -19,26 +26,14 @@ export default function LabPage() {
     <div className={styles.page}>
       <header>
         <p className={styles.brand}>ORDO</p>
-        <h1>Internal demo hub</h1>
+        <h1>Lab — demo links</h1>
         <p className={styles.sub}>
-          Not linked from the public homepage. Guests use the demo menu; staff get a private /staff link.
+          Localhost only. Cancel/void ≠ refund. Review path: guest order → Completed → track stars.
+          Soft drinks stock is low on purpose for alerts.
         </p>
       </header>
-      <h2 style={{ fontSize: "1rem", margin: "1.5rem 0 0.5rem" }}>Guest demos</h2>
       <ul className={styles.list}>
-        {GUEST.map((l) => (
-          <li key={l.href}>
-            <Link href={l.href}>
-              <strong>{l.label}</strong>
-              <span>{l.note}</span>
-              <code>{l.href}</code>
-            </Link>
-          </li>
-        ))}
-      </ul>
-      <h2 style={{ fontSize: "1rem", margin: "1.5rem 0 0.5rem" }}>Private access (do not put on demo site)</h2>
-      <ul className={styles.list}>
-        {PRIVATE.map((l) => (
+        {LINKS.map((l) => (
           <li key={l.href}>
             <Link href={l.href}>
               <strong>{l.label}</strong>

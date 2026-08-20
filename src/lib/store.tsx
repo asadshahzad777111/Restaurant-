@@ -9,9 +9,8 @@ import React, {
   useState,
   startTransition,
 } from "react";
-import type { Permission, PlanId, PlatformTenantMeta, SessionRole } from "./types";
-import type { TenantState, MenuItem, Order, StockItem, TenantUser } from "./tenant-types";
-import { apiUrl } from "./urls";
+import type { Permission, SessionRole } from "./types";
+import type { DiningTable, TenantState, MenuItem, Order, StockItem, TenantUser } from "./tenant-types";
 
 export const TOKEN_KEY = "restaurant_pos_token_v2";
 /** Saved before Help mode so owner can return to ORDO HQ */
@@ -33,109 +32,271 @@ export interface AuthState {
   impersonating: boolean;
   user: AuthUser | null;
   tenant: TenantState | null;
-  meta: PlatformTenantMeta | null;
-  planId: PlanId | null;
   loading: boolean;
+}
+
+export interface LoginPayload {
+  token?: string;
+  session?: {
+    role?: SessionRole | null;
+    tenantId?: string | null;
+    impersonating?: boolean;
+  };
+  user?: AuthUser | null;
+  tenant?: TenantState | null;
 }
 
 interface StoreContextValue extends AuthState {
   setToken: (token: string | null) => void;
-  refresh: () => Promise<void>;
+  refresh: (opts?: { force?: boolean }) => Promise<void>;
+  hydrate: (payload: LoginPayload) => void;
   logout: () => Promise<void>;
   api: (path: string, init?: RequestInit) => Promise<Response>;
+  applyTenant: (tenant: TenantState) => void;
+  applyOrder: (order: Order, extras?: { tables?: DiningTable[] }) => void;
+  mergeOrders: (orders: Order[]) => void;
+}
+
+type MemorySession = {
+  token: string;
+  role: SessionRole | null;
+  tenantId: string | null;
+  impersonating: boolean;
+  user: AuthUser | null;
+  tenant: TenantState | null;
+};
+
+/** Survives StoreProvider remounts during client navigation (React state does not). */
+let memorySession: MemorySession | null = null;
+
+function isPublicPath(path: string) {
+  return (
+    path === "/" ||
+    path.startsWith("/guest") ||
+    path.startsWith("/order") ||
+    path.startsWith("/scan") ||
+    path.startsWith("/track") ||
+    path.startsWith("/login") ||
+    path.startsWith("/lab") ||
+    path.startsWith("/super")
+  );
+}
+
+function readMemory(token: string | null): MemorySession | null {
+  if (!token || !memorySession || memorySession.token !== token) return null;
+  return memorySession;
+}
+
+function writeMemory(next: MemorySession | null) {
+  memorySession = next;
+}
+
+function emptyAuth(): Omit<AuthState, "loading"> {
+  return {
+    token: null,
+    role: null,
+    tenantId: null,
+    impersonating: false,
+    user: null,
+    tenant: null,
+  };
+}
+
+function clientBootState(): AuthState {
+  if (typeof window === "undefined") {
+    return { ...emptyAuth(), loading: true };
+  }
+  const token = localStorage.getItem(TOKEN_KEY);
+  const cached = readMemory(token);
+  if (cached) {
+    return { ...cached, loading: false };
+  }
+  if (!token || isPublicPath(window.location.pathname)) {
+    return { ...emptyAuth(), token, loading: false };
+  }
+  return { ...emptyAuth(), token, loading: true };
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [token, setTokenState] = useState<string | null>(null);
-  const [role, setRole] = useState<SessionRole | null>(null);
-  const [tenantId, setTenantId] = useState<string | null>(null);
-  const [impersonating, setImpersonating] = useState(false);
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [tenant, setTenant] = useState<TenantState | null>(null);
-  const [meta, setMeta] = useState<PlatformTenantMeta | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [boot] = useState(clientBootState);
+  const [token, setTokenState] = useState<string | null>(boot.token);
+  const [role, setRole] = useState<SessionRole | null>(boot.role);
+  const [tenantId, setTenantId] = useState<string | null>(boot.tenantId);
+  const [impersonating, setImpersonating] = useState(boot.impersonating);
+  const [user, setUser] = useState<AuthUser | null>(boot.user);
+  const [tenant, setTenant] = useState<TenantState | null>(boot.tenant);
+  const [loading, setLoading] = useState(boot.loading);
 
   const setToken = useCallback((t: string | null) => {
     if (t) localStorage.setItem(TOKEN_KEY, t);
     else localStorage.removeItem(TOKEN_KEY);
     setTokenState(t);
+    if (!t || (memorySession && memorySession.token !== t)) writeMemory(null);
   }, []);
 
   const api = useCallback(
     async (path: string, init?: RequestInit) => {
       const headers = new Headers(init?.headers);
       if (token) headers.set("Authorization", `Bearer ${token}`);
-      if (!headers.has("Content-Type") && init?.body) {
+      if (!headers.has("Content-Type") && init?.body && !(init.body instanceof FormData)) {
         headers.set("Content-Type", "application/json");
       }
-      return fetch(apiUrl(path), { ...init, headers });
+      return fetch(path, { ...init, headers });
     },
     [token],
   );
 
-  const refresh = useCallback(async () => {
+  const applySession = useCallback((payload: MemorySession, doneLoading = true) => {
+    writeMemory(payload);
+    startTransition(() => {
+      setTokenState(payload.token);
+      setRole(payload.role);
+      setTenantId(payload.tenantId);
+      setImpersonating(payload.impersonating);
+      setUser(payload.user);
+      setTenant(payload.tenant);
+      if (doneLoading) setLoading(false);
+    });
+  }, []);
+
+  const hydrate = useCallback((payload: LoginPayload) => {
+    const t = payload.token ?? (typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null);
+    if (payload.token) {
+      localStorage.setItem(TOKEN_KEY, payload.token);
+    }
+    if (!t) {
+      writeMemory(null);
+      setLoading(false);
+      return;
+    }
+    applySession({
+      token: t,
+      role: payload.session?.role ?? null,
+      tenantId: payload.session?.tenantId ?? null,
+      impersonating: !!payload.session?.impersonating,
+      user: payload.user ?? null,
+      tenant: payload.tenant ?? null,
+    });
+  }, [applySession]);
+
+  const applyTenant = useCallback((next: TenantState) => {
+    startTransition(() => setTenant(next));
+  }, []);
+
+  const applyOrder = useCallback((order: Order, extras?: { tables?: DiningTable[] }) => {
+    setTenant((prev) => {
+      if (!prev) return prev;
+      const idx = prev.orders.findIndex((o) => o.id === order.id);
+      const orders =
+        idx >= 0 ? prev.orders.map((o) => (o.id === order.id ? order : o)) : [order, ...prev.orders];
+      return { ...prev, orders, tables: extras?.tables ?? prev.tables };
+    });
+  }, []);
+
+  const mergeOrders = useCallback((incoming: Order[]) => {
+    if (!incoming.length) return;
+    setTenant((prev) => {
+      if (!prev) return prev;
+      const known = new Set(prev.orders.map((o) => o.id));
+      const fresh = incoming.filter((o) => !known.has(o.id));
+      const updated = prev.orders.map((o) => incoming.find((n) => n.id === o.id) || o);
+      return { ...prev, orders: fresh.length ? [...fresh, ...updated] : updated };
+    });
+  }, []);
+
+  const refresh = useCallback(async (opts?: { force?: boolean }) => {
     const t = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
     if (!t) {
+      writeMemory(null);
       setTokenState(null);
       setRole(null);
       setTenantId(null);
       setUser(null);
       setTenant(null);
-      setMeta(null);
       setImpersonating(false);
       setLoading(false);
       return;
     }
+
+    const cached = readMemory(t);
+    if (!opts?.force && cached && (cached.tenant || cached.role === "super")) {
+      applySession(cached);
+      return;
+    }
+
     setTokenState(t);
-    const res = await fetch(apiUrl("/api/state"), {
+    const res = await fetch("/api/state", {
       headers: { Authorization: `Bearer ${t}` },
     });
     if (!res.ok) {
       localStorage.removeItem(TOKEN_KEY);
+      writeMemory(null);
       setTokenState(null);
       setRole(null);
       setTenant(null);
-      setMeta(null);
       setUser(null);
       setLoading(false);
       return;
     }
     const data = await res.json();
-    startTransition(() => {
-      setRole(data.session?.role ?? null);
-      setTenantId(data.session?.tenantId ?? null);
-      setImpersonating(!!data.session?.impersonating);
-      setUser(data.user ?? null);
-      setTenant(data.tenant ?? null);
-      setMeta(data.meta ?? null);
-      setLoading(false);
+    applySession({
+      token: t,
+      role: data.session?.role ?? null,
+      tenantId: data.session?.tenantId ?? null,
+      impersonating: !!data.session?.impersonating,
+      user: data.user ?? null,
+      tenant: data.tenant ?? null,
     });
-  }, []);
+  }, [applySession]);
 
   const logout = useCallback(async () => {
     const t = localStorage.getItem(TOKEN_KEY);
     if (t) {
-      await fetch(apiUrl("/api/auth"), {
+      await fetch("/api/auth", {
         method: "DELETE",
         headers: { Authorization: `Bearer ${t}` },
       });
     }
+    writeMemory(null);
     setToken(null);
     setRole(null);
     setTenantId(null);
     setUser(null);
     setTenant(null);
-    setMeta(null);
     setImpersonating(false);
   }, [setToken]);
 
   useEffect(() => {
-    void refresh();
+    const path = window.location.pathname;
+    if (isPublicPath(path)) {
+      const t = localStorage.getItem(TOKEN_KEY);
+      setTokenState(t);
+      setLoading(false);
+      return;
+    }
+    const t = localStorage.getItem(TOKEN_KEY);
+    if (readMemory(t)?.tenant || readMemory(t)?.role === "super") {
+      setLoading(false);
+      return;
+    }
+    void refresh({ force: false });
   }, [refresh]);
 
-  const planId = meta?.planId ?? null;
+  useEffect(() => {
+    if (!token) return;
+    /* Don't clobber a warm cache with an empty boot snapshot. */
+    if (!tenant && !user && role !== "super") return;
+    writeMemory({
+      token,
+      role,
+      tenantId,
+      impersonating,
+      user,
+      tenant,
+    });
+  }, [token, role, tenantId, impersonating, user, tenant]);
 
   const value = useMemo(
     () => ({
@@ -145,13 +306,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       impersonating,
       user,
       tenant,
-      meta,
-      planId,
       loading,
       setToken,
       refresh,
+      hydrate,
       logout,
       api,
+      applyTenant,
+      applyOrder,
+      mergeOrders,
     }),
     [
       token,
@@ -160,13 +323,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       impersonating,
       user,
       tenant,
-      meta,
-      planId,
       loading,
       setToken,
       refresh,
+      hydrate,
       logout,
       api,
+      applyTenant,
+      applyOrder,
+      mergeOrders,
     ],
   );
 

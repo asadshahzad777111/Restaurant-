@@ -1,43 +1,53 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { TOKEN_KEY, useStore } from "@/lib/store";
-import { apiUrl } from "@/lib/urls";
+import { isCustomerShell, isStaffShell, readAppShell } from "@/lib/app-shell";
 import styles from "./login.module.css";
 
-function LoginForm() {
-  const router = useRouter();
-  const search = useSearchParams();
-  const { setToken, refresh } = useStore();
-  const ownerOnly =
-    search.get("owner") === "1" ||
-    (typeof window !== "undefined" && window.location.hostname.startsWith("control."));
+const CODE_KEY = "ordo_staff_tenant_code";
 
-  const [code, setCode] = useState("DEMO");
-  const [username, setUsername] = useState(ownerOnly ? "super" : "admin");
-  const [password, setPassword] = useState(ownerOnly ? "super123" : "admin123");
+export default function LoginPage() {
+  const router = useRouter();
+  const { hydrate } = useStore();
+  const [mode, setMode] = useState<"tenant" | "super">("tenant");
+  const [appShell, setAppShell] = useState<string>(() =>
+    typeof window === "undefined" ? "web" : readAppShell(),
+  );
+  const [code, setCode] = useState("");
+  const [username, setUsername] = useState("admin");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (ownerOnly) {
-      setUsername("super");
-      setPassword("super123");
+    const shell = readAppShell();
+    setAppShell(shell);
+    if (shell === "customer" || isCustomerShell()) {
+      router.replace("/guest?app=customer");
+      return;
     }
-  }, [ownerOnly]);
+    if (shell === "staff") setMode("tenant");
+    const saved = localStorage.getItem(CODE_KEY);
+    setCode(saved || (shell === "staff" ? "" : "DEMO"));
+    setPassword(shell === "staff" ? "" : "admin123");
+    router.prefetch("/home");
+    if (shell !== "staff") router.prefetch("/super");
+  }, [router]);
+
+  const hideSuper = isStaffShell() || appShell === "staff";
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError("");
-    const res = await fetch(apiUrl("/api/auth"), {
+    const res = await fetch("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(
-        ownerOnly
+        mode === "super"
           ? { mode: "super", username, password }
           : { mode: "tenant", code, username, password },
       ),
@@ -48,31 +58,79 @@ function LoginForm() {
       setError(data.error || "Login failed");
       return;
     }
+    if (mode === "tenant" && code) {
+      localStorage.setItem(CODE_KEY, code.trim().toUpperCase());
+    }
     localStorage.setItem(TOKEN_KEY, data.token);
-    setToken(data.token);
-    await refresh();
-    router.push(ownerOnly ? "/control" : "/home");
+    hydrate({
+      token: data.token,
+      session: data.session,
+      user: data.user ?? null,
+      tenant: data.tenant ?? null,
+    });
+    if (mode === "super") router.push("/super");
+    else router.push("/home");
   }
 
   return (
-    <div className={ownerOnly ? styles.pageHq : styles.page}>
-      <form className={ownerOnly ? styles.cardHq : styles.card} onSubmit={onSubmit}>
-        <Link href={ownerOnly ? "/control" : "/"} className={ownerOnly ? styles.brandHq : styles.brand}>
-          {ownerOnly ? "ORDO HQ" : "ORDO"}
-        </Link>
-        <h1>{ownerOnly ? "ORDO HQ login" : "Restaurant staff login"}</h1>
-        <p className={styles.hint} style={{ marginTop: 0 }}>
-          {ownerOnly
-            ? "Platform owner only — manage restaurants and help them without their password."
-            : "Use your restaurant code. Guests never need this page — they order from the guest menu."}
-        </p>
-        {!ownerOnly && (
+    <div className={styles.page}>
+      <form className={styles.card} onSubmit={onSubmit}>
+        {hideSuper ? (
+          <span className={styles.brand}>ORDO</span>
+        ) : (
+          <Link href="/" className={styles.brand}>
+            ORDO
+          </Link>
+        )}
+        <h1>Staff login</h1>
+        {hideSuper ? (
+          <p className={styles.hint}>Use your restaurant code. Super Admin is not part of this app.</p>
+        ) : (
+          <>
+            <p className={styles.guestStrip}>
+              Ordering food? This page is for kitchen staff.
+              <span>
+                <Link href="/guest">Enter as guest</Link>
+                {" · "}
+                <Link href="/scan">Scan table QR</Link>
+              </span>
+            </p>
+            <div className={styles.modes}>
+              <button
+                type="button"
+                className={mode === "tenant" ? styles.active : ""}
+                onClick={() => {
+                  setMode("tenant");
+                  setUsername("admin");
+                  setPassword("admin123");
+                }}
+              >
+                Restaurant
+              </button>
+              <button
+                type="button"
+                className={mode === "super" ? styles.active : ""}
+                onClick={() => {
+                  setMode("super");
+                  setUsername("super");
+                  setPassword("super123");
+                }}
+              >
+                Super Admin
+              </button>
+            </div>
+          </>
+        )}
+        {mode === "tenant" && (
           <label className={styles.field}>
             Restaurant code
             <input
               className={styles.input}
               value={code}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              autoCapitalize="characters"
+              autoComplete="off"
+              placeholder="Kitchen code"
               required
             />
           </label>
@@ -97,27 +155,17 @@ function LoginForm() {
           />
         </label>
         {error && <p className={styles.error}>{error}</p>}
-        <button
-          type="submit"
-          className={ownerOnly ? styles.submitHq : styles.submit}
-          disabled={busy}
-        >
+        <button type="submit" className={styles.submit} disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
         </button>
-        {!ownerOnly && (
-          <p className={styles.hint}>
-            Demo: code <strong>DEMO</strong> · admin / admin123
-          </p>
-        )}
+        <p className={styles.hint}>
+          {hideSuper
+            ? "Restaurant code required. Demo kitchen: DEMO · admin / admin123"
+            : "Demo: code DEMO · admin/admin123 · or Super super/super123"}
+          <br />
+          Lab demos only — production pe passwords change karein (Settings).
+        </p>
       </form>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className={styles.page}>Loading…</div>}>
-      <LoginForm />
-    </Suspense>
   );
 }

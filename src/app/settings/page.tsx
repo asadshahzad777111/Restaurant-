@@ -3,19 +3,18 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useStore } from "@/lib/store";
-import { apiUrl } from "@/lib/urls";
-import { planAllows, upgradeHint } from "@/lib/plans";
-import type { TenantUser } from "@/lib/tenant-types";
-import type { Permission } from "@/lib/types";
+import { uploadTenantMedia } from "@/lib/media-client";
 import styles from "../staff.module.css";
 
 export default function SettingsPage() {
-  const { tenant, api, refresh, token, planId } = useStore();
+  const { tenant, api, applyTenant, user, token } = useStore();
   const [msg, setMsg] = useState("");
   const [branding, setBranding] = useState({
     name: "",
     logoUrl: "",
     receiptFooter: "",
+    address: "",
+    phone: "",
   });
   const [fees, setFees] = useState({
     deliveryFee: 0,
@@ -24,14 +23,6 @@ export default function SettingsPage() {
     taxRate: 0,
   });
   const [pw, setPw] = useState({ current: "", next: "" });
-  const [staffForm, setStaffForm] = useState({
-    username: "",
-    password: "",
-    roleLabel: "Cashier",
-  });
-
-  const canLogo = planAllows(planId, "logo");
-  const canStaff = planAllows(planId, "staff");
 
   useEffect(() => {
     if (!tenant) return;
@@ -39,6 +30,8 @@ export default function SettingsPage() {
       name: tenant.branding.name,
       logoUrl: tenant.branding.logoUrl,
       receiptFooter: tenant.branding.receiptFooter,
+      address: tenant.shop.address || "",
+      phone: tenant.shop.phone || "",
     });
     setFees({
       deliveryFee: tenant.shop.deliveryFee || 0,
@@ -50,19 +43,23 @@ export default function SettingsPage() {
 
   async function saveBranding(e: React.FormEvent) {
     e.preventDefault();
-    const payload = canLogo
-      ? branding
-      : {
-          name: branding.name,
-          receiptFooter: branding.receiptFooter,
-          logoUrl: tenant?.branding.logoUrl || "",
-        };
     const res = await api("/api/admin", {
       method: "PUT",
-      body: JSON.stringify({ action: "branding", branding: payload }),
+      body: JSON.stringify({
+        action: "branding",
+        branding: {
+          name: branding.name,
+          logoUrl: branding.logoUrl,
+          receiptFooter: branding.receiptFooter,
+        },
+        shop: { address: branding.address, phone: branding.phone },
+      }),
     });
-    setMsg(res.ok ? "Saved" : "Failed");
-    await refresh();
+    const data = await res.json().catch(() => ({}));
+    setMsg(res.ok ? "Branding saved" : "Failed");
+    if (res.ok && (data as { tenant?: typeof tenant }).tenant) {
+      applyTenant((data as { tenant: NonNullable<typeof tenant> }).tenant);
+    }
   }
 
   async function saveFees(e: React.FormEvent) {
@@ -71,8 +68,11 @@ export default function SettingsPage() {
       method: "PUT",
       body: JSON.stringify({ action: "fees", shop: fees }),
     });
+    const data = await res.json().catch(() => ({}));
     setMsg(res.ok ? "Fees saved" : "Failed");
-    await refresh();
+    if (res.ok && (data as { tenant?: typeof tenant }).tenant) {
+      applyTenant((data as { tenant: NonNullable<typeof tenant> }).tenant);
+    }
   }
 
   async function changePassword(e: React.FormEvent) {
@@ -89,42 +89,12 @@ export default function SettingsPage() {
     setMsg(res.ok ? "Password updated" : data.error || "Failed");
     if (res.ok) {
       setPw({ current: "", next: "" });
-      await refresh();
-    }
-  }
-
-  async function addStaff(e: React.FormEvent) {
-    e.preventDefault();
-    if (!tenant || !canStaff) return;
-    const users: TenantUser[] = [
-      ...tenant.users,
-      {
-        id: `user_${Date.now()}`,
-        username: staffForm.username.trim(),
-        password: staffForm.password,
-        role: "staff",
-        roleLabel: staffForm.roleLabel,
-        permissions: ["home", "pos", "orders", "kitchen"] as Permission[],
-        active: true,
-      },
-    ];
-    const res = await api("/api/admin", {
-      method: "PUT",
-      body: JSON.stringify({ action: "staff", users }),
-    });
-    const data = await res.json();
-    setMsg(res.ok ? "Staff added" : data.error || "Failed");
-    if (res.ok) {
-      setStaffForm({ username: "", password: "", roleLabel: "Cashier" });
-      await refresh();
     }
   }
 
   async function exportData(type: "menu" | "orders", format: "json" | "csv") {
     const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const url = apiUrl(
-      `/api/export?type=${type}&format=${format}${type === "orders" ? `&from=${encodeURIComponent(from)}` : ""}`,
-    );
+    const url = `/api/export?type=${type}&format=${format}${type === "orders" ? `&from=${encodeURIComponent(from)}` : ""}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) {
       setMsg("Export failed");
@@ -147,141 +117,79 @@ export default function SettingsPage() {
     setMsg(`Exported ${type} (${format})`);
   }
 
-  async function backupToR2() {
-    if (!token) return;
-    setMsg("Uploading backup to R2…");
-    const res = await fetch(apiUrl("/api/backup"), {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({}),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setMsg(data.error || data.hint || "R2 backup failed");
-      return;
-    }
-    setMsg(`R2 backup OK — ${data.key}`);
-  }
-
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   return (
     <AppShell title="Settings">
       <div className={styles.stack}>
+        {user?.mustChangePassword && (
+          <div className={styles.card} style={{ borderColor: "#f5c542" }}>
+            <strong>Demo password in use</strong>
+            <p className={styles.muted}>
+              /lab demos OK — production pe password change zaroori hai.
+            </p>
+          </div>
+        )}
+
         <form className={styles.form} onSubmit={saveBranding}>
-          <h3 style={{ margin: 0 }}>Restaurant name</h3>
+          <h3 style={{ margin: 0 }}>Branding</h3>
           <input
             value={branding.name}
             onChange={(e) => setBranding({ ...branding, name: e.target.value })}
             placeholder="Restaurant name"
           />
+          <input
+            value={branding.logoUrl}
+            onChange={(e) => setBranding({ ...branding, logoUrl: e.target.value })}
+            placeholder="Logo URL"
+          />
+          <label className={styles.muted}>
+            Or upload logo (R2 when configured, otherwise local file-store)
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                setMsg("Uploading logo…");
+                try {
+                  const saved = await uploadTenantMedia(token, "logo", file);
+                  setBranding((b) => ({ ...b, logoUrl: saved.url }));
+                  setMsg(`Logo uploaded (${saved.storage})`);
+                } catch (err) {
+                  setMsg(err instanceof Error ? err.message : "Logo upload failed");
+                }
+              }}
+            />
+          </label>
+          {branding.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={branding.logoUrl} alt="" style={{ maxWidth: 120, maxHeight: 80, objectFit: "contain" }} />
+          ) : null}
           <textarea
             value={branding.receiptFooter}
             onChange={(e) => setBranding({ ...branding, receiptFooter: e.target.value })}
-            placeholder="Receipt footer"
+            placeholder="Receipt footer (English or Urdu)"
             rows={2}
           />
-          {canLogo ? (
-            <input
-              value={branding.logoUrl}
-              onChange={(e) => setBranding({ ...branding, logoUrl: e.target.value })}
-              placeholder="Logo URL"
-            />
-          ) : (
-            <div className={styles.upgrade}>
-              <strong>Logo locked on Starter</strong>
-              <p className={styles.muted} style={{ margin: "0.35rem 0 0", color: "inherit" }}>
-                {upgradeHint(planId)}
-              </p>
-            </div>
-          )}
+          <input
+            value={branding.address}
+            onChange={(e) => setBranding({ ...branding, address: e.target.value })}
+            placeholder="Shop address (prints on 58mm bill)"
+          />
+          <input
+            value={branding.phone}
+            onChange={(e) => setBranding({ ...branding, phone: e.target.value })}
+            placeholder="Shop phone (prints on 58mm footer)"
+          />
           <button type="submit" className={styles.btn}>
-            Save
+            Save branding
           </button>
         </form>
 
-        {canLogo && (
-          <div className={styles.card}>
-            <h3 style={{ marginTop: 0 }}>Upload logo</h3>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file || !token) return;
-                const fd = new FormData();
-                fd.append("file", file);
-                fd.append("kind", "logo");
-                const res = await fetch(apiUrl("/api/upload"), {
-                  method: "POST",
-                  headers: { Authorization: `Bearer ${token}` },
-                  body: fd,
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                  setMsg(data.error || data.hint || "Upload failed");
-                  return;
-                }
-                setBranding((b) => ({ ...b, logoUrl: data.url }));
-                setMsg("Uploaded — tap Save above");
-              }}
-            />
-          </div>
-        )}
-
-        {canStaff ? (
-          <div className={styles.card}>
-            <h3 style={{ marginTop: 0 }}>Staff</h3>
-            <p className={styles.muted}>Add cashiers / kitchen logins for this restaurant only.</p>
-            <ul className={styles.muted}>
-              {(tenant?.users ?? []).map((u) => (
-                <li key={u.id}>
-                  {u.username} · {u.roleLabel} ({u.role})
-                </li>
-              ))}
-            </ul>
-            <form
-              className={styles.form}
-              style={{ maxWidth: "100%", border: "none", padding: 0 }}
-              onSubmit={addStaff}
-            >
-              <input
-                required
-                placeholder="Username"
-                value={staffForm.username}
-                onChange={(e) => setStaffForm({ ...staffForm, username: e.target.value })}
-              />
-              <input
-                required
-                type="password"
-                placeholder="Password"
-                value={staffForm.password}
-                onChange={(e) => setStaffForm({ ...staffForm, password: e.target.value })}
-              />
-              <input
-                placeholder="Role label"
-                value={staffForm.roleLabel}
-                onChange={(e) => setStaffForm({ ...staffForm, roleLabel: e.target.value })}
-              />
-              <button type="submit" className={styles.btn}>
-                Add staff login
-              </button>
-            </form>
-          </div>
-        ) : (
-          <div className={styles.upgrade}>
-            <strong>Staff logins locked on Starter</strong>
-            <p className={styles.muted} style={{ margin: "0.35rem 0 0", color: "inherit" }}>
-              Starter is one owner login for simple billing. Pro (₨2,500) unlocks staff accounts.
-            </p>
-          </div>
-        )}
-
         <form className={styles.form} onSubmit={saveFees}>
-          <h3 style={{ margin: 0 }}>Fees</h3>
+          <h3 style={{ margin: 0 }}>Fees (per tenant)</h3>
           <label className={styles.muted}>Delivery fee (PKR)</label>
           <input
             type="number"
@@ -332,62 +240,117 @@ export default function SettingsPage() {
 
         <div className={styles.card}>
           <h3 style={{ marginTop: 0 }}>Backup / export</h3>
+          <p className={styles.muted}>Localhost safety — download menu & orders.</p>
           <div className={styles.row}>
-            <button
-              type="button"
-              className={styles.btnGhost}
-              onClick={() => void exportData("menu", "json")}
-            >
+            <button type="button" className={styles.btnGhost} onClick={() => void exportData("menu", "json")}>
               Menu JSON
             </button>
-            <button
-              type="button"
-              className={styles.btnGhost}
-              onClick={() => void exportData("orders", "csv")}
-            >
-              Orders CSV
+            <button type="button" className={styles.btnGhost} onClick={() => void exportData("menu", "csv")}>
+              Menu CSV
             </button>
-            <button type="button" className={styles.btn} onClick={() => void backupToR2()}>
-              Backup to R2
+            <button type="button" className={styles.btnGhost} onClick={() => void exportData("orders", "json")}>
+              Orders JSON (30d)
+            </button>
+            <button type="button" className={styles.btnGhost} onClick={() => void exportData("orders", "csv")}>
+              Orders CSV (30d)
             </button>
           </div>
         </div>
 
         <div className={styles.card}>
-          <h3 style={{ marginTop: 0 }}>Guest QR links</h3>
+          <h3 style={{ marginTop: 0 }}>QR / guest links</h3>
+          <p className={styles.muted}>Print these on table tents — each restaurant uses its own code.</p>
+          <code>
+            {origin}/guest
+          </code>
+          <br />
+          <code>
+            {origin}/scan
+          </code>
+          <br />
           <code>
             {origin}/order?tenant={tenant?.code}
           </code>
+          <br />
+          <code>
+            {origin}/order?tenant={tenant?.code}&table=3
+          </code>
         </div>
 
-        {planAllows(planId, "stock") && (
-          <div className={styles.card}>
-            <h3 style={{ marginTop: 0 }}>Stock</h3>
-            <div className={styles.tableWrap}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Qty</th>
-                    <th>Low at</th>
+        <div className={styles.card}>
+          <h3 style={{ marginTop: 0 }}>Staff on this kitchen</h3>
+          <p className={styles.muted}>Users belong to {tenant?.code} only — never another restaurant.</p>
+          <ul className={styles.mobileCards}>
+            {(tenant?.users ?? []).map((u) => (
+              <li key={u.id} className={styles.mobileCard}>
+                <strong>{u.username}</strong>
+                <p className={styles.muted}>
+                  {u.roleLabel} · {u.active ? "active" : "off"}
+                </p>
+              </li>
+            ))}
+          </ul>
+          <div className={`${styles.tableScroll} ${styles.tableScrollDesktop}`}>
+            <table className={`${styles.table} ${styles.tableDesktop}`}>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(tenant?.users ?? []).map((u) => (
+                  <tr key={u.id}>
+                    <td>{u.username}</td>
+                    <td>{u.roleLabel}</td>
+                    <td>{u.active ? "active" : "off"}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {(tenant?.stock ?? []).map((s) => (
-                    <tr key={s.id}>
-                      <td>
-                        {s.name} ({s.unit})
-                        {s.quantity <= s.lowThreshold ? " ⚠" : ""}
-                      </td>
-                      <td>{s.quantity}</td>
-                      <td>{s.lowThreshold}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
+        </div>
+
+        <div className={styles.card}>
+          <h3 style={{ marginTop: 0 }}>Stock</h3>
+          <ul className={styles.mobileCards}>
+            {(tenant?.stock ?? []).map((s) => (
+              <li key={s.id} className={styles.mobileCard}>
+                <strong>
+                  {s.name} ({s.unit})
+                  {s.quantity <= s.lowThreshold ? " ⚠" : ""}
+                </strong>
+                <p className={styles.muted}>
+                  Qty {s.quantity} · low at {s.lowThreshold}
+                </p>
+              </li>
+            ))}
+          </ul>
+          <div className={`${styles.tableScroll} ${styles.tableScrollDesktop}`}>
+          <table className={`${styles.table} ${styles.tableDesktop}`}>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Low at</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(tenant?.stock ?? []).map((s) => (
+                <tr key={s.id}>
+                  <td>
+                    {s.name} ({s.unit})
+                    {s.quantity <= s.lowThreshold ? " ⚠" : ""}
+                  </td>
+                  <td>{s.quantity}</td>
+                  <td>{s.lowThreshold}</td>
+                </tr>
+            ))}
+          </tbody>
+          </table>
+          </div>
+        </div>
 
         {msg && <p className={styles.muted}>{msg}</p>}
       </div>

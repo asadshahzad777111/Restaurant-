@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureStore, addOrder, readTenant, findTenantMetaByCode } from "@/lib/db";
 import { AuthError, hasPermission, requireTenantSession } from "@/lib/session";
+import { assertOrderRules } from "@/lib/guest";
 import { computeFees, lineUnitPrice } from "@/lib/fees";
 import type { LineModifier, OrderLine } from "@/lib/tenant-types";
 import type { PaymentMethod, PaymentStatus, ServiceType } from "@/lib/types";
@@ -29,7 +30,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     const tenant = await readTenant(session.tenantId!);
-    return NextResponse.json({ orders: tenant.orders });
+    const poll = new URL(req.url).searchParams.get("poll");
+    if (poll) {
+      const cutoff = Date.now() - 2 * 60 * 1000;
+      const orders = tenant.orders.filter((o) => {
+        if (!["completed", "cancelled"].includes(o.status)) return true;
+        return new Date(o.updatedAt).getTime() >= cutoff;
+      });
+      return NextResponse.json({ orders: orders.slice(0, 80) });
+    }
+    return NextResponse.json({ orders: tenant.orders.slice(0, 200) });
   } catch (e) {
     if (e instanceof AuthError) {
       return NextResponse.json({ error: e.message }, { status: e.status });
@@ -78,6 +88,18 @@ export async function POST(req: NextRequest) {
 
     if (!rawLines?.length) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
+    }
+
+    const ruleError = assertOrderRules({
+      channel,
+      serviceType,
+      paymentMethod,
+      tableNumber,
+      customerPhone,
+      deliveryAddress,
+    });
+    if (ruleError) {
+      return NextResponse.json({ error: ruleError }, { status: 400 });
     }
 
     let tenantId: string;

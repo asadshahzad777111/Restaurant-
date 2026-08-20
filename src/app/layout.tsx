@@ -1,18 +1,26 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import { StoreProvider } from "@/lib/store";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-jakarta",
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+});
+
+const display = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "ORDO — Restaurant OS",
+  title: "ORDO — Restaurant OS for Pakistan kitchens",
   description:
-    "Multi-tenant restaurant operating system: POS, kitchen, inventory, guest QR ordering.",
+    "Guest QR ordering, counter POS, kitchen tickets, and isolated restaurants. Browser-first, PKR pricing from ₨999/month. No per-order fee.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
@@ -22,7 +30,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ff6a1a",
+  themeColor: "#c45c26",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -31,7 +39,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={jakarta.variable}>
+      <body className={`${jakarta.variable} ${display.variable}`}>
         <StoreProvider>{children}</StoreProvider>
       </body>
     </html>

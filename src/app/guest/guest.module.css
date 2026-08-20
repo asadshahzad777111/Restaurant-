@@ -1,0 +1,171 @@
+.page {
+  min-height: 100vh;
+  background: var(--guest-bg);
+  color: var(--guest-text);
+  animation: ordo-fade 0.4s ease both;
+  overflow-x: hidden;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.1rem var(--page-pad);
+}
+
+.brand {
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-size: 1.35rem;
+}
+
+.staff {
+  font-size: 0.9rem;
+  color: var(--guest-muted);
+  border: 1px solid var(--guest-line);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+}
+
+.staff:hover {
+  color: var(--guest-text);
+}
+
+.main {
+  width: min(32rem, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2.5rem 0 4rem;
+  animation: ordo-rise 0.5s ease both;
+}
+
+.kicker {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ember-bright);
+}
+
+.main h1 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(2rem, 5vw, 2.7rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  color: var(--guest-muted);
+  line-height: 1.6;
+  margin: 0.85rem 0 1.1rem;
+}
+
+.cuisines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+}
+
+.cuisines li {
+  border: 1px solid var(--guest-line);
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--guest-muted);
+}
+
+.card,
+.paste {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.25rem;
+  border: 1px solid var(--guest-line);
+  border-radius: var(--radius-lg);
+  background: var(--guest-elevated);
+}
+
+.paste {
+  margin-top: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--guest-muted);
+}
+
+.field input {
+  border: 1px solid var(--guest-line);
+  background: var(--guest-bg);
+  color: var(--guest-text);
+  border-radius: var(--radius);
+  padding: 0.8rem 0.9rem;
+}
+
+.primary,
+.secondary,
+.scan,
+.ghost {
+  border: none;
+  border-radius: 999px;
+  padding: 0.8rem 1.1rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.primary {
+  background: var(--ember);
+  color: var(--ember-ink);
+}
+
+.primary:hover {
+  background: var(--ember-bright);
+}
+
+.secondary {
+  background: var(--guest-text);
+  color: var(--ink);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin: 1rem 0 0;
+}
+
+.actions > * {
+  flex: 1 1 12rem;
+}
+
+.scan,
+.ghost {
+  border: 1px solid var(--guest-line);
+  background: transparent;
+  color: var(--guest-text);
+}
+
+.scan:hover,
+.ghost:hover {
+  border-color: rgba(243, 237, 228, 0.28);
+}
+
+.error {
+  color: var(--danger);
+  font-weight: 600;
+  margin: 1rem 0 0;
+}
+
+@media (max-width: 560px) {
+  .actions {
+    grid-template-columns: 1fr;
+  }
+}

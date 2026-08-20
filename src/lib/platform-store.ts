@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import type { PlatformState, Session, Lead, PlatformTenantMeta, PlanId, TenantStatus } from "./types";
 import { ensureBootstrap } from "./bootstrap";
-import { CANONICAL_PLANS } from "./plans";
+import { PLATFORM_CONTACT_WHATSAPP } from "./contact";
 
 const DATA_ROOT = path.join(process.cwd(), ".data");
 const PLATFORM_PATH = path.join(DATA_ROOT, "platform.json");
@@ -10,9 +10,7 @@ const PLATFORM_PATH = path.join(DATA_ROOT, "platform.json");
 function readPlatform(): PlatformState {
   ensureBootstrap();
   const raw = fs.readFileSync(PLATFORM_PATH, "utf8");
-  const state = JSON.parse(raw) as PlatformState;
-  state.plans = CANONICAL_PLANS.map((p) => ({ ...p }));
-  return state;
+  return JSON.parse(raw) as PlatformState;
 }
 
 function writePlatform(state: PlatformState) {
@@ -125,5 +123,5 @@ export function listLeads() {
 }
 
 export function getContactWhatsapp() {
-  return getPlatform().contactWhatsapp;
+  return getPlatform().contactWhatsapp || PLATFORM_CONTACT_WHATSAPP;
 }

@@ -8,7 +8,7 @@ import {
   getSessionUser,
   publicUser,
 } from "@/lib/session";
-import { findSession, ensureStore } from "@/lib/db";
+import { ensureStore, findSession, readTenantStaffView } from "@/lib/db";
 
 export const runtime = "nodejs";
 
@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
     if (!code) return NextResponse.json({ error: "Restaurant code required" }, { status: 400 });
     const session = await loginTenant(code, username, password);
     const user = publicUser(await getSessionUser(session));
-    return NextResponse.json({ token: session.token, session, user });
+    const tenant = session.tenantId ? await readTenantStaffView(session.tenantId) : null;
+    return NextResponse.json({ token: session.token, session, user, tenant });
   } catch (e) {
     if (e instanceof AuthError) {
       return NextResponse.json({ error: e.message }, { status: e.status });

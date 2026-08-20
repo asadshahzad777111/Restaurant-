@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureStore, findTenantMetaByCode, findTenantMetaById, listPlans, getPublicMenu, readTenantSafe } from "@/lib/db";
+import {
+  ensureStore,
+  findTenantMetaByCode,
+  findTenantMetaById,
+  listPlans,
+  getPublicMenu,
+  readTenantStaffView,
+} from "@/lib/db";
 import { AuthError, getSessionUser, publicUser, requireSession } from "@/lib/session";
 import { storageMode } from "@/lib/env";
 
@@ -26,7 +33,7 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({ error: "No tenant" }, { status: 400 });
         }
         const meta = await findTenantMetaById(session.tenantId);
-        const tenant = await readTenantSafe(session.tenantId);
+        const tenant = await readTenantStaffView(session.tenantId);
         const user = publicUser(await getSessionUser(session));
         return NextResponse.json({
           session,

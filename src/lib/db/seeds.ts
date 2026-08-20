@@ -2,6 +2,7 @@ import type { PlatformState } from "../types";
 import type { Permission } from "../types";
 import type { TenantState } from "../tenant-types";
 import { CANONICAL_PLANS } from "../plans";
+import { demoMenu, demoStock } from "../demo-catalog";
 
 const ALL_PERMS: Permission[] = [
   "home",
@@ -67,44 +68,8 @@ function baseTenant(id: string, code: string, name: string): TenantState {
         mustChangePassword: true,
       },
     ],
-    menu: [
-      {
-        id: "m1",
-        name: "Classic Beef Burger",
-        description: "Angus beef · cheddar",
-        price: 650,
-        category: "Burgers",
-        available: true,
-        imageUrl:
-          "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80",
-        modifiers: [
-          {
-            id: "mg_size",
-            name: "Size",
-            required: true,
-            multi: false,
-            options: [
-              { id: "reg", name: "Regular", priceDelta: 0 },
-              { id: "large", name: "Large", priceDelta: 120 },
-            ],
-          },
-        ],
-      },
-      {
-        id: "m2",
-        name: "Fresh Lime",
-        description: "Sweet / salty",
-        price: 180,
-        category: "Drinks",
-        available: true,
-        imageUrl:
-          "https://images.unsplash.com/photo-1621263764928-df1444c5e859?auto=format&fit=crop&w=600&q=80",
-      },
-    ],
-    stock: [
-      { id: "s1", name: "Beef patties", unit: "pcs", quantity: 40, lowThreshold: 10 },
-      { id: "s2", name: "Soft drink cans", unit: "pcs", quantity: 2, lowThreshold: 12 },
-    ],
+    menu: demoMenu(),
+    stock: demoStock(),
     orders: [],
     reviews: [],
     tables: [
@@ -124,10 +89,12 @@ export function demoTenantSeed(): TenantState {
 /** Second isolated restaurant for live multi-tenant proof */
 export function secondTenantSeed(): TenantState {
   const t = baseTenant("tenant_iso2", "ISO2", "Iso Kitchen Two");
-  t.menu[0] = {
-    ...t.menu[0],
-    name: "ISO2 Special Burger",
-    price: 700,
-  };
+  if (t.menu[0]) {
+    t.menu[0] = {
+      ...t.menu[0],
+      name: "ISO2 Special Burger",
+      price: 700,
+    };
+  }
   return t;
 }

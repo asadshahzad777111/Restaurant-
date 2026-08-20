@@ -136,6 +136,14 @@ export async function readTenantSafe(tenantId: string) {
     : fileTenant.readTenantSafe(tenantId);
 }
 
+/** Staff SPA payload — same tenant only, no review dump, recent tickets. */
+export async function readTenantStaffView(tenantId: string) {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.readTenantStaffViewMongo(tenantId)
+    : fileTenant.readTenantStaffView(tenantId);
+}
+
 export async function createEmptyTenantState(input: {
   id: string;
   code: string;

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ORDO Customer</string>
+    <string name="title_activity_main">ORDO Customer</string>
+    <string name="package_name">com.ordo.customer</string>
+    <string name="custom_url_scheme">com.ordo.customer</string>
+</resources>

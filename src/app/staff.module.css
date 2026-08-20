@@ -1,7 +1,5 @@
 .page {
   color: var(--staff-text);
-  width: 100%;
-  max-width: 100%;
   min-width: 0;
 }
 
@@ -21,14 +19,14 @@
 
 .card strong {
   display: block;
-  font-size: 1.45rem;
+  font-size: 1.6rem;
   margin-top: 0.35rem;
-  word-break: break-word;
 }
 
 .muted {
   color: var(--staff-muted);
   font-size: 0.9rem;
+  overflow-wrap: anywhere;
 }
 
 .row {
@@ -41,10 +39,9 @@
 .btn,
 .btnGhost {
   border-radius: 8px;
-  padding: 0.5rem 0.75rem;
+  padding: 0.45rem 0.75rem;
   border: 1px solid #ddd6cc;
   background: #fff;
-  font-size: 0.88rem;
 }
 
 .btn {
@@ -54,20 +51,59 @@
   font-weight: 700;
 }
 
-.tableWrap {
+.tableScroll {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   border-radius: 12px;
-  border: 1px solid #e8e4de;
-  background: #fff;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
   background: #fff;
-  min-width: 520px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.mobileCards {
+  display: none;
+}
+
+.mobileCard {
+  list-style: none;
+  background: #fff;
+  border: 1px solid #e8e4de;
+  border-radius: 12px;
+  padding: 0.85rem 0.95rem;
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.mobileCard strong,
+.mobileCard p {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.mobileCard strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.cardActions a,
+.cardActions button {
+  min-width: 0;
+  white-space: normal;
 }
 
 .table th,
@@ -75,13 +111,12 @@
   text-align: left;
   padding: 0.7rem;
   border-bottom: 1px solid #eee8e0;
-  font-size: 0.88rem;
-  vertical-align: top;
+  font-size: 0.9rem;
 }
 
 .menuGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 0.55rem;
 }
 
@@ -96,12 +131,70 @@
 
 .item strong {
   display: block;
+  overflow-wrap: anywhere;
+}
+
+.itemImg {
+  width: 100%;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  background: #f3eee8;
+}
+
+.catRow {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
 }
 
 .kitchen {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 0.75rem;
+}
+
+.kitchenBoard {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.lane {
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid #e8e4de;
+  border-radius: 14px;
+  padding: 0.65rem;
+}
+
+.laneHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.55rem;
+  gap: 0.5rem;
+}
+
+.laneHead h2 {
+  margin: 0;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--staff-muted);
+}
+
+.laneHead span {
+  font-weight: 700;
+  color: var(--staff-accent);
+}
+
+.laneStack {
+  display: grid;
+  gap: 0.55rem;
 }
 
 .ticket {
@@ -110,17 +203,54 @@
   border-radius: 12px;
   padding: 0.9rem;
   min-width: 0;
+  border-left: 4px solid #d4c9bb;
+}
+
+.ticket_placed {
+  border-left-color: var(--staff-accent);
+}
+
+.ticket_accepted {
+  border-left-color: #c9922a;
+}
+
+.ticket_preparing {
+  border-left-color: #8b3d14;
+}
+
+.ticket_ready {
+  border-left-color: #2f9e6b;
 }
 
 .ticket h3 {
   margin: 0 0 0.5rem;
+  overflow-wrap: anywhere;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: baseline;
+  font-size: 1.05rem;
+}
+
+.ticketTime {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--staff-muted);
+}
+
+.ticketLines {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.ticketLines strong {
+  overflow-wrap: anywhere;
 }
 
 .form {
   display: grid;
   gap: 0.55rem;
   max-width: 420px;
-  width: 100%;
   background: #fff;
   border: 1px solid #e8e4de;
   border-radius: 12px;
@@ -133,67 +263,88 @@
   border: 1px solid #ddd6cc;
   border-radius: 8px;
   padding: 0.55rem 0.65rem;
+  min-width: 0;
   width: 100%;
-  max-width: 100%;
+}
+
+.form input[type="checkbox"],
+.form input[type="file"] {
+  width: auto;
+  padding: 0;
 }
 
 .stack {
   display: grid;
   gap: 1rem;
+  min-width: 0;
 }
 
-.orderCards {
-  display: none;
+@media (max-width: 1100px) {
+  .kitchenBoard {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
-.upgrade {
-  background: #fff8f1;
-  border: 1px dashed #e2a36a;
-  border-radius: 12px;
-  padding: 1rem;
-  color: #7a3e0c;
+@media (min-width: 801px) {
+  .mobileCards {
+    display: none;
+  }
+
+  .tableScroll {
+    overflow: visible;
+  }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 800px) {
   .grid {
     grid-template-columns: 1fr;
   }
 
-  .menuGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .kitchen {
+  .kitchen,
+  .kitchenBoard {
     grid-template-columns: 1fr;
   }
 
-  .desktopOnly {
-    display: none !important;
+  .menuGrid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
 
-  .orderCards {
+  .tableDesktop,
+  .tableScrollDesktop {
+    display: none;
+  }
+
+  .mobileCards {
     display: grid;
-    gap: 0.75rem;
+    gap: 0.65rem;
+    margin: 0;
+    padding: 0;
   }
 
-  .orderCard {
+  .mobileCard > button {
+    width: 100%;
+    white-space: normal;
+  }
+
+  .cardActions button,
+  .cardActions a {
+    width: auto;
+    flex: 1 1 42%;
+    text-align: center;
+    padding: 0.5rem 0.65rem;
+    border-radius: 8px;
+    border: 1px solid #ddd6cc;
     background: #fff;
-    border: 1px solid #e8e4de;
-    border-radius: 12px;
-    padding: 0.85rem;
+    color: inherit;
+    font-size: 0.88rem;
   }
 
-  .orderCard header {
-    display: flex;
-    justify-content: space-between;
-    gap: 0.5rem;
-    margin-bottom: 0.45rem;
+  .form {
+    max-width: none;
   }
 
-  .orderActions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-top: 0.65rem;
+  .page,
+  .stack {
+    min-width: 0;
   }
 }

@@ -117,6 +117,13 @@
   padding: 0.55rem 1rem;
 }
 
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -168,6 +175,47 @@
   color: #6b7280;
 }
 
+.appGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.appCard {
+  background: #fff;
+  border: 1px solid #e5e0d8;
+  border-radius: 12px;
+  padding: 1rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.appCard h3 {
+  margin: 0;
+}
+
+.appMeta {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #e85d04;
+}
+
+.upload {
+  border: 1px solid #ddd6cc;
+  background: #fff;
+  border-radius: 6px;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .error {
   color: #c62828;
 }
@@ -177,9 +225,33 @@
     grid-template-columns: 1fr;
   }
 
+  .main {
+    padding: 1rem 0.9rem 2rem;
+    min-width: 0;
+  }
+
   .grid,
   .planGrid,
-  .stats {
+  .stats,
+  .appGrid {
     grid-template-columns: 1fr;
+  }
+
+  .table {
+    min-width: 36rem;
+  }
+
+  .table th:first-child,
+  .table td:first-child {
+    position: sticky;
+    left: 0;
+    background: #fff;
+    z-index: 1;
+  }
+
+  .side {
+    flex-direction: row;
+    overflow-x: auto;
+    align-items: center;
   }
 }

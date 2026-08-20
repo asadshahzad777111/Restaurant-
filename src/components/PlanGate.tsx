@@ -12,8 +12,9 @@ export function PlanGate({
   need: PlanCapability;
   children: React.ReactNode;
 }) {
-  const { planId } = useStore();
-  if (planAllows(planId, need)) return <>{children}</>;
+  const store = useStore();
+  const planId = "planId" in store ? (store as { planId?: string | null }).planId : "pro";
+  if (!planId || planAllows(planId, need)) return <>{children}</>;
   return (
     <div className={styles.upgrade}>
       <strong>Not on your plan</strong>

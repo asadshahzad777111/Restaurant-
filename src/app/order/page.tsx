@@ -1,146 +1,249 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import type { LineModifier, MenuItem, ModifierGroup } from "@/lib/tenant-types";
+import type { MenuItem } from "@/lib/tenant-types";
 import type { PaymentMethod, ServiceType } from "@/lib/types";
-import { computeFees, lineUnitPrice, money } from "@/lib/fees";
-import { LANG_KEY, dual, type Lang } from "@/lib/i18n";
-import { apiUrl } from "@/lib/urls";
 import {
-  backdropTransition,
-  emptyState,
-  listContainer,
-  listItem,
-  pageEnter,
-  sheetTransition,
-  toastTransition,
-  useIsCoarsePointer,
-  usePrefersReducedMotion,
-  viewOnce,
-} from "@/lib/motion";
+  LAST_GUEST_TENANT_KEY,
+  assertOrderRules,
+  cartStorageKey,
+  guestOrderPath,
+  modeLabel,
+  paymentChoices,
+  type GuestMode,
+} from "@/lib/guest";
 import styles from "./order.module.css";
 
-type CartLine = {
-  key: string;
-  item: MenuItem;
-  qty: number;
-  modifiers: LineModifier[];
-  unitPrice: number;
-};
+type CartLine = { item: MenuItem; qty: number };
 
-type ShopFees = {
+type PublicShop = {
+  address: string;
+  phone: string;
   currency: string;
-  deliveryFee: number;
-  packingFee: number;
-  serviceChargePercent: number;
-  taxRate: number;
+  openHours: string;
 };
 
-function paymentChoices(mode: ServiceType): { id: PaymentMethod; label: string }[] {
-  if (mode === "table") return [{ id: "pay_at_counter", label: "Pay at counter" }];
-  if (mode === "pickup") {
-    return [
-      { id: "pay_at_counter", label: "Pay at pickup" },
-      { id: "paid_in_advance", label: "Paid in advance" },
-    ];
-  }
-  if (mode === "delivery") {
-    return [
-      { id: "cod", label: "Cash on delivery" },
-      { id: "paid_in_advance", label: "Paid in advance" },
-    ];
-  }
-  return [{ id: "cash", label: "Cash" }];
+function qtyOf(cart: CartLine[], id: string) {
+  return cart.find((c) => c.item.id === id)?.qty ?? 0;
 }
 
-function toLineModifiers(
-  groups: ModifierGroup[],
-  selected: Record<string, string[]>,
-): LineModifier[] {
-  const out: LineModifier[] = [];
-  for (const g of groups) {
-    for (const optId of selected[g.id] || []) {
-      const opt = g.options.find((o) => o.id === optId);
-      if (!opt) continue;
-      out.push({
-        groupId: g.id,
-        groupName: g.name,
-        optionId: opt.id,
-        optionName: opt.name,
-        priceDelta: opt.priceDelta,
-      });
-    }
-  }
-  return out;
+function CheckoutForm({
+  mode,
+  table,
+  currency,
+  total,
+  paymentMethod,
+  setPaymentMethod,
+  customerName,
+  setCustomerName,
+  customerPhone,
+  setCustomerPhone,
+  deliveryAddress,
+  setDeliveryAddress,
+  note,
+  setNote,
+  paidAck,
+  setPaidAck,
+  error,
+  busy,
+  onPlace,
+  onClear,
+  cart,
+}: {
+  mode: ServiceType;
+  table?: string;
+  currency: string;
+  total: number;
+  paymentMethod: PaymentMethod;
+  setPaymentMethod: (m: PaymentMethod) => void;
+  customerName: string;
+  setCustomerName: (v: string) => void;
+  customerPhone: string;
+  setCustomerPhone: (v: string) => void;
+  deliveryAddress: string;
+  setDeliveryAddress: (v: string) => void;
+  note: string;
+  setNote: (v: string) => void;
+  paidAck: boolean;
+  setPaidAck: (v: boolean) => void;
+  error: string;
+  busy: boolean;
+  onPlace: () => void;
+  onClear: () => void;
+  cart: CartLine[];
+}) {
+  const pays = paymentChoices(mode);
+  return (
+    <div className={styles.checkout}>
+      <ul className={styles.cartList}>
+        {cart.map((c) => (
+          <li key={c.item.id}>
+            <span>
+              {c.qty}× {c.item.name}
+            </span>
+            <span>
+              {currency} {c.item.price * c.qty}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <button type="button" className={styles.clear} onClick={onClear}>
+        Clear cart
+      </button>
+
+      <fieldset className={styles.pay}>
+        <legend>Payment</legend>
+        {pays.map((p) => (
+          <label key={p.id} className={paymentMethod === p.id ? styles.payOn : styles.payOff}>
+            <input
+              type="radio"
+              name="pay"
+              checked={paymentMethod === p.id}
+              onChange={() => setPaymentMethod(p.id)}
+            />
+            <span>
+              <strong>{p.label}</strong>
+              <em>{p.hint}</em>
+            </span>
+          </label>
+        ))}
+      </fieldset>
+
+      {paymentMethod === "paid_in_advance" && (
+        <label className={styles.ack}>
+          <input type="checkbox" checked={paidAck} onChange={(e) => setPaidAck(e.target.checked)} />
+          I confirm this should be recorded as already paid. No card or wallet is charged in ORDO.
+        </label>
+      )}
+
+      {(mode === "pickup" || mode === "delivery") && (
+        <div className={styles.fields}>
+          <label>
+            Name
+            <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+          </label>
+          <label>
+            Phone {mode === "delivery" ? "(required)" : ""}
+            <input
+              value={customerPhone}
+              onChange={(e) => setCustomerPhone(e.target.value)}
+              required={mode === "delivery"}
+            />
+          </label>
+          {mode === "delivery" && (
+            <label>
+              Delivery address
+              <textarea
+                value={deliveryAddress}
+                onChange={(e) => setDeliveryAddress(e.target.value)}
+                rows={3}
+                required
+              />
+            </label>
+          )}
+        </div>
+      )}
+
+      {mode === "table" && (
+        <p className={styles.note}>Dining at table {table}. Pay at the counter when staff asks.</p>
+      )}
+
+      <label className={styles.noteField}>
+        Kitchen note
+        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" />
+      </label>
+
+      {error && <p className={styles.error}>{error}</p>}
+      <button type="button" className={styles.place} disabled={busy || !cart.length} onClick={onPlace}>
+        {busy ? "Placing…" : `Place order · ${currency} ${total}`}
+      </button>
+    </div>
+  );
 }
 
 function OrderInner() {
   const params = useSearchParams();
   const router = useRouter();
-  const tenantCode = (params.get("tenant") || "DEMO").toUpperCase();
-  const table = params.get("table") || undefined;
-  const modeParam = params.get("mode") as ServiceType | null;
+  const tenantCode = (params.get("tenant") || "").toUpperCase();
+  const table = (params.get("table") || "").trim();
+  const modeParam = params.get("mode");
 
-  const initialMode: ServiceType = table ? "table" : modeParam || "pickup";
-  const [mode, setMode] = useState<ServiceType>(initialMode);
-  const [lang, setLang] = useState<Lang>("en");
+  const mode: ServiceType | null = table
+    ? "table"
+    : modeParam === "pickup" || modeParam === "delivery" || modeParam === "table"
+      ? modeParam
+      : null;
+
+  const needsTable = mode === "table" && !table;
+  const showMenu = Boolean(mode) && !needsTable;
+
   const [branding, setBranding] = useState<{ name: string; logoUrl: string } | null>(null);
+  const [shop, setShop] = useState<PublicShop | null>(null);
   const [menu, setMenu] = useState<MenuItem[]>([]);
-  const [shop, setShop] = useState<ShopFees>({
-    currency: "PKR",
-    deliveryFee: 0,
-    packingFee: 0,
-    serviceChargePercent: 0,
-    taxRate: 0,
-  });
+  const [loadError, setLoadError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [modItem, setModItem] = useState<MenuItem | null>(null);
-  const [modSel, setModSel] = useState<Record<string, string[]>>({});
-  const [category, setCategory] = useState("All");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pay_at_counter");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [note, setNote] = useState("");
+  const [paidAck, setPaidAck] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const reduced = usePrefersReducedMotion();
-  const coarse = useIsCoarsePointer();
-  const pageMotion = pageEnter(reduced, coarse);
-  const itemMotion = listItem(reduced, coarse);
-  const emptyMotion = emptyState(reduced);
+  const [tableDraft, setTableDraft] = useState("");
+  const [cartReady, setCartReady] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem(LANG_KEY) as Lang | null;
-    if (saved === "en" || saved === "ur") setLang(saved);
-  }, []);
+    if (!tenantCode) router.replace("/guest");
+  }, [tenantCode, router]);
 
   useEffect(() => {
-    void fetch(apiUrl(`/api/state?tenant=${tenantCode}`))
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.error) {
-          setError(d.error);
+    if (!tenantCode) return;
+    setLoading(true);
+    void fetch(`/api/state?tenant=${encodeURIComponent(tenantCode)}`)
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) {
+          setLoadError(d.error || "Restaurant not found");
+          setBranding(null);
           return;
         }
+        setLoadError("");
         setBranding(d.public.branding);
+        setShop(d.public.shop);
         setMenu(d.public.menu);
-        setShop({
-          currency: d.public.shop.currency,
-          deliveryFee: d.public.shop.deliveryFee || 0,
-          packingFee: d.public.shop.packingFee || 0,
-          serviceChargePercent: d.public.shop.serviceChargePercent || 0,
-          taxRate: d.public.shop.taxRate || 0,
-        });
-      });
+        localStorage.setItem(LAST_GUEST_TENANT_KEY, tenantCode);
+      })
+      .finally(() => setLoading(false));
   }, [tenantCode]);
 
   useEffect(() => {
+    if (!tenantCode) return;
+    try {
+      const raw = localStorage.getItem(cartStorageKey(tenantCode));
+      if (raw) setCart(JSON.parse(raw) as CartLine[]);
+    } catch {
+      /* ignore */
+    }
+    setCartReady(true);
+  }, [tenantCode]);
+
+  useEffect(() => {
+    if (!cartReady || !tenantCode) return;
+    localStorage.setItem(cartStorageKey(tenantCode), JSON.stringify(cart));
+  }, [cart, cartReady, tenantCode]);
+
+  useEffect(() => {
+    if (!mode) return;
     setPaymentMethod(paymentChoices(mode)[0].id);
+    setPaidAck(false);
+    setError("");
   }, [mode]);
 
   useEffect(() => {
@@ -149,78 +252,39 @@ function OrderInner() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const categoryList = useMemo(() => {
-    const cats = [...new Set(menu.map((m) => m.category))];
-    return ["All", ...cats];
+  const deals = useMemo(() => menu.filter((m) => m.isDeal), [menu]);
+  const categories = useMemo(() => {
+    const map = new Map<string, MenuItem[]>();
+    menu
+      .filter((m) => !m.isDeal)
+      .forEach((m) => {
+        const list = map.get(m.category) || [];
+        list.push(m);
+        map.set(m.category, list);
+      });
+    return [...map.entries()];
   }, [menu]);
 
-  const visible = useMemo(() => {
-    if (category === "All") return menu;
-    return menu.filter((m) => m.category === category);
-  }, [menu, category]);
-
-  const orderLines = cart.map((c) => ({
-    itemId: c.item.id,
-    name: c.item.name,
-    qty: c.qty,
-    unitPrice: c.unitPrice,
-    modifiers: c.modifiers,
-  }));
-  const fees = computeFees(
-    {
-      address: "",
-      phone: "",
-      whatsapp: "",
-      currency: shop.currency,
-      openHours: "",
-      taxRate: shop.taxRate,
-      deliveryFee: shop.deliveryFee,
-      packingFee: shop.packingFee,
-      serviceChargePercent: shop.serviceChargePercent,
-    },
-    mode,
-    orderLines,
-  );
+  const total = cart.reduce((s, c) => s + c.item.price * c.qty, 0);
   const count = cart.reduce((s, c) => s + c.qty, 0);
+  const currency = shop?.currency || "PKR";
 
-  function setLanguage(l: Lang) {
-    setLang(l);
-    localStorage.setItem(LANG_KEY, l);
-  }
-
-  function openAdd(item: MenuItem) {
-    if (item.modifiers?.length) {
-      const init: Record<string, string[]> = {};
-      for (const g of item.modifiers) {
-        if (g.required && !g.multi && g.options[0]) init[g.id] = [g.options[0].id];
-        else init[g.id] = [];
-      }
-      setModSel(init);
-      setModItem(item);
-      return;
-    }
-    addConfigured(item, []);
-  }
-
-  function addConfigured(item: MenuItem, modifiers: LineModifier[]) {
-    const unitPrice = lineUnitPrice(item.price, modifiers);
-    const key = `${item.id}:${modifiers.map((m) => m.optionId).sort().join(",")}`;
+  function addItem(item: MenuItem) {
     setCart((prev) => {
-      const hit = prev.find((p) => p.key === key);
-      if (hit) return prev.map((p) => (p.key === key ? { ...p, qty: p.qty + 1 } : p));
-      return [...prev, { key, item, qty: 1, modifiers, unitPrice }];
+      const hit = prev.find((p) => p.item.id === item.id);
+      if (hit) return prev.map((p) => (p.item.id === item.id ? { ...p, qty: p.qty + 1 } : p));
+      return [...prev, { item, qty: 1 }];
     });
     setToast(`Added ${item.name}`);
-    setModItem(null);
   }
 
-  function removeKey(key: string) {
+  function removeItem(itemId: string) {
     setCart((prev) => {
-      const hit = prev.find((p) => p.key === key);
+      const hit = prev.find((p) => p.item.id === itemId);
       if (!hit) return prev;
       setToast(`Removed ${hit.item.name}`);
-      if (hit.qty <= 1) return prev.filter((p) => p.key !== key);
-      return prev.map((p) => (p.key === key ? { ...p, qty: p.qty - 1 } : p));
+      if (hit.qty <= 1) return prev.filter((p) => p.item.id !== itemId);
+      return prev.map((p) => (p.item.id === itemId ? { ...p, qty: p.qty - 1 } : p));
     });
   }
 
@@ -231,48 +295,61 @@ function OrderInner() {
     setToast("Cart cleared");
   }
 
-  function switchMode(next: ServiceType) {
+  function goMode(next: GuestMode, tableNumber?: string) {
     if (cart.length && next !== mode) {
-      if (!confirm("Switching mode keeps your cart. Continue?")) return;
+      if (!confirm("Switching service keeps your cart. Continue?")) return;
     }
-    setMode(next);
-  }
-
-  function toggleMod(group: ModifierGroup, optId: string) {
-    setModSel((prev) => {
-      const cur = prev[group.id] || [];
-      if (group.multi) {
-        return {
-          ...prev,
-          [group.id]: cur.includes(optId) ? cur.filter((x) => x !== optId) : [...cur, optId],
-        };
-      }
-      return { ...prev, [group.id]: [optId] };
-    });
+    if (next === "table") {
+      const t = (tableNumber || tableDraft).trim();
+      if (!t) return;
+      router.push(guestOrderPath({ tenant: tenantCode, table: t }));
+      return;
+    }
+    router.push(guestOrderPath({ tenant: tenantCode, mode: next }));
   }
 
   async function placeOrder() {
+    if (!mode) return;
+    if (mode === "pickup" && !customerPhone.trim() && !customerName.trim()) {
+      setError("Add a name or phone so the counter can call you.");
+      return;
+    }
+    if (paymentMethod === "paid_in_advance" && !paidAck) {
+      setError("Confirm that this order should be recorded as already paid.");
+      return;
+    }
+    const ruleError = assertOrderRules({
+      channel: "guest",
+      serviceType: mode,
+      paymentMethod,
+      tableNumber: table,
+      customerPhone,
+      deliveryAddress,
+    });
+    if (ruleError) {
+      setError(ruleError);
+      return;
+    }
     setBusy(true);
     setError("");
-    const res = await fetch(apiUrl("/api/orders"), {
+    const res = await fetch("/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         tenantCode,
         channel: "guest",
         serviceType: mode,
-        tableNumber: mode === "table" ? table || "1" : undefined,
+        tableNumber: mode === "table" ? table : undefined,
         customerName: customerName || undefined,
         customerPhone: customerPhone || undefined,
         deliveryAddress: mode === "delivery" ? deliveryAddress : undefined,
+        note: note || undefined,
         paymentMethod,
         lines: cart.map((c) => ({
           itemId: c.item.id,
           name: c.item.name,
           qty: c.qty,
-          basePrice: c.item.price,
-          modifiers: c.modifiers,
-          unitPrice: c.unitPrice,
+          unitPrice: c.item.price,
         })),
       }),
     });
@@ -282,380 +359,298 @@ function OrderInner() {
       setError(data.error || "Order failed");
       return;
     }
+    localStorage.removeItem(cartStorageKey(tenantCode));
+    setCart([]);
     router.push(`/track/${data.order.trackToken}`);
   }
 
-  if (error && !branding) {
+  if (!tenantCode) {
+    return <div className={styles.page} />;
+  }
+
+  if (loadError) {
     return (
       <div className={styles.page}>
-        <p className={styles.error}>{error}</p>
+        <div className={styles.shell}>
+          <p className={styles.error}>{loadError}</p>
+          <Link href="/guest" className={styles.textLink}>
+            Choose another restaurant
+          </Link>
+        </div>
       </div>
     );
   }
 
+  const checkout = showMenu ? (
+    <CheckoutForm
+      mode={mode!}
+      table={table}
+      currency={currency}
+      total={total}
+      paymentMethod={paymentMethod}
+      setPaymentMethod={setPaymentMethod}
+      customerName={customerName}
+      setCustomerName={setCustomerName}
+      customerPhone={customerPhone}
+      setCustomerPhone={setCustomerPhone}
+      deliveryAddress={deliveryAddress}
+      setDeliveryAddress={setDeliveryAddress}
+      note={note}
+      setNote={setNote}
+      paidAck={paidAck}
+      setPaidAck={setPaidAck}
+      error={error}
+      busy={busy}
+      cart={cart}
+      onClear={clearCart}
+      onPlace={() => void placeOrder()}
+    />
+  ) : null;
+
   return (
-    <motion.div className={styles.page} variants={pageMotion} initial="hidden" animate="show">
-      <div className={styles.langRow}>
-        <button
-          type="button"
-          className={lang === "en" ? styles.langOn : styles.lang}
-          onClick={() => setLanguage("en")}
-        >
-          EN
-        </button>
-        <button
-          type="button"
-          className={lang === "ur" ? styles.langOn : styles.lang}
-          onClick={() => setLanguage("ur")}
-        >
-          Roman Urdu
-        </button>
+    <div className={styles.page}>
+      <div className={showMenu ? styles.layout : styles.shell}>
+        <div>
+          <header className={styles.header}>
+            {branding?.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={branding.logoUrl} alt="" className={styles.logo} />
+            ) : (
+              <div className={styles.mark}>{branding?.name?.slice(0, 1) || (loading ? "…" : "R")}</div>
+            )}
+            <div>
+              <h1>{branding?.name || (loading ? "Loading…" : "Restaurant")}</h1>
+              <p>
+                {showMenu
+                  ? `${modeLabel(mode!)}${table ? ` · Table ${table}` : ""} · ${tenantCode}`
+                  : `${tenantCode}${shop?.openHours ? ` · ${shop.openHours}` : ""}`}
+              </p>
+              {shop?.address && <p className={styles.addr}>{shop.address}</p>}
+              {shop?.phone && showMenu && (
+                <p className={styles.addr}>
+                  {shop.openHours ? `${shop.openHours} · ` : ""}
+                  {shop.phone}
+                </p>
+              )}
+            </div>
+          </header>
+
+          {!showMenu && (
+            <section className={styles.gate}>
+              <h2>{needsTable ? "Which table?" : "How are you ordering?"}</h2>
+              <p>
+                {needsTable
+                  ? "Dining tickets are tied to a table number from your QR or the floor."
+                  : "Pickup, delivery, and dining each use the payment choices that restaurant already runs."}
+              </p>
+
+              {needsTable ? (
+                <form
+                  className={styles.tableForm}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    goMode("table", tableDraft);
+                  }}
+                >
+                  <label>
+                    Table number
+                    <input
+                      value={tableDraft}
+                      onChange={(e) => setTableDraft(e.target.value)}
+                      placeholder="e.g. 7"
+                      required
+                    />
+                  </label>
+                  <button type="submit" className={styles.place}>
+                    Open dining menu
+                  </button>
+                </form>
+              ) : (
+                <div className={styles.modeCards}>
+                  <article>
+                    <h3>Dining</h3>
+                    <p>At the table. Pay at the counter.</p>
+                    <label>
+                      Table
+                      <input
+                        value={tableDraft}
+                        onChange={(e) => setTableDraft(e.target.value)}
+                        placeholder="Number"
+                      />
+                    </label>
+                    <button type="button" onClick={() => goMode("table")} disabled={!tableDraft.trim()}>
+                      Start dining
+                    </button>
+                  </article>
+                  <article>
+                    <h3>Takeaway</h3>
+                    <p>Collect when ready. Pay at counter or record as paid in advance.</p>
+                    <button type="button" onClick={() => goMode("pickup")}>
+                      Order pickup
+                    </button>
+                  </article>
+                  <article>
+                    <h3>Delivery</h3>
+                    <p>Cash on delivery or recorded as paid in advance.</p>
+                    <button type="button" onClick={() => goMode("delivery")}>
+                      Order delivery
+                    </button>
+                  </article>
+                </div>
+              )}
+              <p className={styles.gateLinks}>
+                <Link href="/scan">Scan a QR instead</Link>
+                <Link href="/guest">Change restaurant</Link>
+              </p>
+            </section>
+          )}
+
+          {showMenu && (
+            <>
+              <div className={styles.modeBar}>
+                <span>
+                  {modeLabel(mode!)}
+                  {table ? ` · Table ${table}` : ""}
+                </span>
+                <Link href={`/order?tenant=${tenantCode}`}>Change</Link>
+              </div>
+
+              {loading && <p className={styles.muted}>Loading this kitchen’s menu…</p>}
+
+              {!loading && menu.length === 0 && (
+                <div className={styles.empty}>
+                  <h2>No dishes on the board</h2>
+                  <p>This restaurant has no available items right now.</p>
+                </div>
+              )}
+
+              {deals.length > 0 && (
+                <section className={styles.deals} id="cat-Deals">
+                  <h2>Deals</h2>
+                  <div className={styles.dealRail}>
+                    {deals.map((d) => (
+                      <button key={d.id} type="button" className={styles.deal} onClick={() => addItem(d)}>
+                        {d.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={d.imageUrl} alt="" className={styles.dealPhoto} loading="lazy" />
+                        ) : (
+                          <span className={styles.letter} aria-hidden>
+                            {d.name.slice(0, 1)}
+                          </span>
+                        )}
+                        <strong>{d.name}</strong>
+                        {d.dealLabel && <em>{d.dealLabel}</em>}
+                        <span className={styles.price}>
+                          {currency} {d.price}
+                          {d.compareAtPrice ? <s>{d.compareAtPrice}</s> : null}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {categories.length > 0 && (
+                <nav className={styles.catNav} aria-label="Menu sections">
+                  {categories.map(([cat]) => (
+                    <a key={cat} href={`#cat-${cat}`} className={styles.catChip}>
+                      {cat}
+                    </a>
+                  ))}
+                </nav>
+              )}
+
+              {categories.map(([cat, items]) => (
+                <section key={cat} className={styles.cat} id={`cat-${cat}`}>
+                  <h2>{cat}</h2>
+                  <div className={styles.grid}>
+                    {items.map((item) => (
+                      <article key={item.id} className={styles.tile}>
+                        {item.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={item.imageUrl} alt="" className={styles.tilePhoto} loading="lazy" />
+                        ) : null}
+                        <div className={styles.tileTop}>
+                          {!item.imageUrl && (
+                            <span className={styles.letter} aria-hidden>
+                              {item.name.slice(0, 1)}
+                            </span>
+                          )}
+                          <div>
+                            <strong>{item.name}</strong>
+                            <p>{item.description}</p>
+                          </div>
+                        </div>
+                        <div className={styles.tileBottom}>
+                          <span className={styles.price}>
+                            {currency} {item.price}
+                          </span>
+                          <div className={styles.qty}>
+                            <button type="button" onClick={() => removeItem(item.id)} aria-label={`Remove ${item.name}`}>
+                              −
+                            </button>
+                            <span>{qtyOf(cart, item.id)}</span>
+                            <button type="button" onClick={() => addItem(item)} aria-label={`Add ${item.name}`}>
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </>
+          )}
+        </div>
+
+        {showMenu && (
+          <aside className={styles.rail} aria-label="Cart">
+            <h2>Your order</h2>
+            {count === 0 ? (
+              <p className={styles.muted}>Add dishes. This cart stays on this restaurant only.</p>
+            ) : (
+              checkout
+            )}
+          </aside>
+        )}
       </div>
 
-      <header className={styles.header}>
-        <p className={styles.brand}>{branding?.name || "Restaurant"}</p>
-        <h1 className={styles.title}>
-          {mode === "table"
-            ? `${dual("table", lang)} ${table || "—"}`
-            : dual(mode === "delivery" ? "delivery" : "pickup", lang)}
-        </h1>
-        <p className={styles.tagline}>
-          {mode === "table"
-            ? "Scan · order · we bring it to your table"
-            : mode === "delivery"
-              ? "Order · we deliver to your door"
-              : "Order · collect at the counter"}
-        </p>
-      </header>
+      {showMenu && count > 0 && (
+        <button type="button" className={styles.cartBar} onClick={() => setSheetOpen(true)}>
+          <span>{count} items</span>
+          <strong>
+            View cart · {currency} {total}
+          </strong>
+        </button>
+      )}
 
-      {!table && (
-        <div className={styles.modes}>
-          {(["pickup", "delivery"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              className={mode === m ? styles.modeOn : styles.mode}
-              onClick={() => switchMode(m)}
-            >
-              {dual(m, lang)}
-            </button>
-          ))}
+      {sheetOpen && showMenu && (
+        <div className={styles.sheet} role="dialog" aria-modal="true" aria-labelledby="cart-title">
+          <div className={styles.sheetPanel}>
+            <div className={styles.sheetHead}>
+              <h3 id="cart-title">Your order</h3>
+              <button type="button" onClick={() => setSheetOpen(false)}>
+                Close
+              </button>
+            </div>
+            {checkout}
+          </div>
         </div>
       )}
 
-      <div className={styles.cats}>
-        {categoryList.map((c) => (
-          <button
-            key={c}
-            type="button"
-            className={category === c ? styles.catOn : styles.cat}
-            onClick={() => setCategory(c)}
-          >
-            {c === "All" ? dual("all", lang) : c}
-          </button>
-        ))}
-      </div>
-
-      {visible.length === 0 ? (
-        <motion.p
-          className={styles.tagline}
-          variants={emptyMotion}
-          initial="hidden"
-          animate="show"
-        >
-          No items in this category.
-        </motion.p>
-      ) : (
-        <motion.div
-          className={styles.grid}
-          key={category}
-          variants={listContainer(0.05)}
-          initial="hidden"
-          animate="show"
-        >
-          {visible.map((item) => (
-            <motion.article
-              key={item.id}
-              className={styles.card}
-              variants={itemMotion}
-              viewport={viewOnce}
-            >
-              <button type="button" className={styles.cardHit} onClick={() => openAdd(item)}>
-                <div className={styles.imgWrap}>
-                  {item.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={item.imageUrl} alt="" className={styles.img} loading="lazy" />
-                  ) : (
-                    <div className={styles.imgFallback}>{item.imageEmoji || "🍽️"}</div>
-                  )}
-                  {item.isDeal && item.dealLabel && (
-                    <span className={styles.dealBadge}>{item.dealLabel}</span>
-                  )}
-                </div>
-                <div className={styles.cardBody}>
-                  <strong>{item.name}</strong>
-                  <span className={styles.catLabel}>{item.category}</span>
-                  <span className={styles.price}>{money(shop.currency, item.price)}</span>
-                </div>
-              </button>
-            </motion.article>
-          ))}
-        </motion.div>
+      {toast && (
+        <div className={styles.toast} role="status">
+          {toast}
+        </div>
       )}
-
-      <AnimatePresence>
-        {count > 0 && (
-          <motion.div
-            className={styles.cartBar}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <button type="button" className={styles.cartInfo} onClick={() => setSheetOpen(true)}>
-              <span className={styles.count}>{count}</span>
-              <span>
-                {dual("yourOrder", lang)} · <strong>{money(shop.currency, fees.total)}</strong>
-              </span>
-            </button>
-            <button type="button" className={styles.placeBtn} onClick={() => setSheetOpen(true)}>
-              {dual("place", lang)}
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {modItem && (
-          <motion.div
-            className={styles.sheet}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={backdropTransition(reduced)}
-          >
-            <motion.button
-              type="button"
-              className={styles.sheetBg}
-              onClick={() => setModItem(null)}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            />
-            <motion.div
-              className={styles.sheetPanel}
-              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.98 }}
-              animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-              exit={reduced ? { opacity: 0 } : { opacity: 0, y: 16 }}
-              transition={sheetTransition}
-            >
-              <div className={styles.sheetHead}>
-                <h3>{modItem.name}</h3>
-                <button type="button" className={styles.closeX} onClick={() => setModItem(null)}>
-                  ×
-                </button>
-              </div>
-              {(modItem.modifiers || []).map((g) => (
-                <div key={g.id} className={styles.pay}>
-                  <h4>
-                    {g.name}
-                    {g.required ? " *" : ""}
-                  </h4>
-                  {g.options.map((o) => (
-                    <label key={o.id} className={styles.payOpt}>
-                      <input
-                        type={g.multi ? "checkbox" : "radio"}
-                        checked={(modSel[g.id] || []).includes(o.id)}
-                        onChange={() => toggleMod(g, o.id)}
-                      />
-                      {o.name}
-                      {o.priceDelta ? ` (+${o.priceDelta})` : ""}
-                    </label>
-                  ))}
-                </div>
-              ))}
-              <button
-                type="button"
-                className={styles.confirm}
-                onClick={() =>
-                  addConfigured(modItem, toLineModifiers(modItem.modifiers || [], modSel))
-                }
-              >
-                Add ·{" "}
-                {money(
-                  shop.currency,
-                  lineUnitPrice(
-                    modItem.price,
-                    toLineModifiers(modItem.modifiers || [], modSel),
-                  ),
-                )}
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {sheetOpen && (
-          <motion.div
-            className={styles.sheet}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={backdropTransition(reduced)}
-          >
-            <motion.button
-              type="button"
-              className={styles.sheetBg}
-              aria-label="Close"
-              onClick={() => setSheetOpen(false)}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            />
-            <motion.div
-              className={styles.sheetPanel}
-              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 28, scale: 0.98 }}
-              animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-              exit={reduced ? { opacity: 0 } : { opacity: 0, y: 18 }}
-              transition={sheetTransition}
-            >
-              <div className={styles.sheetHead}>
-                <h3>{dual("yourOrder", lang)}</h3>
-                <button type="button" className={styles.closeX} onClick={() => setSheetOpen(false)}>
-                  ×
-                </button>
-              </div>
-              <ul className={styles.cartList}>
-                {cart.map((c) => (
-                  <li key={c.key}>
-                    <span>
-                      {c.qty}× {c.item.name}
-                      {(c.modifiers || []).map((m) => (
-                        <small key={m.optionId} style={{ display: "block", color: "#8a8790" }}>
-                          + {m.optionName}
-                        </small>
-                      ))}
-                    </span>
-                    <span>
-                      {money(shop.currency, c.unitPrice * c.qty)}
-                      <button type="button" className={styles.clear} onClick={() => removeKey(c.key)}>
-                        −
-                      </button>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <div className={styles.cartList}>
-                <li>
-                  <span>Subtotal</span>
-                  <span>{money(shop.currency, fees.subtotal)}</span>
-                </li>
-                {fees.packingFee > 0 && (
-                  <li>
-                    <span>Packing</span>
-                    <span>{money(shop.currency, fees.packingFee)}</span>
-                  </li>
-                )}
-                {fees.deliveryFee > 0 && (
-                  <li>
-                    <span>Delivery</span>
-                    <span>{money(shop.currency, fees.deliveryFee)}</span>
-                  </li>
-                )}
-                {fees.serviceCharge > 0 && (
-                  <li>
-                    <span>Service</span>
-                    <span>{money(shop.currency, fees.serviceCharge)}</span>
-                  </li>
-                )}
-                {fees.tax > 0 && (
-                  <li>
-                    <span>GST/Tax</span>
-                    <span>{money(shop.currency, fees.tax)}</span>
-                  </li>
-                )}
-                <li>
-                  <strong>Total</strong>
-                  <strong>{money(shop.currency, fees.total)}</strong>
-                </li>
-              </div>
-              <button type="button" className={styles.clear} onClick={clearCart}>
-                {dual("clearCart", lang)}
-              </button>
-              <div className={styles.pay}>
-                <h4>{dual("payment", lang)}</h4>
-                {paymentChoices(mode).map((p) => (
-                  <label key={p.id} className={styles.payOpt}>
-                    <input
-                      type="radio"
-                      name="pay"
-                      checked={paymentMethod === p.id}
-                      onChange={() => setPaymentMethod(p.id)}
-                    />
-                    {p.label}
-                  </label>
-                ))}
-              </div>
-              {(mode === "pickup" || mode === "delivery") && (
-                <div className={styles.fields}>
-                  <input
-                    placeholder="Name"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                  />
-                  <input
-                    placeholder="Phone"
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                  />
-                  {mode === "delivery" && (
-                    <textarea
-                      placeholder="Delivery address"
-                      value={deliveryAddress}
-                      onChange={(e) => setDeliveryAddress(e.target.value)}
-                      rows={2}
-                    />
-                  )}
-                </div>
-              )}
-              {error && <p className={styles.error}>{error}</p>}
-              <button
-                type="button"
-                className={styles.confirm}
-                disabled={busy || !cart.length}
-                onClick={() => void placeOrder()}
-              >
-                {busy
-                  ? "…"
-                  : `${dual("placeOrder", lang)} · ${money(shop.currency, fees.total)}`}
-              </button>
-              <p className={styles.note}>After place, changes go through staff only.</p>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            className={styles.toast}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={toastTransition}
-          >
-            {toast}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }
 
 export default function OrderPage() {
   return (
-    <Suspense fallback={<div className={styles.page}>Loading menu…</div>}>
+    <Suspense fallback={<div className={styles.page} />}>
       <OrderInner />
     </Suspense>
   );

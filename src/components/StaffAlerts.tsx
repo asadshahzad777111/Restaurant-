@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import styles from "./StaffAlerts.module.css";
+import type { Order } from "@/lib/tenant-types";
 
 export function StaffAlerts() {
-  const { tenant, refresh, user } = useStore();
+  const { tenant, api, mergeOrders, user } = useStore();
   const [toast, setToast] = useState<string | null>(null);
   const seen = useRef<Set<string>>(new Set());
   const primed = useRef(false);
@@ -58,11 +59,32 @@ export function StaffAlerts() {
   }, [toast]);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      void refresh();
-    }, 6000);
-    return () => clearInterval(id);
-  }, [refresh]);
+    if (!canHear) return;
+    let cancelled = false;
+
+    async function tick() {
+      if (document.visibilityState === "hidden") return;
+      try {
+        const res = await api("/api/orders?poll=1");
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { orders?: Order[] };
+        if (data.orders?.length) mergeOrders(data.orders);
+      } catch {
+        /* ignore poll errors */
+      }
+    }
+
+    const id = window.setInterval(() => void tick(), 10000);
+    const onVis = () => {
+      if (document.visibilityState === "visible") void tick();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [api, mergeOrders, canHear]);
 
   if (!canHear) return null;
 

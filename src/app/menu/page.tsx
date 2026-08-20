@@ -4,11 +4,12 @@ import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PlanGate } from "@/components/PlanGate";
 import { useStore } from "@/lib/store";
+import { uploadTenantMedia } from "@/lib/media-client";
 import type { MenuItem } from "@/lib/tenant-types";
 import styles from "../staff.module.css";
 
 export default function MenuPage() {
-  const { tenant, api, refresh } = useStore();
+  const { tenant, api, applyTenant, token } = useStore();
   const [draft, setDraft] = useState({
     name: "",
     description: "",
@@ -26,21 +27,26 @@ export default function MenuPage() {
       method: "PUT",
       body: JSON.stringify({ action: "menu", menu }),
     });
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const d = await res.json();
-      setMsg(d.error || "Failed");
+      setMsg((data as { error?: string }).error || "Failed");
       return;
     }
+    if ((data as { tenant?: typeof tenant }).tenant) {
+      applyTenant((data as { tenant: NonNullable<typeof tenant> }).tenant);
+    }
     setMsg("Saved");
-    await refresh();
   }
 
   async function toggle86(itemId: string) {
-    await api("/api/admin", {
+    const res = await api("/api/admin", {
       method: "PUT",
       body: JSON.stringify({ action: "toggle86", itemId }),
     });
-    await refresh();
+    const data = await res.json().catch(() => ({}));
+    if ((data as { tenant?: typeof tenant }).tenant) {
+      applyTenant((data as { tenant: NonNullable<typeof tenant> }).tenant);
+    }
   }
 
   async function addItem(e: React.FormEvent) {
@@ -102,6 +108,26 @@ export default function MenuPage() {
             value={draft.imageUrl}
             onChange={(e) => setDraft({ ...draft, imageUrl: e.target.value })}
           />
+          <label className={styles.muted}>
+            Or upload photo
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                setMsg("Uploading image…");
+                try {
+                  const saved = await uploadTenantMedia(token, "menu", file);
+                  setDraft((d) => ({ ...d, imageUrl: saved.url }));
+                  setMsg(`Image uploaded (${saved.storage})`);
+                } catch (err) {
+                  setMsg(err instanceof Error ? err.message : "Image upload failed");
+                }
+              }}
+            />
+          </label>
           <label>
             <input
               type="checkbox"
@@ -137,7 +163,31 @@ export default function MenuPage() {
           </button>
           {msg && <p className={styles.muted}>{msg}</p>}
         </form>
-        <table className={styles.table}>
+        <ul className={styles.mobileCards}>
+            {(tenant?.menu ?? []).map((m) => (
+            <li key={m.id} className={styles.mobileCard}>
+              <div>
+                <strong>
+                  {m.name}
+                  {m.isDeal ? " · deal" : ""}
+                  {(m.modifiers?.length || 0) > 0 ? " · mods" : ""}
+                </strong>
+                <p className={styles.muted}>
+                  {m.category} · {tenant?.shop.currency} {m.price}
+                </p>
+              </div>
+              <button
+                type="button"
+                className={m.available ? styles.btnGhost : styles.btn}
+                onClick={() => void toggle86(m.id)}
+              >
+                {m.available ? "86" : "Restore"}
+              </button>
+            </li>
+          ))}
+        </ul>
+        <div className={`${styles.tableScroll} ${styles.tableScrollDesktop}`}>
+        <table className={`${styles.table} ${styles.tableDesktop}`}>
           <thead>
             <tr>
               <th>Name</th>
@@ -169,6 +219,7 @@ export default function MenuPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
       </PlanGate>
     </AppShell>
