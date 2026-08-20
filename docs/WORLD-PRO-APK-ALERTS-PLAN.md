@@ -111,6 +111,7 @@ All of the above trigger the same continuous beep + typed message (distinct labe
 - [x] AdminApkCard copy polish  
 - [x] Guest splash already branded — verify name+logo  
 - [x] No APK binaries / keystores in git  
+- [x] iOS / PWA plan + Admin install links + dynamic manifest  
 - [ ] `tsc` / lint · push · PR → main when green  
 
 ---
@@ -123,3 +124,18 @@ All of the above trigger the same continuous beep + typed message (distinct labe
 4. Hear continuous beep → tap **Stop alert** → sound stops  
 5. Drop a stock qty under threshold → see stock-low alert  
 6. Download Staff + Customer APKs; confirm filenames include kitchen code  
+
+---
+
+## 11. iPhone / iOS (web + PWA — no APK)
+
+iOS cannot install Android APKs. Kitchens use **Safari / Add to Home Screen** with the **same** `tenant=CODE` isolation and Settings branding.
+
+Full plan: **`docs/IOS-PWA-SAFE-PLAN.md`**.
+
+| Audience | Install link |
+|---|---|
+| Customer | `/guest?app=customer&tenant=CODE` |
+| Staff / Admin | `/login?app=staff&tenant=CODE` |
+
+Admin Settings shows copyable absolute URLs + Add to Home Screen steps. Alerts: same Enable sound / Stop alert (iOS autoplay limits documented in iOS plan).  

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TOKEN_KEY, OWNER_TOKEN_KEY, useStore } from "@/lib/store";
 import { setHelpModeCookieClient } from "@/lib/help-mode";
-import { isCustomerShell, isStaffShell, readAppShell } from "@/lib/app-shell";
+import { isCustomerShell, isStaffShell, readAppShell, readLockedStaffTenant } from "@/lib/app-shell";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import styles from "./login.module.css";
 
@@ -51,8 +51,9 @@ export default function LoginPage() {
     }
     const saved = localStorage.getItem(CODE_KEY);
     const urlTenant = new URLSearchParams(window.location.search).get("tenant");
-    setCode((urlTenant || saved || (staff ? "" : "DEMO")).toUpperCase());
-    setCodeLocked(Boolean(staff && urlTenant));
+    const lockedStaff = readLockedStaffTenant();
+    setCode((urlTenant || lockedStaff || saved || (staff ? "" : "DEMO")).toUpperCase());
+    setCodeLocked(Boolean(staff && (urlTenant || lockedStaff)));
     setPassword(staff ? "" : desk ? "super123" : "admin123");
     if (desk) router.prefetch("/control");
     else router.prefetch("/home");

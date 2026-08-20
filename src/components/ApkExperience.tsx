@@ -37,7 +37,7 @@ function tipsForShell(shell: string): Tip[] {
       {
         id: "staff-alerts",
         title: "Order alerts + sound",
-        body: "Tap Enable order sound once. New dine-in, delivery, and pickup tickets beep until you tap Stop alert.",
+        body: "Tap Enable order sound once (needed on iPhone Safari too). New dine-in, delivery, and pickup tickets beep until you tap Stop alert.",
       },
       {
         id: "billing-scan",
