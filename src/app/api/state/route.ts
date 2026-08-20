@@ -7,7 +7,7 @@ import {
   getPublicMenu,
   readTenantStaffView,
 } from "@/lib/db";
-import { AuthError, getSessionUser, publicUser, requireSession } from "@/lib/session";
+import { AuthError, publicUser, requireSession } from "@/lib/session";
 import { storageMode } from "@/lib/env";
 
 export const runtime = "nodejs";
@@ -33,9 +33,14 @@ export async function GET(req: NextRequest) {
         if (!session.tenantId) {
           return NextResponse.json({ error: "No tenant" }, { status: 400 });
         }
-        const meta = await findTenantMetaById(session.tenantId);
-        const tenant = await readTenantStaffView(session.tenantId);
-        const user = publicUser(await getSessionUser(session));
+        const [meta, tenant] = await Promise.all([
+          findTenantMetaById(session.tenantId),
+          readTenantStaffView(session.tenantId),
+        ]);
+        const user =
+          session.userId && tenant
+            ? publicUser(tenant.users.find((u) => u.id === session.userId) ?? null)
+            : null;
         return NextResponse.json({
           session,
           user,
@@ -58,11 +63,20 @@ export async function GET(req: NextRequest) {
     if (meta.status === "suspended") {
       return NextResponse.json({ error: "Restaurant suspended" }, { status: 403 });
     }
-    return NextResponse.json({
-      public: await getPublicMenu(meta.id),
-      meta,
-      storage: storageMode(),
-    });
+    const pub = await getPublicMenu(meta.id);
+    return NextResponse.json(
+      {
+        public: pub,
+        meta,
+        storage: storageMode(),
+      },
+      {
+        headers: {
+          // Short browser cache so flipping menu↔cart↔checkout feels instant on free tier.
+          "Cache-Control": "private, max-age=8, stale-while-revalidate=20",
+        },
+      },
+    );
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed";
     return NextResponse.json({ error: message }, { status: 500 });

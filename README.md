@@ -32,6 +32,8 @@ Open http://localhost:3000/lab
 GitHub · Vercel · MongoDB Atlas · Cloudflare DNS · Cloudflare R2 · Resend · WhatsApp · Uptime on `/api/health`  
 Env placeholders: `.env.example` → paste real values only in **Vercel Environment Variables**.
 
+**Free-plan tip:** ping `GET /api/health?ping=1` every 5–10 minutes (UptimeRobot / cron-job.org) so Vercel + Mongo stay warm. Full `/api/health` is for dashboards.
+
 ## Sell model
 - **You = Super** → create restaurants, plans, leads, Super-only APK downloads
 - **Each restaurant = Rest Admin** → own menu, stock, staff, QR, branding

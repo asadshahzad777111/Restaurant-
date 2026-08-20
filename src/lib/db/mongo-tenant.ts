@@ -55,6 +55,62 @@ export async function readTenantMongo(tenantId: string): Promise<TenantState> {
   return normalize(rest as TenantState);
 }
 
+/** Guest menu payload — skip orders/reviews/users so /api/state stays small + fast. */
+export async function getPublicMenuMongo(tenantId: string) {
+  await ensureMongoBootstrap();
+  const doc = (await (await tenantsCol()).findOne(
+    { _id: tenantId } as never,
+    {
+      projection: {
+        id: 1,
+        code: 1,
+        branding: 1,
+        shop: 1,
+        tables: 1,
+        menu: 1,
+      },
+    },
+  )) as unknown as Partial<TenantDoc> | null;
+  if (!doc) throw new Error("Tenant not found");
+  const t = normalize({
+    id: (doc.id as string) || tenantId,
+    code: doc.code || "",
+    branding: doc.branding!,
+    shop: doc.shop!,
+    users: [],
+    stock: [],
+    menu: doc.menu || [],
+    orders: [],
+    reviews: [],
+    tables: doc.tables || [],
+    dayCloses: [],
+    nextOrderNumber: 1001,
+  } as TenantState);
+  return {
+    id: t.id,
+    code: t.code,
+    branding: t.branding,
+    shop: {
+      address: t.shop.address,
+      phone: t.shop.phone,
+      whatsapp: t.shop.whatsapp,
+      currency: t.shop.currency,
+      openHours: t.shop.openHours,
+      taxRate: t.shop.taxRate,
+      deliveryFee: t.shop.deliveryFee,
+      packingFee: t.shop.packingFee,
+      serviceChargePercent: t.shop.serviceChargePercent,
+    },
+    tables: t.tables.map((tb) => ({
+      id: tb.id,
+      label: tb.label,
+      seats: tb.seats,
+      status: tb.status,
+    })),
+    menu: t.menu.filter((m) => m.available),
+  };
+}
+
 export async function writeTenantMongo(state: TenantState) {
   await (await tenantsCol()).replaceOne(
     { _id: state.id } as never,
@@ -129,33 +185,6 @@ export async function createEmptyTenantMongo(input: {
   };
   await writeTenantMongo(state);
   return state;
-}
-
-export async function getPublicMenuMongo(tenantId: string) {
-  const t = await readTenantMongo(tenantId);
-  return {
-    id: t.id,
-    code: t.code,
-    branding: t.branding,
-    shop: {
-      address: t.shop.address,
-      phone: t.shop.phone,
-      whatsapp: t.shop.whatsapp,
-      currency: t.shop.currency,
-      openHours: t.shop.openHours,
-      taxRate: t.shop.taxRate,
-      deliveryFee: t.shop.deliveryFee,
-      packingFee: t.shop.packingFee,
-      serviceChargePercent: t.shop.serviceChargePercent,
-    },
-    tables: t.tables.map((tb) => ({
-      id: tb.id,
-      label: tb.label,
-      seats: tb.seats,
-      status: tb.status,
-    })),
-    menu: t.menu.filter((m) => m.available),
-  };
 }
 
 export async function findUserMongo(tenantId: string, username: string) {
@@ -281,14 +310,15 @@ export async function addDayCloseMongo(tenantId: string, summary: Omit<DayCloseS
 
 export async function findOrderByTrackTokenMongo(token: string) {
   await ensureMongoBootstrap();
-  const docs = await (await tenantsCol()).find({}).toArray();
-  for (const doc of docs) {
-    const { _id: _omit, ...rest } = doc as unknown as TenantDoc;
-    const t = normalize(rest as TenantState);
-    const order = t.orders.find((o) => o.trackToken === token);
-    if (order) return { tenant: t, order };
-  }
-  return null;
+  const doc = (await (await tenantsCol()).findOne({
+    "orders.trackToken": token,
+  } as never)) as unknown as TenantDoc | null;
+  if (!doc) return null;
+  const { _id: _omit, ...rest } = doc;
+  const t = normalize(rest as TenantState);
+  const order = t.orders.find((o) => o.trackToken === token);
+  if (!order) return null;
+  return { tenant: t, order };
 }
 
 export async function addReviewMongo(tenantId: string, review: Omit<Review, "id" | "createdAt">) {
@@ -319,11 +349,39 @@ export async function readTenantSafeMongo(tenantId: string) {
 }
 
 export async function readTenantStaffViewMongo(tenantId: string) {
-  const t = await readTenantSafeMongo(tenantId);
+  await ensureMongoBootstrap();
+  const docs = await (
+    await tenantsCol()
+  )
+    .aggregate([
+      { $match: { _id: tenantId } },
+      {
+        $project: {
+          id: 1,
+          code: 1,
+          branding: 1,
+          shop: 1,
+          users: 1,
+          stock: 1,
+          menu: 1,
+          tables: 1,
+          nextOrderNumber: 1,
+          orders: { $slice: ["$orders", 200] },
+          dayCloses: { $slice: [{ $ifNull: ["$dayCloses", []] }, 30] },
+        },
+      },
+    ])
+    .toArray();
+  const doc = docs[0] as unknown as TenantDoc | undefined;
+  if (!doc) throw new Error("Tenant not found");
+  const { _id: _omit, ...rest } = doc;
+  const t = normalize({
+    ...(rest as TenantState),
+    reviews: [],
+  });
   return {
     ...t,
+    users: t.users.map(({ password: _p, ...u }) => ({ ...u, password: "" })),
     reviews: [],
-    orders: t.orders.slice(0, 200),
-    dayCloses: (t.dayCloses || []).slice(0, 30),
   };
 }

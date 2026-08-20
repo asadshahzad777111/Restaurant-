@@ -7,69 +7,121 @@ import { defaultPlatformSeed, demoTenantSeed, secondTenantSeed } from "./seeds";
 const OLD_PLATFORM_WHATSAPP = ["+923001234567", "+923000000000", "03001234567"];
 
 const PLATFORM_ID = "platform";
+const PLATFORM_CACHE_MS = 20_000;
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __ordoMongoBooted: boolean | undefined;
+  // eslint-disable-next-line no-var
+  var __ordoMongoBootPromise: Promise<void> | undefined;
+  // eslint-disable-next-line no-var
+  var __ordoPlatformCache: { at: number; data: PlatformState } | undefined;
+}
 
 async function col(name: string) {
   return (await getDb()).collection(name);
-}
-
-export async function ensureMongoBootstrap() {
-  const pcol = await col("platform");
-  const existing = await pcol.findOne({ _id: PLATFORM_ID } as never);
-  if (!existing) {
-    const platform = defaultPlatformSeed();
-    if (contactFromEnv()) platform.contactWhatsapp = contactFromEnv();
-    await pcol.insertOne({ _id: PLATFORM_ID, ...platform } as never);
-  } else {
-    const patch: Record<string, unknown> = {
-      plans: defaultPlatformSeed().plans,
-    };
-    const currentWa = String((existing as unknown as PlatformState).contactWhatsapp || "").replace(/\s/g, "");
-    if (contactFromEnv()) {
-      patch.contactWhatsapp = contactFromEnv();
-    } else if (!currentWa || OLD_PLATFORM_WHATSAPP.includes(currentWa)) {
-      patch.contactWhatsapp = PLATFORM_CONTACT_WHATSAPP;
-    }
-    await pcol.updateOne({ _id: PLATFORM_ID } as never, { $set: patch });
-  }
-
-  if (!demoSeedEnabled()) return;
-
-  const tcol = await col("tenants");
-  const demo = await tcol.findOne({ _id: "tenant_demo" } as never);
-  if (!demo) {
-    const d = demoTenantSeed();
-    await tcol.insertOne({ _id: d.id, ...d } as never);
-  }
-  /* Existing DEMO/ISO2 kitchens keep Mongo menu, stock, branding — never reset on deploy. */
-  const second = await tcol.findOne({ _id: "tenant_iso2" } as never);
-  if (!second) {
-    const s = secondTenantSeed();
-    await tcol.insertOne({ _id: s.id, ...s } as never);
-    const plat = await getPlatformMongo();
-    if (!plat.tenants.some((t) => t.id === s.id)) {
-      plat.tenants.push({
-        id: s.id,
-        code: s.code,
-        name: s.branding.name,
-        planId: "starter",
-        status: "active",
-        renewsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        createdAt: new Date().toISOString(),
-      });
-      await savePlatformMongo(plat);
-    }
-  }
 }
 
 function contactFromEnv() {
   return process.env.CONTACT_WHATSAPP?.trim() || "";
 }
 
+function invalidatePlatformCache() {
+  global.__ordoPlatformCache = undefined;
+}
+
+/**
+ * One-time (per warm instance) seed / repair. Must NOT write on every API request —
+ * that was the main free-tier lag (Atlas write + round trips on every /api/state).
+ */
+export async function ensureMongoBootstrap() {
+  if (global.__ordoMongoBooted) return;
+  if (global.__ordoMongoBootPromise) {
+    await global.__ordoMongoBootPromise;
+    return;
+  }
+  global.__ordoMongoBootPromise = (async () => {
+    const pcol = await col("platform");
+    const tcol = await col("tenants");
+
+    await Promise.all([
+      tcol.createIndex({ code: 1 }, { unique: true, sparse: true }).catch(() => undefined),
+      tcol.createIndex({ "orders.trackToken": 1 }, { sparse: true }).catch(() => undefined),
+    ]);
+
+    const existing = await pcol.findOne({ _id: PLATFORM_ID } as never);
+    if (!existing) {
+      const platform = defaultPlatformSeed();
+      if (contactFromEnv()) platform.contactWhatsapp = contactFromEnv();
+      await pcol.insertOne({ _id: PLATFORM_ID, ...platform } as never);
+      invalidatePlatformCache();
+    } else {
+      const seedPlans = defaultPlatformSeed().plans;
+      const current = existing as unknown as PlatformState;
+      const patch: Record<string, unknown> = {};
+      const starter = current.plans?.find((p) => p.id === "starter");
+      if (!starter || starter.pricePkr !== seedPlans.find((p) => p.id === "starter")?.pricePkr) {
+        patch.plans = seedPlans;
+      }
+      const currentWa = String(current.contactWhatsapp || "").replace(/\s/g, "");
+      if (contactFromEnv()) {
+        if (currentWa !== contactFromEnv().replace(/\s/g, "")) {
+          patch.contactWhatsapp = contactFromEnv();
+        }
+      } else if (!currentWa || OLD_PLATFORM_WHATSAPP.includes(currentWa)) {
+        patch.contactWhatsapp = PLATFORM_CONTACT_WHATSAPP;
+      }
+      if (Object.keys(patch).length) {
+        await pcol.updateOne({ _id: PLATFORM_ID } as never, { $set: patch });
+        invalidatePlatformCache();
+      }
+    }
+
+    if (demoSeedEnabled()) {
+      const demo = await tcol.findOne({ _id: "tenant_demo" } as never, { projection: { _id: 1 } });
+      if (!demo) {
+        const d = demoTenantSeed();
+        await tcol.insertOne({ _id: d.id, ...d } as never);
+      }
+      /* Existing DEMO/ISO2 kitchens keep Mongo menu, stock, branding — never reset on deploy. */
+      const second = await tcol.findOne({ _id: "tenant_iso2" } as never, { projection: { _id: 1 } });
+      if (!second) {
+        const s = secondTenantSeed();
+        await tcol.insertOne({ _id: s.id, ...s } as never);
+        const plat = await getPlatformMongo();
+        if (!plat.tenants.some((t) => t.id === s.id)) {
+          plat.tenants.push({
+            id: s.id,
+            code: s.code,
+            name: s.branding.name,
+            planId: "starter",
+            status: "active",
+            renewsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            createdAt: new Date().toISOString(),
+          });
+          await savePlatformMongo(plat);
+        }
+      }
+    }
+
+    global.__ordoMongoBooted = true;
+  })().finally(() => {
+    global.__ordoMongoBootPromise = undefined;
+  });
+
+  await global.__ordoMongoBootPromise;
+}
+
 export async function getPlatformMongo(): Promise<PlatformState> {
   await ensureMongoBootstrap();
+  const cached = global.__ordoPlatformCache;
+  if (cached && Date.now() - cached.at < PLATFORM_CACHE_MS) {
+    return cached.data;
+  }
   const doc = await (await col("platform")).findOne({ _id: PLATFORM_ID } as never);
   if (!doc) throw new Error("Platform missing");
   const { _id: _omit, ...rest } = doc as unknown as PlatformState & { _id: string };
+  global.__ordoPlatformCache = { at: Date.now(), data: rest };
   return rest;
 }
 
@@ -79,6 +131,7 @@ async function savePlatformMongo(state: PlatformState) {
     { _id: PLATFORM_ID, ...state } as never,
     { upsert: true },
   );
+  invalidatePlatformCache();
 }
 
 export async function listPlansMongo() {

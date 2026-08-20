@@ -1,14 +1,31 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { ensureStore, listTenantsMeta } from "@/lib/db";
 import { r2Configured, resendConfigured, storageMode, useMongo, whatsappApiConfigured } from "@/lib/env";
 import { mediaBackend } from "@/lib/media";
 import { LIVE_API_HOST, LIVE_APP_HOST, LIVE_CONTROL_HOST, LIVE_MEDIA_HOST, publicApiBase, appUrl, controlUrl } from "@/lib/urls";
+import { getDb } from "@/lib/mongo";
 
 export const runtime = "nodejs";
 
-/** Uptime monitors can hit this. No secrets returned. */
-export async function GET() {
+/**
+ * Uptime monitors: prefer `?ping=1` (cheap) every few minutes on free Vercel/Mongo
+ * so instances stay warm. Full JSON is for dashboards.
+ */
+export async function GET(req: NextRequest) {
   try {
+    const pingOnly = new URL(req.url).searchParams.get("ping") === "1";
+    if (pingOnly) {
+      if (useMongo()) {
+        await getDb().then((db) => db.command({ ping: 1 }));
+      } else {
+        await ensureStore();
+      }
+      return NextResponse.json(
+        { ok: true, ping: true, time: new Date().toISOString() },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+    }
+
     await ensureStore();
     const tenants = await listTenantsMeta();
     const mongo = useMongo();

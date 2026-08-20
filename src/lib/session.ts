@@ -124,6 +124,13 @@ export async function hasPermission(session: Session, perm: Permission): Promise
   return !!user?.permissions.includes(perm);
 }
 
+export async function hasAnyPermission(session: Session, perms: Permission[]): Promise<boolean> {
+  if (session.role === "super" || session.role === "tenant_admin") return true;
+  const user = await getSessionUser(session);
+  if (!user) return false;
+  return perms.some((p) => user.permissions.includes(p));
+}
+
 /** One restaurant only. Super (no tenantId) cannot pass — that is how HQ stays HQ. */
 export async function requireTenantSession(req: NextRequest): Promise<Session> {
   const session = await requireSession(req);
