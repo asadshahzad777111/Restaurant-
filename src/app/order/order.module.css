@@ -9,7 +9,6 @@
   width: min(1120px, calc(100% - 2rem));
   margin: 0 auto;
   padding: 1.25rem 0 6.5rem;
-  animation: ordo-rise 0.45s ease both;
 }
 
 .header {
@@ -82,15 +81,13 @@
   padding: 1.15rem;
   display: grid;
   gap: 0.55rem;
-  animation: ordo-rise 0.5s ease both;
+  transition: border-color 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.modeCards article:nth-child(2) {
-  animation-delay: 0.06s;
-}
-
+.modeCards article:nth-child(2),
 .modeCards article:nth-child(3) {
-  animation-delay: 0.12s;
+  animation: none;
 }
 
 .modeCards h3 {
@@ -207,8 +204,8 @@
   padding: 0;
   overflow: hidden;
   min-width: 0;
-  animation: ordo-rise 0.4s ease both;
-  transition: transform 0.18s ease, border-color 0.18s ease;
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.18s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .tilePhoto,
@@ -256,6 +253,9 @@
   padding: 0.4rem 0.8rem;
   font-size: 0.82rem;
   font-weight: 600;
+  transition: border-color 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.18s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .catChip:hover {
@@ -392,7 +392,6 @@
   background: rgba(14, 12, 10, 0.62);
   display: flex;
   align-items: flex-end;
-  animation: ordo-fade 0.2s ease both;
 }
 
 .sheetPanel {
@@ -402,7 +401,6 @@
   background: var(--guest-elevated);
   border-radius: 18px 18px 0 0;
   padding: 1.15rem 1.15rem 1.6rem;
-  animation: ordo-sheet 0.32s ease both;
 }
 
 .sheetHead {
@@ -518,15 +516,17 @@
 
 .toast {
   position: fixed;
-  left: 50%;
+  left: 0;
+  right: 0;
   bottom: 5.5rem;
-  transform: translateX(-50%);
+  margin-inline: auto;
+  width: fit-content;
+  max-width: calc(100% - 2rem);
   background: var(--ink);
   border: 1px solid var(--guest-line);
   padding: 0.65rem 0.9rem;
   border-radius: 999px;
   z-index: 40;
-  animation: ordo-rise 0.2s ease both;
 }
 
 .error {

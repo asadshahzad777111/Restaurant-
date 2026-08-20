@@ -2,7 +2,6 @@
   min-height: 100vh;
   background: #0e0c0a;
   color: var(--guest-text);
-  animation: ordo-fade 0.35s ease both;
 }
 
 .top {
@@ -49,7 +48,6 @@
   overflow: hidden;
   background: #1a1612;
   aspect-ratio: 3 / 4;
-  animation: ordo-rise 0.45s ease both;
 }
 
 .video {
@@ -65,7 +63,6 @@
   border: 1px solid rgba(243, 237, 228, 0.35);
   border-radius: 12px;
   box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.35);
-  animation: ordo-breathe 2.4s ease-in-out infinite;
 }
 
 .status {

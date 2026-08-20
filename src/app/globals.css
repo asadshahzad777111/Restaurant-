@@ -2,6 +2,11 @@
   --font: var(--font-jakarta), "Plus Jakarta Sans", sans-serif;
   --display: var(--font-display), "Instrument Serif", "Times New Roman", serif;
 
+  --ease-primary: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-alt: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-hover: 0.18s;
+  --motion-page: 0.22s;
+
   --ember: #c45c26;
   --ember-bright: #d96a30;
   --ember-deep: #8b3d14;
@@ -106,7 +111,7 @@ img {
 @keyframes ordo-rise {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -125,34 +130,12 @@ img {
 
 @keyframes ordo-sheet {
   from {
-    transform: translateY(18%);
-    opacity: 0.6;
+    transform: translateY(12%);
+    opacity: 0.7;
   }
   to {
     transform: none;
     opacity: 1;
-  }
-}
-
-@keyframes ordo-pop {
-  0% {
-    transform: scale(1);
-  }
-  45% {
-    transform: scale(1.03);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes ordo-breathe {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(196, 92, 38, 0.35);
-  }
-  50% {
-    box-shadow: 0 0 0 10px rgba(196, 92, 38, 0);
   }
 }
 

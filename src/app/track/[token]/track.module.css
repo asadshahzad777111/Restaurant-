@@ -5,7 +5,6 @@
   color: var(--guest-text);
   max-width: 480px;
   margin: 0 auto;
-  animation: ordo-rise 0.45s ease both;
 }
 
 .brand {
@@ -31,7 +30,6 @@
   background: rgba(196, 92, 38, 0.18);
   color: #ffc29a;
   font-weight: 700;
-  animation: ordo-breathe 2s ease-in-out infinite;
 }
 
 .statusBad {

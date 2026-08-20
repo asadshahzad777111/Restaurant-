@@ -3,7 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { motion } from "framer-motion";
 import { modeLabel, trackSteps } from "@/lib/guest";
+import {
+  listContainer,
+  listItem,
+  pageEnter,
+  useIsCoarsePointer,
+  usePrefersReducedMotion,
+} from "@/lib/motion";
 import styles from "./track.module.css";
 
 interface TrackData {
@@ -43,6 +51,10 @@ export default function TrackPage() {
   const [comment, setComment] = useState("");
   const [sent, setSent] = useState(false);
   const [reviewError, setReviewError] = useState("");
+  const reduced = usePrefersReducedMotion();
+  const coarse = useIsCoarsePointer();
+  const enter = pageEnter(reduced, coarse);
+  const stepVar = listItem(reduced, coarse);
 
   async function load() {
     const res = await fetch(`/api/track/${token}`);
@@ -99,7 +111,7 @@ export default function TrackPage() {
     current === "cancelled" ? data.order.statusHistory.map((h) => h.status) : trackSteps(data.order.serviceType);
 
   return (
-    <div className={styles.page}>
+    <motion.div className={styles.page} variants={enter} initial="hidden" animate="show">
       <header>
         <p className={styles.brand}>{data.branding.name}</p>
         <h1>Order #{data.order.number}</h1>
@@ -109,18 +121,23 @@ export default function TrackPage() {
         <p className={styles.live}>Updates every few seconds from this kitchen.</p>
       </header>
 
-      <ol className={styles.timeline}>
+      <motion.ol
+        className={styles.timeline}
+        variants={listContainer(0.05)}
+        initial="hidden"
+        animate="show"
+      >
         {steps.map((step) => {
           const hit = data.order.statusHistory.find((h) => h.status === step);
           const state = step === current ? "now" : hit ? "done" : "wait";
           return (
-            <li key={step} data-state={state}>
+            <motion.li key={step} data-state={state} variants={stepVar}>
               <strong>{LABELS[step] || step}</strong>
               <span>{hit ? new Date(hit.at).toLocaleTimeString() : state === "now" ? "Now" : "—"}</span>
-            </li>
+            </motion.li>
           );
         })}
-      </ol>
+      </motion.ol>
 
       <section className={styles.box}>
         <h2>Items</h2>
@@ -181,6 +198,6 @@ export default function TrackPage() {
       <p className={styles.footerNav}>
         <Link href="/guest">Order again</Link>
       </p>
-    </div>
+    </motion.div>
   );
 }

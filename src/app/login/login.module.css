@@ -4,7 +4,6 @@
   place-items: center;
   padding: 2rem 1.25rem;
   background: var(--guest-bg);
-  animation: ordo-fade 0.35s ease both;
 }
 
 .card {
@@ -15,7 +14,6 @@
   padding: 1.75rem;
   display: grid;
   gap: 0.85rem;
-  animation: ordo-rise 0.45s ease both;
 }
 
 .brand {

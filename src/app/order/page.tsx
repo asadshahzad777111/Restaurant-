@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import type { MenuItem } from "@/lib/tenant-types";
 import type { PaymentMethod, ServiceType } from "@/lib/types";
 import {
@@ -15,6 +16,18 @@ import {
   paymentChoices,
   type GuestMode,
 } from "@/lib/guest";
+import {
+  backdropTransition,
+  emptyState,
+  listContainer,
+  listItem,
+  pageEnter,
+  sheetTransition,
+  toastTransition,
+  useIsCoarsePointer,
+  usePrefersReducedMotion,
+  viewOnce,
+} from "@/lib/motion";
 import styles from "./order.module.css";
 
 type CartLine = { item: MenuItem; qty: number };
@@ -198,6 +211,11 @@ function OrderInner() {
   const [busy, setBusy] = useState(false);
   const [tableDraft, setTableDraft] = useState("");
   const [cartReady, setCartReady] = useState(false);
+  const reduced = usePrefersReducedMotion();
+  const coarse = useIsCoarsePointer();
+  const enter = pageEnter(reduced, coarse);
+  const empty = emptyState(reduced);
+  const itemVar = listItem(reduced, coarse);
 
   useEffect(() => {
     if (!tenantCode) router.replace("/guest");
@@ -408,7 +426,7 @@ function OrderInner() {
   ) : null;
 
   return (
-    <div className={styles.page}>
+    <motion.div className={styles.page} variants={enter} initial="hidden" animate="show">
       <div className={showMenu ? styles.layout : styles.shell}>
         <div>
           <header className={styles.header}>
@@ -466,8 +484,13 @@ function OrderInner() {
                   </button>
                 </form>
               ) : (
-                <div className={styles.modeCards}>
-                  <article>
+                <motion.div
+                  className={styles.modeCards}
+                  variants={listContainer(0.05)}
+                  initial="hidden"
+                  animate="show"
+                >
+                  <motion.article variants={itemVar}>
                     <h3>Dining</h3>
                     <p>At the table. Pay at the counter.</p>
                     <label>
@@ -481,22 +504,22 @@ function OrderInner() {
                     <button type="button" onClick={() => goMode("table")} disabled={!tableDraft.trim()}>
                       Start dining
                     </button>
-                  </article>
-                  <article>
+                  </motion.article>
+                  <motion.article variants={itemVar}>
                     <h3>Takeaway</h3>
                     <p>Collect when ready. Pay at counter or record as paid in advance.</p>
                     <button type="button" onClick={() => goMode("pickup")}>
                       Order pickup
                     </button>
-                  </article>
-                  <article>
+                  </motion.article>
+                  <motion.article variants={itemVar}>
                     <h3>Delivery</h3>
                     <p>Cash on delivery or recorded as paid in advance.</p>
                     <button type="button" onClick={() => goMode("delivery")}>
                       Order delivery
                     </button>
-                  </article>
-                </div>
+                  </motion.article>
+                </motion.div>
               )}
               <p className={styles.gateLinks}>
                 <Link href="/scan">Scan a QR instead</Link>
@@ -518,18 +541,35 @@ function OrderInner() {
               {loading && <p className={styles.muted}>Loading this kitchen’s menu…</p>}
 
               {!loading && menu.length === 0 && (
-                <div className={styles.empty}>
+                <motion.div
+                  className={styles.empty}
+                  variants={empty}
+                  initial="hidden"
+                  animate="show"
+                >
                   <h2>No dishes on the board</h2>
                   <p>This restaurant has no available items right now.</p>
-                </div>
+                </motion.div>
               )}
 
               {deals.length > 0 && (
                 <section className={styles.deals} id="cat-Deals">
                   <h2>Deals</h2>
-                  <div className={styles.dealRail}>
+                  <motion.div
+                    className={styles.dealRail}
+                    variants={listContainer(0.045)}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={viewOnce}
+                  >
                     {deals.map((d) => (
-                      <button key={d.id} type="button" className={styles.deal} onClick={() => addItem(d)}>
+                      <motion.button
+                        key={d.id}
+                        type="button"
+                        className={styles.deal}
+                        onClick={() => addItem(d)}
+                        variants={itemVar}
+                      >
                         {d.imageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={d.imageUrl} alt="" className={styles.dealPhoto} loading="lazy" />
@@ -544,9 +584,9 @@ function OrderInner() {
                           {currency} {d.price}
                           {d.compareAtPrice ? <s>{d.compareAtPrice}</s> : null}
                         </span>
-                      </button>
+                      </motion.button>
                     ))}
-                  </div>
+                  </motion.div>
                 </section>
               )}
 
@@ -563,41 +603,55 @@ function OrderInner() {
               {categories.map(([cat, items]) => (
                 <section key={cat} className={styles.cat} id={`cat-${cat}`}>
                   <h2>{cat}</h2>
-                  <div className={styles.grid}>
-                    {items.map((item) => (
-                      <article key={item.id} className={styles.tile}>
-                        {item.imageUrl ? (
+                  <motion.div
+                    className={styles.grid}
+                    variants={listContainer(0.05)}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={viewOnce}
+                  >
+                    {items.map((menuItem) => (
+                      <motion.article key={menuItem.id} className={styles.tile} variants={itemVar}>
+                        {menuItem.imageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={item.imageUrl} alt="" className={styles.tilePhoto} loading="lazy" />
+                          <img src={menuItem.imageUrl} alt="" className={styles.tilePhoto} loading="lazy" />
                         ) : null}
                         <div className={styles.tileTop}>
-                          {!item.imageUrl && (
+                          {!menuItem.imageUrl && (
                             <span className={styles.letter} aria-hidden>
-                              {item.name.slice(0, 1)}
+                              {menuItem.name.slice(0, 1)}
                             </span>
                           )}
                           <div>
-                            <strong>{item.name}</strong>
-                            <p>{item.description}</p>
+                            <strong>{menuItem.name}</strong>
+                            <p>{menuItem.description}</p>
                           </div>
                         </div>
                         <div className={styles.tileBottom}>
                           <span className={styles.price}>
-                            {currency} {item.price}
+                            {currency} {menuItem.price}
                           </span>
                           <div className={styles.qty}>
-                            <button type="button" onClick={() => removeItem(item.id)} aria-label={`Remove ${item.name}`}>
+                            <button
+                              type="button"
+                              onClick={() => removeItem(menuItem.id)}
+                              aria-label={`Remove ${menuItem.name}`}
+                            >
                               −
                             </button>
-                            <span>{qtyOf(cart, item.id)}</span>
-                            <button type="button" onClick={() => addItem(item)} aria-label={`Add ${item.name}`}>
+                            <span>{qtyOf(cart, menuItem.id)}</span>
+                            <button
+                              type="button"
+                              onClick={() => addItem(menuItem)}
+                              aria-label={`Add ${menuItem.name}`}
+                            >
                               +
                             </button>
                           </div>
                         </div>
-                      </article>
+                      </motion.article>
                     ))}
-                  </div>
+                  </motion.div>
                 </section>
               ))}
             </>
@@ -625,26 +679,56 @@ function OrderInner() {
         </button>
       )}
 
-      {sheetOpen && showMenu && (
-        <div className={styles.sheet} role="dialog" aria-modal="true" aria-labelledby="cart-title">
-          <div className={styles.sheetPanel}>
-            <div className={styles.sheetHead}>
-              <h3 id="cart-title">Your order</h3>
-              <button type="button" onClick={() => setSheetOpen(false)}>
-                Close
-              </button>
-            </div>
-            {checkout}
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {sheetOpen && showMenu ? (
+          <motion.div
+            key="cart-sheet"
+            className={styles.sheet}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cart-title"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={backdropTransition(reduced)}
+            onClick={() => setSheetOpen(false)}
+          >
+            <motion.div
+              className={styles.sheetPanel}
+              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 28 }}
+              animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              exit={reduced ? { opacity: 0 } : { opacity: 0, y: 16 }}
+              transition={reduced ? backdropTransition(true) : sheetTransition}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={styles.sheetHead}>
+                <h3 id="cart-title">Your order</h3>
+                <button type="button" onClick={() => setSheetOpen(false)}>
+                  Close
+                </button>
+              </div>
+              {checkout}
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
-      {toast && (
-        <div className={styles.toast} role="status">
-          {toast}
-        </div>
-      )}
-    </div>
+      <AnimatePresence>
+        {toast ? (
+          <motion.div
+            key="toast"
+            className={styles.toast}
+            role="status"
+            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10 }}
+            animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            exit={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
+            transition={toastTransition}
+          >
+            {toast}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
