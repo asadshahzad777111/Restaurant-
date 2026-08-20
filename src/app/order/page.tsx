@@ -17,6 +17,7 @@ import {
   paymentChoices,
   type GuestMode,
 } from "@/lib/guest";
+import { isCustomerShell, readLockedCustomerTenant } from "@/lib/app-shell";
 import {
   backdropTransition,
   emptyState,
@@ -272,7 +273,14 @@ function OrderInner() {
   const itemVar = listItem(reduced, coarse);
 
   useEffect(() => {
-    if (!tenantCode) router.replace("/guest");
+    if (!tenantCode) {
+      router.replace("/guest");
+      return;
+    }
+    const locked = readLockedCustomerTenant();
+    if (isCustomerShell() && locked && tenantCode !== locked) {
+      router.replace(guestOrderPath({ tenant: locked }));
+    }
   }, [tenantCode, router]);
 
   useEffect(() => {

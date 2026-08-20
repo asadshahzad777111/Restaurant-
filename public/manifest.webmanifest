@@ -1,17 +1,23 @@
 {
   "name": "ORDO",
   "short_name": "ORDO",
-  "description": "Modern tech for premium hospitality — guest QR, POS, kitchen tickets",
+  "description": "Modern tech for premium hospitality — guest QR, POS, kitchen tickets. Per-kitchen PWAs use /api/manifest?tenant=CODE&app=customer|staff.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#14110e",
-  "theme_color": "#f58220",
+  "theme_color": "#c45c26",
   "orientation": "portrait",
   "icons": [
     {
       "src": "/ordo-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/ordo-mark-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any"
     },
     {

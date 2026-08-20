@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { LAST_GUEST_TENANT_KEY, guestOrderPath, isTenantCode, parseGuestQr } from "@/lib/guest";
-import { isCustomerShell, readAppShell } from "@/lib/app-shell";
+import { isCustomerShell, readAppShell, readLockedCustomerTenant } from "@/lib/app-shell";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import styles from "./guest.module.css";
 
@@ -29,12 +29,19 @@ function GuestInner() {
   useEffect(() => {
     const shell = readAppShell();
     setAppShell(shell);
+    const locked = readLockedCustomerTenant();
     if (preset) {
       setCode(preset);
-      // Customer APK deep-link: lock to this kitchen immediately when valid.
-      if (shell === "customer" && isTenantCode(preset)) {
+      // Customer APK/PWA deep-link: lock to this kitchen immediately when valid.
+      if ((shell === "customer" || isCustomerShell()) && isTenantCode(preset)) {
         localStorage.setItem(LAST_GUEST_TENANT_KEY, preset);
       }
+      return;
+    }
+    // Locked Customer shell without URL tenant: keep baked kitchen only (no mix-up).
+    if ((shell === "customer" || isCustomerShell()) && locked && isTenantCode(locked)) {
+      setCode(locked);
+      setLastKitchen(locked);
       return;
     }
     const last = localStorage.getItem(LAST_GUEST_TENANT_KEY);
@@ -68,14 +75,15 @@ function GuestInner() {
     };
   }, [preset, code]);
 
-  // Customer APK with baked tenant: go straight to that kitchen’s menu (no mix-up).
+  // Customer APK/PWA with baked tenant: go straight to that kitchen’s menu (no mix-up).
   useEffect(() => {
     const shell = readAppShell();
     if (shell !== "customer" && !isCustomerShell()) return;
-    if (!preset || !isTenantCode(preset)) return;
+    const locked = (preset || readLockedCustomerTenant() || "").toUpperCase();
+    if (!locked || !isTenantCode(locked)) return;
     const t = window.setTimeout(() => {
-      localStorage.setItem(LAST_GUEST_TENANT_KEY, preset);
-      router.replace(guestOrderPath({ tenant: preset }));
+      localStorage.setItem(LAST_GUEST_TENANT_KEY, locked);
+      router.replace(guestOrderPath({ tenant: locked }));
     }, 900);
     return () => window.clearTimeout(t);
   }, [preset, router]);
@@ -84,6 +92,11 @@ function GuestInner() {
     const next = tenant.trim().toUpperCase();
     if (!isTenantCode(next)) {
       setError("Enter a valid restaurant code.");
+      return;
+    }
+    const locked = readLockedCustomerTenant();
+    if ((appShell === "customer" || isCustomerShell()) && locked && next !== locked) {
+      setError(`This app is locked to ${locked}. Other kitchens cannot open here.`);
       return;
     }
     setBusy(true);
@@ -173,7 +186,7 @@ function GuestInner() {
             <h1>{brand.name}</h1>
             <p className={styles.lead}>
               Opening this kitchen’s menu only — code {preset || code}. Other restaurants cannot open inside this
-              APK.
+              Customer app / Home Screen shortcut.
             </p>
             {brand.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -204,8 +217,8 @@ function GuestInner() {
           </>
         )}
 
-        {/* Locked customer APK (baked tenant=CODE): no code picker — prevents kitchen mix-up */}
-        {!(appShell === "customer" || isCustomerShell()) || !preset ? (
+        {/* Locked customer PWA/APK (baked tenant=CODE): no code picker — prevents kitchen mix-up */}
+        {!(appShell === "customer" || isCustomerShell()) || !(preset || readLockedCustomerTenant()) ? (
           <>
             <form className={styles.card} onSubmit={(e) => void onCode(e)}>
               <label className={styles.field}>

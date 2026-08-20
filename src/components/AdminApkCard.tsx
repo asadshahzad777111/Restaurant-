@@ -68,14 +68,15 @@ export function AdminApkCard() {
 
   const name = tenant?.branding.name || tenant?.code || "Restaurant";
   const logo = tenant?.branding.logoUrl || "";
+  const code = tenant?.code || "";
 
   return (
     <div className={styles.card}>
-      <h3 style={{ marginTop: 0 }}>Your apps (customers, staff & Play Store)</h3>
+      <h3 style={{ marginTop: 0 }}>Your apps — Android APK</h3>
       <p className={styles.muted}>
-        Phone pe naam/logo isi kitchen ke Settings se. Customer APK diners ko WhatsApp pe do.{" "}
-        <strong>Customer AAB</strong> Google Play pe upload karo — code <strong>{tenant?.code}</strong>{" "}
-        locked, kisi aur restaurant se merge nahi.
+        <strong>Customer APK</strong> diners (Android) · <strong>Staff APK</strong> team / POS /
+        kitchen. In-app logo & name = Settings. Code <strong>{code || "—"}</strong> locked.{" "}
+        <strong>iPhone</strong> users: see <em>Install on iPhone</em> below (web / Add to Home Screen).
       </p>
       <div className={styles.row} style={{ alignItems: "center", marginBottom: "0.75rem" }}>
         {logo ? (
@@ -100,11 +101,11 @@ export function AdminApkCard() {
         <div>
           <strong>{name}</strong>
           <p className={styles.muted} style={{ margin: 0 }}>
-            Code {tenant?.code} · Play package com.ordo.customer.
-            {(tenant?.code || "").toLowerCase().replace(/[^a-z0-9]/g, "")}
+            Code {code} · Android APK / Play AAB
           </p>
         </div>
       </div>
+
       {note && <p className={styles.muted}>{note}</p>}
       {error && <p className={styles.muted}>{error}</p>}
       {apps.map((app) => (
@@ -139,7 +140,8 @@ export function AdminApkCard() {
         </div>
       ))}
       <p className={styles.muted} style={{ marginBottom: 0 }}>
-        Play Console: Create app → upload <strong>AAB</strong> (not APK). See docs/PLAY-STORE.md.
+        Play Console (optional): upload <strong>AAB</strong> not APK — docs/PLAY-STORE.md. iPhone:{" "}
+        docs/IOS-PWA-SAFE-PLAN.md.
       </p>
     </div>
   );

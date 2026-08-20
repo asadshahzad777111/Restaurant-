@@ -41,6 +41,10 @@ Each kitchen gets **two branded APKs**:
 - Tenant code is **baked into deep link** so guests/staff of Kitchen A cannot land on Kitchen B by accident
 - Global template slots optional (`ORDO-Staff.apk` / `ORDO-Customer.apk`) for rebuilds; **production distribution is always per-tenant**
 
+### iPhone / iOS (no APK)
+iPhone customers and staff use the **same** locked URLs via Safari → Share → **Add to Home Screen**.  
+Plan + Admin Settings “Install on iPhone”: **`docs/IOS-PWA-SAFE-PLAN.md`**. Alerts companion: `docs/WORLD-PRO-APK-ALERTS-PLAN.md`.
+
 ### Super Apps tab
 - List restaurants → expand → Staff + Customer upload/download/replace
 - Show: available, size, updatedAt, loads URL, display name

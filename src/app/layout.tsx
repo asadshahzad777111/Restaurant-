@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Plus_Jakarta_Sans } from "next/font/google";
 import { StoreProvider } from "@/lib/store";
 import { ApkExperience } from "@/components/ApkExperience";
+import { TenantPwaMeta } from "@/components/TenantPwaMeta";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={`${jakarta.variable} ${display.variable}`}>
         <StoreProvider>
+          <TenantPwaMeta />
           <ApkExperience />
           {children}
         </StoreProvider>

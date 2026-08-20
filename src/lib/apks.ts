@@ -1,9 +1,12 @@
 import fs from "fs";
 import path from "path";
+import { apkAppHost, tenantApkLoadsPath, type ApkId } from "./apk-urls";
 import { r2Configured } from "./env";
 import { deleteR2Object, getR2Object, headR2Object, putR2Object } from "./r2";
 
-export type ApkId = "staff" | "customer";
+export type { ApkId } from "./apk-urls";
+export { apkAppHost, tenantApkLoadsPath } from "./apk-urls";
+
 export type ApkFormat = "apk" | "aab";
 
 export interface ApkApp {
@@ -17,12 +20,6 @@ export interface ApkApp {
 }
 
 const DATA_ROOT = path.join(process.cwd(), ".data", "apks");
-
-/** Restaurant OS host. APKs must never target /super or mix tenants. */
-export function apkAppHost() {
-  const raw = process.env.NEXT_PUBLIC_APP_URL || "https://ordo.asfins.com";
-  return raw.replace(/\/$/, "");
-}
 
 /** Global template binaries (rebuild base). Distribution is per-tenant. */
 export const APK_APPS: ApkApp[] = [
@@ -70,13 +67,6 @@ export function tenantApkFilename(code: string, id: ApkId, format: ApkFormat = "
 export function tenantApkDisplayTitle(restaurantName: string, id: ApkId) {
   const name = restaurantName.trim() || "Restaurant";
   return id === "staff" ? `${name} · Staff` : `${name} · Customer`;
-}
-
-export function tenantApkLoadsPath(code: string, id: ApkId) {
-  const c = encodeURIComponent(safeCode(code));
-  return id === "staff"
-    ? `/login?app=staff&tenant=${c}`
-    : `/guest?app=customer&tenant=${c}`;
 }
 
 export function apkContentType(format: ApkFormat) {
