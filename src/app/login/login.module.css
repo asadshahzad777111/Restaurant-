@@ -17,11 +17,15 @@
 }
 
 .brand {
-  font-family: var(--display);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: var(--guest-text);
-  font-size: 1.35rem;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+}
+
+.brandImg {
+  display: block;
+  height: 2.1rem;
+  width: auto;
 }
 
 .card h1 {

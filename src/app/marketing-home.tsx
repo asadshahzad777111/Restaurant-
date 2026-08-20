@@ -337,10 +337,15 @@ export function MarketingHome() {
     <div className={styles.page} data-theme={theme} data-marketing-page>
       <header className={styles.nav}>
         <div className={styles.navInner}>
-          <Link href="/" className={styles.navBrand} onClick={closeMenu}>
+          <Link href="/" className={styles.navBrand} onClick={closeMenu} aria-label="ORDO home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ordo-icon.svg" alt="" className={styles.navMark} width={32} height={32} />
-            ORDO
+            <img
+              src={theme === "dark" ? "/ordo-logo-on-dark.svg" : "/ordo-logo.svg"}
+              alt="ORDO"
+              className={styles.navLogo}
+              height={36}
+              width={158}
+            />
           </Link>
 
           <nav className={styles.navCenter} aria-label="Primary">
@@ -1004,11 +1009,14 @@ export function MarketingHome() {
           <div className={styles.footerInner}>
             <div className={styles.footerBrand}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/ordo-icon.svg" alt="" className={styles.navMark} width={36} height={36} />
-              <div>
-                <strong>ORDO</strong>
-                <p>Modern tech for premium hospitality — guest QR, counter POS, and the pass in one system.</p>
-              </div>
+              <img
+                src={theme === "dark" ? "/ordo-logo-on-dark.svg" : "/ordo-logo.svg"}
+                alt="ORDO"
+                className={styles.footerLogo}
+                height={40}
+                width={175}
+              />
+              <p>Modern tech for premium hospitality — guest QR, counter POS, and the pass in one system.</p>
             </div>
             <div className={styles.footerCols}>
               <div className={styles.footerCol}>

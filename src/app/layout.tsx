@@ -24,8 +24,11 @@ export const metadata: Metadata = {
     "ORDO is the quiet layer between guests and the kitchen: QR ordering, counter POS, tickets, and isolated restaurants. Browser-first, PKR from ₨999/month.",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/ordo-icon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/ordo-mark-256.png" }],
+    icon: [
+      { url: "/ordo-icon.svg", type: "image/svg+xml" },
+      { url: "/ordo-mark-256.png", sizes: "256x256", type: "image/png" },
+    ],
+    apple: [{ url: "/ordo-apple-touch.png", sizes: "180x180", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,
