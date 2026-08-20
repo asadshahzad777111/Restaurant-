@@ -941,17 +941,40 @@ export function MarketingHome() {
 
       <footer className={styles.footer}>
         <div className={styles.wrap}>
-          <div className={styles.footerRow}>
-            <strong>ORDO</strong>
-            <span>Restaurant OS · isolated tenants</span>
-            <nav>
-              <Link href="/order?tenant=DEMO">Demo</Link>
-              <Link href="/scan">Scan</Link>
-              <Link href="/login">Admin</Link>
-              <a href={controlUrl()} className={styles.footerQuiet}>
-                HQ
-              </a>
-            </nav>
+          <div className={styles.footerInner}>
+            <div className={styles.footerBrand}>
+              <span className={styles.navMark} aria-hidden>
+                o
+              </span>
+              <div>
+                <strong>ORDO</strong>
+                <p>Restaurant OS for Pakistan kitchens — guest QR, counter POS, and the pass in one system.</p>
+              </div>
+            </div>
+            <div className={styles.footerCols}>
+              <div className={styles.footerCol}>
+                <h3>Product</h3>
+                <Link href="/order?tenant=DEMO">Live demo</Link>
+                <Link href="/scan">Scan a table</Link>
+                <a href="#shop">Monthly package</a>
+              </div>
+              <div className={styles.footerCol}>
+                <h3>Account</h3>
+                <Link href="/login">Kitchen login</Link>
+                <a href={controlUrl()}>Owner HQ</a>
+              </div>
+              <div className={styles.footerCol}>
+                <h3>Contact</h3>
+                <a href={`https://wa.me/${waDigits}`} target="_blank" rel="noreferrer">
+                  WhatsApp {whatsapp}
+                </a>
+                <a href="#contact">Request a kitchen</a>
+              </div>
+            </div>
+          </div>
+          <div className={styles.footerBottom}>
+            <span>© {new Date().getFullYear()} ORDO · asfins.com</span>
+            <span>Isolated per kitchen · priced in PKR</span>
           </div>
         </div>
       </footer>
