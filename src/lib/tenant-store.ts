@@ -13,6 +13,7 @@ import type {
 import { ensureBootstrap } from "./bootstrap";
 
 const DATA_ROOT = path.join(process.cwd(), ".data");
+/** One JSON file per tenantId — never read another kitchen's folder. */
 const tenantCache = new Map<string, { mtime: number; data: TenantState }>();
 
 function tenantDir(tenantId: string) {

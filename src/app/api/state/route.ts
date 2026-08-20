@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
       try {
         const session = await requireSession(req);
         if (session.role === "super") {
+          // Super has no restaurant payload. Do not pick a tenant or impersonate.
           return NextResponse.json({
             session,
             plans: await listPlans(),

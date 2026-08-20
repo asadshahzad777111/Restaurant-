@@ -857,12 +857,48 @@
   scroll-margin-top: calc(var(--m-nav) + 0.75rem);
   margin-top: 2rem;
   display: grid;
-  grid-template-columns: 0.95fr 1.05fr;
+  grid-template-columns: 0.85fr 1.15fr;
   gap: 1.4rem;
+  align-items: center;
   padding: 1.6rem;
   border-radius: 1.15rem;
   border: 1px solid var(--m-line);
   background: var(--m-bg);
+}
+
+.printVisual {
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 1rem;
+  background: #ece6dc;
+  border: 1px solid var(--m-line);
+}
+
+.printVisual img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+}
+
+.printVisual p {
+  margin: 0.65rem 0 0 !important;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+}
+
+.printIncluded {
+  margin: 1rem 0 0;
+  padding: 0 0 0 1.1rem;
+  color: var(--m-muted);
+}
+
+.printIncluded li {
+  margin: 0.35rem 0;
 }
 
 .printNote {
@@ -874,6 +910,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
+  margin-top: 1.25rem;
 }
 
 .timeline {

@@ -20,6 +20,7 @@ export async function PUT(req: NextRequest) {
     const session = await requireTenantSession(req);
     const body = await req.json();
     const { action } = body as { action: string };
+    // Mutations stay on session.tenantId — Super cannot hit this without Help (tenant_admin).
     const tenantId = session.tenantId!;
 
     if (action === "menu") {

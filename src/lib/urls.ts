@@ -1,8 +1,8 @@
 /**
- * Live hosts for asfins.com (ORDO).
+ * Live hosts for asfins.com (ORDO). Do not change apex/www DNS from this app.
  *
- * - ordo.asfins.com     → restaurants (guest + staff). No owner panel.
- * - control.asfins.com  → YOU only: create/open restaurants without their passwords.
+ * - ordo.asfins.com     → restaurants (guest + staff). No owner panel. Admin cannot open HQ.
+ * - control.asfins.com  → Super only. Creating a restaurant does not log Super in as that Admin.
  * - api.ordo.asfins.com → backend /api only
  * - media.ordo.asfins.com → R2 media + backups
  */

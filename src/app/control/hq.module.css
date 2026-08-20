@@ -153,16 +153,22 @@
   margin-bottom: 1.25rem;
 }
 
-.how ol {
+.how ol,
+.how p {
   margin: 0.5rem 0 0;
   padding-left: 1.2rem;
   color: var(--hq-ink);
   line-height: 1.55;
 }
 
+.how p {
+  padding-left: 0;
+  margin-bottom: 0.85rem;
+}
+
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.75rem;
 }
 
@@ -263,13 +269,23 @@
   flex-wrap: wrap;
 }
 
-.actions button {
+.actions button,
+.actions select {
   border: 1px solid var(--hq-line);
   background: #fff;
   border-radius: 4px;
   padding: 0.35rem 0.65rem;
   font-size: 0.82rem;
   cursor: pointer;
+}
+
+.table select {
+  border: 1px solid var(--hq-line);
+  background: #fff;
+  border-radius: 4px;
+  padding: 0.3rem 0.45rem;
+  font-size: 0.82rem;
+  max-width: 11rem;
 }
 
 .helpBtn {

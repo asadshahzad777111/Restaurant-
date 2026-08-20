@@ -238,15 +238,25 @@ export function createEmptyTenant(input: {
   adminUsername: string;
   adminPassword: string;
 }): TenantState {
-  const base = demoTenant();
+  // Isolated kitchen: empty catalog, not DEMO menu/logo/stock. Admin belongs to this id only.
   const state: TenantState = {
-    ...base,
     id: input.id,
     code: input.code.toUpperCase(),
     branding: {
       name: input.name,
       logoUrl: "",
       receiptFooter: `Thank you for dining with ${input.name}`,
+    },
+    shop: {
+      address: "",
+      phone: "",
+      whatsapp: "",
+      currency: "PKR",
+      taxRate: 0,
+      openHours: "",
+      deliveryFee: 0,
+      packingFee: 0,
+      serviceChargePercent: 0,
     },
     users: [
       {
@@ -260,9 +270,16 @@ export function createEmptyTenant(input: {
         mustChangePassword: true,
       },
     ],
+    stock: [],
+    menu: [],
     orders: [],
     reviews: [],
-    tables: base.tables.map((tb) => ({ ...tb, status: "empty" as const, currentOrderId: undefined })),
+    tables: [
+      { id: "t1", label: "1", seats: 4, status: "empty" },
+      { id: "t2", label: "2", seats: 4, status: "empty" },
+      { id: "t3", label: "3", seats: 4, status: "empty" },
+      { id: "t4", label: "4", seats: 4, status: "empty" },
+    ],
     dayCloses: [],
     nextOrderNumber: 1001,
   };

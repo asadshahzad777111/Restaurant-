@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { HELP_MODE_COOKIE, helpModeCookieSetOptions } from "@/lib/help-mode";
 import {
   ensureStore,
   createEmptyTenantState,
@@ -46,6 +47,7 @@ export async function POST(req: NextRequest) {
       if (!code || !name) {
         return NextResponse.json({ error: "code and name required" }, { status: 400 });
       }
+      // New kitchen + its Admin only. Super session is unchanged — do not impersonate.
       await createEmptyTenantState({ id, code, name, adminUsername, adminPassword });
       const meta = await createTenantMeta({ id, code, name, planId });
       return NextResponse.json({ tenant: meta });
@@ -56,6 +58,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ tenant: meta });
     }
 
+    if (action === "plan") {
+      const planId = body.planId as PlanId;
+      if (!["starter", "pro", "enterprise"].includes(planId)) {
+        return NextResponse.json({ error: "Unknown plan" }, { status: 400 });
+      }
+      const meta = await updateTenantMeta(body.id, { planId });
+      return NextResponse.json({ tenant: meta });
+    }
+
     if (action === "rename") {
       const meta = await updateTenantMeta(body.id, { name: body.name });
       return NextResponse.json({ tenant: meta });
@@ -63,7 +74,9 @@ export async function POST(req: NextRequest) {
 
     if (action === "impersonate") {
       const newSession = await impersonateTenant(session, body.id);
-      return NextResponse.json({ token: newSession.token, session: newSession });
+      const res = NextResponse.json({ token: newSession.token, session: newSession });
+      res.cookies.set(HELP_MODE_COOKIE, "1", helpModeCookieSetOptions());
+      return res;
     }
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });

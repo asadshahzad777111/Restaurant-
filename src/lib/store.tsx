@@ -11,9 +11,10 @@ import React, {
 } from "react";
 import type { Permission, SessionRole } from "./types";
 import type { DiningTable, TenantState, MenuItem, Order, StockItem, TenantUser } from "./tenant-types";
+import { setHelpModeCookieClient } from "./help-mode";
 
 export const TOKEN_KEY = "restaurant_pos_token_v2";
-/** Saved before Help mode so owner can return to ORDO HQ */
+/** Super token parked while Help mode uses TOKEN_KEY for the restaurant session. */
 export const OWNER_TOKEN_KEY = "ordo_owner_token_v1";
 
 export interface AuthUser {
@@ -51,6 +52,8 @@ interface StoreContextValue extends AuthState {
   refresh: (opts?: { force?: boolean }) => Promise<void>;
   hydrate: (payload: LoginPayload) => void;
   logout: () => Promise<void>;
+  enterHelp: (impersonationToken: string) => void;
+  exitHelp: () => Promise<void>;
   api: (path: string, init?: RequestInit) => Promise<Response>;
   applyTenant: (tenant: TenantState) => void;
   applyOrder: (order: Order, extras?: { tables?: DiningTable[] }) => void;
@@ -69,6 +72,7 @@ type MemorySession = {
 /** Survives StoreProvider remounts during client navigation (React state does not). */
 let memorySession: MemorySession | null = null;
 
+/** Skip restaurant /api/state on marketing, login, and Super HQ — HQ is not Admin. */
 function isPublicPath(path: string) {
   return (
     path === "/" ||
@@ -78,7 +82,8 @@ function isPublicPath(path: string) {
     path.startsWith("/track") ||
     path.startsWith("/login") ||
     path.startsWith("/lab") ||
-    path.startsWith("/super")
+    path.startsWith("/super") ||
+    path.startsWith("/control")
   );
 }
 
@@ -231,12 +236,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       headers: { Authorization: `Bearer ${t}` },
     });
     if (!res.ok) {
+      // Do not destroy a parked Super token just because restaurant state failed.
+      const owner = localStorage.getItem(OWNER_TOKEN_KEY);
+      if (owner && owner !== t) {
+        setLoading(false);
+        return;
+      }
       localStorage.removeItem(TOKEN_KEY);
       writeMemory(null);
       setTokenState(null);
       setRole(null);
       setTenant(null);
       setUser(null);
+      setImpersonating(false);
       setLoading(false);
       return;
     }
@@ -251,14 +263,68 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, [applySession]);
 
+  const enterHelp = useCallback(
+    (impersonationToken: string) => {
+      const owner = localStorage.getItem(TOKEN_KEY);
+      if (owner && owner !== impersonationToken) {
+        localStorage.setItem(OWNER_TOKEN_KEY, owner);
+      }
+      setHelpModeCookieClient(true);
+      localStorage.setItem(TOKEN_KEY, impersonationToken);
+      writeMemory(null);
+      setTokenState(impersonationToken);
+    },
+    [],
+  );
+
+  const exitHelp = useCallback(async () => {
+    const helpTok = localStorage.getItem(TOKEN_KEY);
+    const owner = localStorage.getItem(OWNER_TOKEN_KEY);
+    if (helpTok && helpTok !== owner) {
+      await fetch("/api/auth", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${helpTok}` },
+      });
+    }
+    setHelpModeCookieClient(false);
+    writeMemory(null);
+    if (owner) {
+      localStorage.setItem(TOKEN_KEY, owner);
+      localStorage.removeItem(OWNER_TOKEN_KEY);
+      setTokenState(owner);
+      setRole("super");
+      setTenantId(null);
+      setUser(null);
+      setTenant(null);
+      setImpersonating(false);
+      setLoading(false);
+      return;
+    }
+    setToken(null);
+    setRole(null);
+    setTenantId(null);
+    setUser(null);
+    setTenant(null);
+    setImpersonating(false);
+  }, [setToken]);
+
   const logout = useCallback(async () => {
     const t = localStorage.getItem(TOKEN_KEY);
+    const owner = localStorage.getItem(OWNER_TOKEN_KEY);
     if (t) {
       await fetch("/api/auth", {
         method: "DELETE",
         headers: { Authorization: `Bearer ${t}` },
       });
     }
+    if (owner && owner !== t) {
+      await fetch("/api/auth", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${owner}` },
+      });
+    }
+    setHelpModeCookieClient(false);
+    localStorage.removeItem(OWNER_TOKEN_KEY);
     writeMemory(null);
     setToken(null);
     setRole(null);
@@ -311,6 +377,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       refresh,
       hydrate,
       logout,
+      enterHelp,
+      exitHelp,
       api,
       applyTenant,
       applyOrder,
@@ -328,6 +396,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       refresh,
       hydrate,
       logout,
+      enterHelp,
+      exitHelp,
       api,
       applyTenant,
       applyOrder,

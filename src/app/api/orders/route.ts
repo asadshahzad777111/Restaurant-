@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
       }
       tenantId = session.tenantId!;
     } else {
+      // Guests must send this kitchen's code/QR — never inherit another restaurant.
       if (!tenantCode) {
         return NextResponse.json({ error: "tenantCode required" }, { status: 400 });
       }

@@ -15,7 +15,7 @@ export interface ApkApp {
 
 const DATA_ROOT = path.join(process.cwd(), ".data", "apks");
 
-/** Restaurant OS host. Super `/super` is never the WebView target and has no extra domain. */
+/** Restaurant OS host. APKs must never target /super or mix tenants. Binaries are optional. */
 export function apkAppHost() {
   const raw = process.env.NEXT_PUBLIC_APP_URL || "https://ordo.asfins.com";
   return raw.replace(/\/$/, "");
@@ -29,7 +29,7 @@ export const APK_APPS: ApkApp[] = [
     audience: "Admin / POS / billing / kitchen / staff",
     loadsPath: "/login?app=staff",
     version: "1.0.0",
-    note: "Restaurant floor app. After kitchen-code login: Home, POS, orders, kitchen, menu, staff. Super panel is not inside this APK. Download only from Super → Apps.",
+    note: "Restaurant floor app. Kitchen-code login only. Super HQ is not inside this APK. Hidden until a file is uploaded.",
   },
   {
     id: "customer",
@@ -38,7 +38,7 @@ export const APK_APPS: ApkApp[] = [
     audience: "Diners — dining, pickup, delivery, COD, QR scan",
     loadsPath: "/guest?app=customer",
     version: "1.0.0",
-    note: "Guest app: find kitchen, scan table QR, dine-in, pickup, delivery / cash on delivery. No Super download, no public demo download.",
+    note: "Guest app: restaurant code / QR. No Super, no public download until the file exists.",
   },
 ];
 

@@ -4,6 +4,8 @@ import { APK_APPS, readApk, type ApkId } from "@/lib/apks";
 
 export const runtime = "nodejs";
 
+/** Super-only. 404 when the binary is missing — never a fake download. */
+
 export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
     await requireSuper(req);

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 420" role="img" aria-labelledby="tpTitle tpDesc">
+  <title id="tpTitle">58mm thermal receipt printer</title>
+  <desc id="tpDesc">Compact POS-58 thermal printer with a paper receipt  sold with ORDO monthly plans.</desc>
+  <defs>
+    <linearGradient id="body" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#3a3d42"/>
+      <stop offset="55%" stop-color="#1c1e22"/>
+      <stop offset="100%" stop-color="#111214"/>
+    </linearGradient>
+    <linearGradient id="lid" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#4a4e55"/>
+      <stop offset="100%" stop-color="#2a2d32"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#fffdf8"/>
+      <stop offset="100%" stop-color="#efe8d8"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="420" rx="28" fill="#f3eee6"/>
+  <ellipse cx="240" cy="368" rx="150" ry="18" fill="#d9d0c3" opacity="0.7"/>
+  <!-- printer body -->
+  <rect x="108" y="168" width="264" height="168" rx="18" fill="url(#body)"/>
+  <rect x="118" y="178" width="244" height="28" rx="8" fill="#2c2f34"/>
+  <circle cx="142" cy="192" r="5" fill="#3ecf8e"/>
+  <circle cx="162" cy="192" r="5" fill="#c45c26"/>
+  <text x="188" y="197" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#c5c8ce">POS-58 · 58mm</text>
+  <!-- lid -->
+  <path d="M124 168 L356 168 L338 118 L142 118 Z" fill="url(#lid)"/>
+  <rect x="168" y="128" width="144" height="22" rx="6" fill="#1a1c20" opacity="0.55"/>
+  <!-- paper slot + receipt -->
+  <rect x="176" y="158" width="128" height="10" rx="3" fill="#0d0e10"/>
+  <g transform="translate(168 38)">
+    <rect x="0" y="0" width="144" height="128" rx="4" fill="url(#paper)" stroke="#e4dcc8"/>
+    <rect x="16" y="14" width="72" height="6" rx="2" fill="#c45c26"/>
+    <rect x="16" y="28" width="112" height="4" rx="2" fill="#d7d0c4"/>
+    <rect x="16" y="40" width="96" height="4" rx="2" fill="#d7d0c4"/>
+    <rect x="16" y="56" width="112" height="3" rx="1.5" fill="#ece6da"/>
+    <rect x="16" y="66" width="88" height="3" rx="1.5" fill="#ece6da"/>
+    <rect x="16" y="76" width="104" height="3" rx="1.5" fill="#ece6da"/>
+    <rect x="16" y="92" width="112" height="3" rx="1.5" fill="#333"/>
+    <rect x="16" y="104" width="64" height="3" rx="1.5" fill="#333"/>
+    <path d="M0 128 L8 136 L16 128 L24 136 L32 128 L40 136 L48 128 L56 136 L64 128 L72 136 L80 128 L88 136 L96 128 L104 136 L112 128 L120 136 L128 128 L136 136 L144 128" fill="#fffdf8" stroke="#e4dcc8"/>
+  </g>
+  <!-- front panel -->
+  <rect x="132" y="228" width="216" height="86" rx="12" fill="#15171a"/>
+  <rect x="148" y="244" width="120" height="10" rx="5" fill="#2e3238"/>
+  <rect x="148" y="264" width="84" height="8" rx="4" fill="#2e3238"/>
+  <rect x="288" y="248" width="40" height="40" rx="8" fill="#c45c26"/>
+  <circle cx="308" cy="268" r="8" fill="#f4e6dc"/>
+</svg>

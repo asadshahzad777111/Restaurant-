@@ -11,6 +11,12 @@ import {
 import type { Permission, Session, SessionRole } from "./types";
 import type { TenantUser } from "./tenant-types";
 
+/**
+ * Bearer token cookie name (legacy). Live auth is Authorization: Bearer from localStorage.
+ * Super and restaurant Admin MUST NOT share a session: Super has no tenantId;
+ * Admin/staff always have tenantId. Impersonation is a *second* tenant_admin session
+ * with impersonating:true — it is never created on HQ page load, plan edit, or messages.
+ */
 export const TOKEN_COOKIE = "restaurant_pos_token_v2";
 
 export function newToken() {
@@ -39,6 +45,7 @@ export class AuthError extends Error {
   }
 }
 
+/** Platform owner only. No tenantId — Super is not a restaurant Admin. */
 export async function loginSuper(username: string, password: string): Promise<Session> {
   if (!(await verifySuper(username, password))) throw new AuthError("Invalid credentials", 401);
   return addSession({
@@ -48,6 +55,7 @@ export async function loginSuper(username: string, password: string): Promise<Se
   });
 }
 
+/** Restaurant staff/admin. Bound to one tenantId from that kitchen's code — never Super. */
 export async function loginTenant(
   code: string,
   username: string,
@@ -68,11 +76,16 @@ export async function loginTenant(
   });
 }
 
+/**
+ * Explicit Help this restaurant only. Keeps the Super session intact (caller saves it).
+ * Never call this from HQ Home / plans / messages / settings load.
+ */
 export async function impersonateTenant(
   superSession: Session,
   tenantId: string,
 ): Promise<Session> {
   if (superSession.role !== "super") throw new AuthError("Forbidden", 403);
+  if (superSession.impersonating) throw new AuthError("Already in help mode", 403);
   const tenant = await readTenant(tenantId);
   const admin = tenant.users.find((u) => u.role === "admin");
   if (!admin) throw new AuthError("No admin user", 400);
@@ -103,12 +116,15 @@ export function publicUser(user: TenantUser | null) {
 }
 
 export async function hasPermission(session: Session, perm: Permission): Promise<boolean> {
+  // Super is the platform owner. Do not use this to let Super act as a kitchen Admin —
+  // tenant routes must go through requireTenantSession, which rejects role=super.
   if (session.role === "super") return true;
   if (session.role === "tenant_admin") return true;
   const user = await getSessionUser(session);
   return !!user?.permissions.includes(perm);
 }
 
+/** One restaurant only. Super (no tenantId) cannot pass — that is how HQ stays HQ. */
 export async function requireTenantSession(req: NextRequest): Promise<Session> {
   const session = await requireSession(req);
   if (!session.tenantId || (session.role !== "tenant_admin" && session.role !== "staff")) {
@@ -117,8 +133,11 @@ export async function requireTenantSession(req: NextRequest): Promise<Session> {
   return session;
 }
 
+/** Platform owner. Impersonating help sessions are tenant_admin and must fail here. */
 export async function requireSuper(req: NextRequest): Promise<Session> {
   const session = await requireSession(req);
-  if (session.role !== "super") throw new AuthError("Super admin required", 403);
+  if (session.role !== "super" || session.impersonating) {
+    throw new AuthError("Super admin required", 403);
+  }
   return session;
 }

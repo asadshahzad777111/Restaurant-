@@ -8,6 +8,7 @@ import {
   getSessionUser,
   publicUser,
 } from "@/lib/session";
+import { HELP_MODE_COOKIE } from "@/lib/help-mode";
 import { ensureStore, findSession, readTenantStaffView } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -27,7 +28,9 @@ export async function POST(req: NextRequest) {
     }
     if (mode === "super" || (!code && mode !== "tenant")) {
       const session = await loginSuper(username, password);
-      return NextResponse.json({ token: session.token, session });
+      const res = NextResponse.json({ token: session.token, session });
+      res.cookies.set(HELP_MODE_COOKIE, "", { path: "/", maxAge: 0 });
+      return res;
     }
     if (!code) return NextResponse.json({ error: "Restaurant code required" }, { status: 400 });
     const session = await loginTenant(code, username, password);

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { HELP_MODE_COOKIE } from "@/lib/help-mode";
 import {
   LIVE_APP_HOST,
   LIVE_CONTROL_HOST,
@@ -8,6 +9,19 @@ import {
   isControlHost,
   isLocalHost,
 } from "@/lib/urls";
+
+/** Restaurant Admin chrome. Allowed on control.asfins.com only during explicit Help. */
+const STAFF_UI = [
+  "/home",
+  "/pos",
+  "/orders",
+  "/kitchen",
+  "/menu",
+  "/tables",
+  "/settings",
+  "/day-close",
+  "/staff",
+];
 
 const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
@@ -37,10 +51,10 @@ function applyCors(req: NextRequest, res: NextResponse) {
 }
 
 /**
- * Host split:
+ * Host split (roles must never mix):
  * - api.ordo.asfins.com     → /api/* only
- * - control.asfins.com      → owner control plane only (/control, /login)
- * - ordo.asfins.com         → restaurants; /super and /control blocked
+ * - control.asfins.com      → Super HQ only (/control, /login). Staff UI only if Help cookie.
+ * - ordo.asfins.com         → restaurants; /super and /control blocked (Admin cannot open HQ)
  */
 export function middleware(req: NextRequest) {
   const host = req.headers.get("host") || "";
@@ -70,22 +84,15 @@ export function middleware(req: NextRequest) {
       url.pathname = "/control";
       return withSecurity(NextResponse.redirect(url));
     }
-    // Owner panel + Super APK desk + temporary staff UI after Help this restaurant
-    const allowed =
+    const helping = req.cookies.get(HELP_MODE_COOKIE)?.value === "1";
+    const hq =
       pathname.startsWith("/control") ||
       pathname.startsWith("/super") ||
       pathname.startsWith("/login") ||
-      pathname.startsWith("/home") ||
-      pathname.startsWith("/pos") ||
-      pathname.startsWith("/orders") ||
-      pathname.startsWith("/kitchen") ||
-      pathname.startsWith("/menu") ||
-      pathname.startsWith("/tables") ||
-      pathname.startsWith("/settings") ||
-      pathname.startsWith("/day-close") ||
       pathname.startsWith("/api/") ||
       pathname.startsWith("/_next");
-    if (!allowed) {
+    const staffUi = helping && STAFF_UI.some((p) => pathname.startsWith(p));
+    if (!hq && !staffUi) {
       const url = req.nextUrl.clone();
       url.pathname = "/control";
       return withSecurity(NextResponse.redirect(url));
@@ -93,7 +100,7 @@ export function middleware(req: NextRequest) {
     return withSecurity(NextResponse.next());
   }
 
-  // Restaurant app host: HQ / Super stay on control.asfins.com. APKs never open /super.
+  // Restaurant host: Admin/staff/guest only. Never serve HQ — APKs must not open /super.
   if (isAppHost(host) && !isLocalHost(host)) {
     if (pathname.startsWith("/control") || pathname.startsWith("/super")) {
       return withSecurity(

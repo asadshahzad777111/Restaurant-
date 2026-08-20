@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { TOKEN_KEY, useStore } from "@/lib/store";
+import { TOKEN_KEY, OWNER_TOKEN_KEY, useStore } from "@/lib/store";
+import { setHelpModeCookieClient } from "@/lib/help-mode";
 import { isCustomerShell, isStaffShell, readAppShell } from "@/lib/app-shell";
 import styles from "./login.module.css";
 
@@ -48,9 +49,8 @@ export default function LoginPage() {
     const saved = localStorage.getItem(CODE_KEY);
     setCode(saved || (staff ? "" : "DEMO"));
     setPassword(staff ? "" : desk ? "super123" : "admin123");
-    router.prefetch("/home");
     if (desk) router.prefetch("/control");
-    else if (!staff && onLocal) router.prefetch("/super");
+    else router.prefetch("/home");
   }, [router]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -75,6 +75,10 @@ export default function LoginPage() {
     if (mode === "tenant" && code) {
       localStorage.setItem(CODE_KEY, code.trim().toUpperCase());
     }
+    if (mode === "super") {
+      localStorage.removeItem(OWNER_TOKEN_KEY);
+      setHelpModeCookieClient(false);
+    }
     localStorage.setItem(TOKEN_KEY, data.token);
     hydrate({
       token: data.token,
@@ -82,7 +86,7 @@ export default function LoginPage() {
       user: data.user ?? null,
       tenant: data.tenant ?? null,
     });
-    if (mode === "super") router.push(ownerDesk ? "/control" : "/super");
+    if (mode === "super") router.push("/control");
     else router.push("/home");
   }
 

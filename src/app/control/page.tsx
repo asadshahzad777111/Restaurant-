@@ -4,22 +4,24 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TOKEN_KEY, OWNER_TOKEN_KEY, useStore } from "@/lib/store";
+import { setHelpModeCookieClient } from "@/lib/help-mode";
 import { apiUrl } from "@/lib/urls";
-import type { Lead, Plan, PlatformTenantMeta } from "@/lib/types";
+import type { Lead, Plan, PlanId, PlatformTenantMeta } from "@/lib/types";
 import styles from "./hq.module.css";
 
-type Tab = "dashboard" | "restaurants" | "plans" | "leads";
+type Tab = "dashboard" | "restaurants" | "plans" | "leads" | "settings";
 
 const NAV: { id: Tab; label: string }[] = [
   { id: "dashboard", label: "Home" },
   { id: "restaurants", label: "Your restaurants" },
   { id: "plans", label: "Pricing plans" },
   { id: "leads", label: "Messages" },
+  { id: "settings", label: "Settings" },
 ];
 
 export default function ControlPage() {
   const router = useRouter();
-  const { setToken, logout } = useStore();
+  const { setToken, logout, enterHelp } = useStore();
   const [tab, setTab] = useState<Tab>("dashboard");
   const [token, setLocalToken] = useState<string | null>(null);
   const [tenants, setTenants] = useState<PlatformTenantMeta[]>([]);
@@ -47,7 +49,14 @@ export default function ControlPage() {
   );
 
   const load = useCallback(async () => {
-    const t = localStorage.getItem(TOKEN_KEY);
+    let t = localStorage.getItem(TOKEN_KEY);
+    const owner = localStorage.getItem(OWNER_TOKEN_KEY);
+    if (!t && owner) {
+      localStorage.setItem(TOKEN_KEY, owner);
+      localStorage.removeItem(OWNER_TOKEN_KEY);
+      t = owner;
+      setHelpModeCookieClient(false);
+    }
     if (!t) {
       router.replace("/login?owner=1");
       return;
@@ -55,14 +64,32 @@ export default function ControlPage() {
     setLocalToken(t);
     const auth = await fetch(apiUrl("/api/auth"), { headers: { Authorization: `Bearer ${t}` } });
     if (!auth.ok) {
+      if (owner && owner !== t) {
+        localStorage.setItem(TOKEN_KEY, owner);
+        localStorage.removeItem(OWNER_TOKEN_KEY);
+        setHelpModeCookieClient(false);
+        setToken(owner);
+        router.replace("/control");
+        return;
+      }
       router.replace("/login?owner=1");
       return;
     }
-    const session = await auth.json();
-    if (session.session?.role !== "super") {
-      router.replace("/home");
+    const data = await auth.json();
+    // Super stays on HQ. A leftover Admin/help token must restore owner — never /home.
+    if (data.session?.role !== "super") {
+      if (owner) {
+        localStorage.setItem(TOKEN_KEY, owner);
+        localStorage.removeItem(OWNER_TOKEN_KEY);
+        setHelpModeCookieClient(false);
+        setToken(owner);
+        router.replace("/control");
+        return;
+      }
+      router.replace("/login?owner=1");
       return;
     }
+    setHelpModeCookieClient(false);
     const [tenRes, leadRes] = await Promise.all([
       fetch(apiUrl("/api/super/tenants"), { headers: { Authorization: `Bearer ${t}` } }),
       fetch(apiUrl("/api/leads"), { headers: { Authorization: `Bearer ${t}` } }),
@@ -76,7 +103,7 @@ export default function ControlPage() {
       const d = await leadRes.json();
       setLeads(d.leads || []);
     }
-  }, [router]);
+  }, [router, setToken]);
 
   useEffect(() => {
     void load();
@@ -94,7 +121,13 @@ export default function ControlPage() {
       setError(data.error || "Could not add restaurant");
       return;
     }
-    setForm({ code: "", name: "", planId: "starter", adminUsername: "admin", adminPassword: "admin123" });
+    setForm({
+      code: "",
+      name: "",
+      planId: "starter",
+      adminUsername: "admin",
+      adminPassword: "admin123",
+    });
     await load();
     setTab("restaurants");
   }
@@ -107,9 +140,15 @@ export default function ControlPage() {
     await load();
   }
 
+  async function setPlan(id: string, planId: PlanId) {
+    await api("/api/super/tenants", {
+      method: "POST",
+      body: JSON.stringify({ action: "plan", id, planId }),
+    });
+    await load();
+  }
+
   async function helpRestaurant(id: string) {
-    const ownerTok = localStorage.getItem(TOKEN_KEY);
-    if (ownerTok) localStorage.setItem(OWNER_TOKEN_KEY, ownerTok);
     const res = await api("/api/super/tenants", {
       method: "POST",
       body: JSON.stringify({ action: "impersonate", id }),
@@ -119,7 +158,7 @@ export default function ControlPage() {
       setError(data.error || "Could not open restaurant");
       return;
     }
-    localStorage.setItem(TOKEN_KEY, data.token);
+    enterHelp(data.token);
     setToken(data.token);
     router.push("/home");
   }
@@ -127,6 +166,19 @@ export default function ControlPage() {
   function goTab(id: Tab) {
     setTab(id);
     setMenuOpen(false);
+  }
+
+  function planPrice(planId: string) {
+    const p = plans.find((x) => x.id === planId);
+    return p ? `₨${p.pricePkr.toLocaleString()}/mo` : planId;
+  }
+
+  function renewLabel(iso: string) {
+    try {
+      return new Date(iso).toLocaleDateString();
+    } catch {
+      return "—";
+    }
   }
 
   return (
@@ -144,7 +196,7 @@ export default function ControlPage() {
           <Link href="/control" className={styles.brand}>
             ORDO HQ
           </Link>
-          <p className={styles.role}>Platform owner</p>
+          <p className={styles.role}>Platform owner · Super</p>
         </div>
         <div className={styles.navWrap}>
           {NAV.map((n) => (
@@ -157,9 +209,6 @@ export default function ControlPage() {
               {n.label}
             </button>
           ))}
-          <Link href="/super" className={styles.nav}>
-            Android apps
-          </Link>
         </div>
         <button
           type="button"
@@ -183,7 +232,7 @@ export default function ControlPage() {
             <div>
               <strong>ORDO HQ</strong>
               <div>
-                <span>Your platform control — not a restaurant</span>
+                <span>You are Super — not a restaurant Admin</span>
               </div>
             </div>
           </div>
@@ -194,17 +243,18 @@ export default function ControlPage() {
             <section>
               <h1>Home</h1>
               <p className={styles.lead}>
-                Manage restaurants here. Staff and guests use a different site — this panel is only for you.
+                Manage restaurants here. Staff and guests use ordo.asfins.com — this panel never becomes
+                their Admin login.
               </p>
               <div className={styles.how}>
                 <strong>How it works</strong>
                 <ol>
-                  <li>Add a restaurant (they get their own name + login — not DEMO).</li>
-                  <li>They sign in at ordo.asfins.com/login with their code.</li>
-                  <li>Guests order with /order?tenant=CODE.</li>
+                  <li>Add a restaurant and its Admin (code, plan, username, password).</li>
+                  <li>They sign in at ordo.asfins.com/login with that code — they cannot open HQ.</li>
+                  <li>Guests order with /order?tenant=CODE or table QR for that kitchen only.</li>
                   <li>
-                    <em>Help this restaurant</em> opens <strong>their</strong> panel (or DEMO as a
-                    sample). Yellow banner = you are helping, not in ORDO HQ.
+                    <em>Help this restaurant</em> is the only way into their panel. Yellow banner + Back to
+                    ORDO HQ. Plans and messages stay on this page.
                   </li>
                 </ol>
               </div>
@@ -218,6 +268,10 @@ export default function ControlPage() {
                   <span>Active</span>
                 </div>
                 <div>
+                  <strong>{tenants.filter((t) => t.status === "suspended").length}</strong>
+                  <span>Paused</span>
+                </div>
+                <div>
                   <strong>{leads.length}</strong>
                   <span>Messages</span>
                 </div>
@@ -229,10 +283,11 @@ export default function ControlPage() {
             <section>
               <h1>Your restaurants</h1>
               <p className={styles.lead}>
-                Each restaurant is separate. Help opens their panel without their password.
+                Each Admin belongs to one kitchen. Pause blocks their staff login. Billing is the monthly
+                package you assign — not a restaurant Settings screen.
               </p>
               <form className={styles.create} onSubmit={createRestaurant}>
-                <h2>Add restaurant</h2>
+                <h2>Add restaurant + Admin</h2>
                 <div className={styles.grid}>
                   <input
                     required
@@ -252,7 +307,7 @@ export default function ControlPage() {
                   >
                     {plans.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.name}
+                        {p.name} · ₨{p.pricePkr.toLocaleString()}/mo
                       </option>
                     ))}
                   </select>
@@ -278,7 +333,8 @@ export default function ControlPage() {
                     <tr>
                       <th>Code</th>
                       <th>Name</th>
-                      <th>Plan</th>
+                      <th>Plan / billing</th>
+                      <th>Renews</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
@@ -291,8 +347,21 @@ export default function ControlPage() {
                           {t.code === "DEMO" && <span className={styles.demoTag}>Demo</span>}
                         </td>
                         <td>{t.name}</td>
-                        <td>{t.planId}</td>
-                        <td>{t.status}</td>
+                        <td>
+                          <select
+                            value={t.planId}
+                            onChange={(e) => void setPlan(t.id, e.target.value as PlanId)}
+                          >
+                            {plans.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.name} · ₨{p.pricePkr.toLocaleString()}
+                              </option>
+                            ))}
+                          </select>
+                          <div className={styles.muted}>{planPrice(t.planId)}</div>
+                        </td>
+                        <td>{renewLabel(t.renewsAt)}</td>
+                        <td>{t.status === "suspended" ? "Paused" : t.status}</td>
                         <td className={styles.actions}>
                           <button
                             type="button"
@@ -307,7 +376,7 @@ export default function ControlPage() {
                             </button>
                           ) : (
                             <button type="button" onClick={() => void setStatus(t.id, "active")}>
-                              Activate
+                              Unpause
                             </button>
                           )}
                         </td>
@@ -322,7 +391,9 @@ export default function ControlPage() {
           {tab === "plans" && (
             <section>
               <h1>Pricing plans</h1>
-              <p className={styles.lead}>Plans you assign when adding a restaurant.</p>
+              <p className={styles.lead}>
+                Monthly packages you assign per restaurant. Editing this list does not open a kitchen.
+              </p>
               <div className={styles.planGrid}>
                 {plans.map((p) => (
                   <article key={p.id}>
@@ -344,7 +415,7 @@ export default function ControlPage() {
           {tab === "leads" && (
             <section>
               <h1>Messages</h1>
-              <p className={styles.lead}>Contact requests from the marketing site.</p>
+              <p className={styles.lead}>Contact requests from the marketing site. Viewing them stays on HQ.</p>
               {leads.length === 0 ? (
                 <p className={styles.muted}>No messages yet.</p>
               ) : (
@@ -373,6 +444,29 @@ export default function ControlPage() {
                   </table>
                 </div>
               )}
+            </section>
+          )}
+
+          {tab === "settings" && (
+            <section>
+              <h1>HQ settings</h1>
+              <p className={styles.lead}>
+                Platform owner tools. Restaurant logos, menus, and printers live inside that kitchen — use
+                Help this restaurant, then Back to ORDO HQ.
+              </p>
+              <div className={styles.how}>
+                <strong>Pause &amp; billing</strong>
+                <p>
+                  Pause a restaurant from Your restaurants. Staff login is blocked while paused. Billing is
+                  Starter ₨999, Pro ₨1,999, Enterprise ₨4,499 per month, assigned per kitchen.
+                </p>
+                <strong>Android apps</strong>
+                <p>
+                  Staff and guest APKs are not published yet. Download and upload stay hidden until a real
+                  file exists — we will not offer a 404. Later APKs will login with that restaurant’s code,
+                  never open /super, and never mix kitchens.
+                </p>
+              </div>
             </section>
           )}
         </div>

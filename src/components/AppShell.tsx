@@ -14,15 +14,20 @@ export function AppShell({
   children: React.ReactNode;
   title?: string;
 }) {
-  const { loading, token, role, tenant, user, impersonating, logout, refresh } = useStore();
+  const { loading, token, role, tenant, user, impersonating, logout, refresh, exitHelp } = useStore();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && (!token || role === "super")) {
-      if (role === "super") router.replace("/super");
-      else router.replace("/login");
+    if (loading) return;
+    if (!token) {
+      router.replace("/login");
+      return;
     }
-  }, [loading, token, role, router]);
+    // Super without Help is not restaurant Admin — send them to HQ, never keep them in this shell.
+    if (role === "super" && !impersonating) {
+      router.replace("/control");
+    }
+  }, [loading, token, role, impersonating, router]);
 
   useEffect(() => {
     if (loading || !token || role === "super" || (tenant && user)) return;
@@ -37,13 +42,38 @@ export function AppShell({
     <div className={styles.shell}>
       <Sidebar />
       <div className={styles.main}>
+        {impersonating && (
+          <div className={styles.helpBanner} role="status">
+            <strong>Help mode · Super</strong>
+            <span>
+              You are helping {tenant.branding.name} ({tenant.code}). This is not ORDO HQ and not their
+              Admin login.
+            </span>
+            <button
+              type="button"
+              className={styles.helpExit}
+              onClick={async () => {
+                await exitHelp();
+                router.push("/control");
+              }}
+            >
+              Back to ORDO HQ
+            </button>
+          </div>
+        )}
         <header className={styles.top}>
           <div>
             <p className={styles.brand}>{tenant.branding.name}</p>
             <h1 className={styles.title}>{title}</h1>
           </div>
           <div className={styles.meta}>
-            {impersonating && <span className={styles.badge}>Impersonating</span>}
+            {impersonating ? (
+              <span className={styles.badge}>Super helping this restaurant</span>
+            ) : (
+              <span className={styles.badgeMuted}>
+                {user.role === "admin" ? "Restaurant Admin" : "Staff"} · {tenant.code}
+              </span>
+            )}
             <span className={styles.user}>
               {user.roleLabel} · {user.username}
             </span>
@@ -52,7 +82,7 @@ export function AppShell({
               className={styles.logout}
               onClick={async () => {
                 await logout();
-                router.push("/login");
+                router.push(impersonating ? "/login?owner=1" : "/login");
               }}
             >
               Log out

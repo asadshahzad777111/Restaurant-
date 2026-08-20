@@ -645,10 +645,10 @@ export function MarketingHome() {
       <section className={styles.sectionSoft} id="shop">
         <div className={styles.wrap}>
           <p className={styles.kicker}>ORDO shop</p>
-          <h2>Software you can start this month. Hardware only if you ask.</h2>
+          <h2>Software and a 58mm thermal printer, on a monthly package.</h2>
           <p className={styles.lead}>
-            Launch pricing for Pakistan kitchens. Month to month. No per-order cut. Confirm the plan on
-            WhatsApp — no fake checkout on this page.
+            Launch pricing for Pakistan kitchens. Month to month. No per-order cut. Confirm ORDO OS plus a
+            compact POS-58 printer on WhatsApp — no fake checkout on this page.
           </p>
           <div className={styles.plans}>
             {PLANS.map((p) => (
@@ -673,36 +673,56 @@ export function MarketingHome() {
           </div>
 
           <div className={styles.printBox} id="print">
+            <div className={styles.printVisual}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/thermal-printer.svg"
+                alt="Compact 58mm thermal receipt printer for ORDO POS"
+                width={480}
+                height={420}
+              />
+              <p>POS-58 · 58mm thermal</p>
+            </div>
             <div>
-              <p className={styles.kicker}>Printer package</p>
-              <h3>Software first. A thermal kit only if you need paper.</h3>
+              <p className={styles.kicker}>ORDO + printer package</p>
+              <h3>POS software and a 58mm thermal printer, with a monthly plan.</h3>
               <p>
-                Browser receipt print is included — 58mm layout with that restaurant’s name, items, qty, rates,
-                totals, and footer. Compact thermal hardware (ESC/POS) is a quoted add-on: we confirm model,
-                paper width, and delivery on WhatsApp. No fake Windows kernel driver.
+                Sell the counter and the paper together: ORDO OS (guest QR, POS, kitchen tickets) plus a
+                compact 58mm thermal receipt printer. Browser print is included on every plan. Hardware is
+                confirmed on WhatsApp — model, paper width, and delivery — with Starter ₨999, Pro ₨1,999, or
+                Enterprise ₨4,499 per month.
               </p>
+              <ul className={styles.printIncluded}>
+                <li>ORDO OS on the plan you pick — isolated per kitchen.</li>
+                <li>58mm thermal receipt layout: name, items, qty, rates, totals, footer.</li>
+                <li>Quoted compact ESC/POS printer (POS-58 class) when you want paper at the counter.</li>
+                <li>Setup guidance for the printer and the software workflow.</li>
+              </ul>
               <p className={styles.printNote}>
-                Any phone shown in product pictures demonstrates ORDO OS. It is not included in a printer
-                package unless we agree separately.
+                Any phone in product pictures demonstrates ORDO OS. It is not included in a printer package
+                unless we agree separately.
               </p>
+              <a href="#contact" className={styles.planCta} style={{ display: "inline-flex", width: "auto" }}>
+                Request POS + printer quote
+              </a>
             </div>
-            <div className={styles.printSteps}>
-              <article>
-                <span>01</span>
-                <h3>Details</h3>
-                <p>Name, city, paper width, and whether you already own a printer.</p>
-              </article>
-              <article>
-                <span>02</span>
-                <h3>Quote</h3>
-                <p>Your request opens on WhatsApp for plan + hardware, if any.</p>
-              </article>
-              <article>
-                <span>03</span>
-                <h3>Confirmation</h3>
-                <p>Confirm software, delivery, and onboarding before anything ships.</p>
-              </article>
-            </div>
+          </div>
+          <div className={styles.printSteps}>
+            <article>
+              <span>01</span>
+              <h3>Details</h3>
+              <p>Name, city, paper width, and whether you already own a printer.</p>
+            </article>
+            <article>
+              <span>02</span>
+              <h3>Quote</h3>
+              <p>WhatsApp confirms monthly plan + hardware, if any.</p>
+            </article>
+            <article>
+              <span>03</span>
+              <h3>Confirmation</h3>
+              <p>Confirm software, delivery, and onboarding before anything ships.</p>
+            </article>
           </div>
         </div>
       </section>

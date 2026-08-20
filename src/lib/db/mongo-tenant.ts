@@ -8,9 +8,9 @@ import type {
   DiningTable,
   DayCloseSummary,
 } from "../tenant-types";
+import type { Permission } from "../types";
 import { getDb } from "../mongo";
 import { ensureMongoBootstrap } from "./mongo-platform";
-import { demoTenantSeed } from "./seeds";
 
 type TenantDoc = TenantState & { _id: string };
 
@@ -63,6 +63,17 @@ export async function writeTenantMongo(state: TenantState) {
   );
 }
 
+const ALL_PERMS: Permission[] = [
+  "home",
+  "pos",
+  "orders",
+  "kitchen",
+  "menu",
+  "stock",
+  "settings",
+  "staff",
+];
+
 export async function createEmptyTenantMongo(input: {
   id: string;
   code: string;
@@ -70,15 +81,24 @@ export async function createEmptyTenantMongo(input: {
   adminUsername: string;
   adminPassword: string;
 }) {
-  const base = demoTenantSeed();
   const state: TenantState = {
-    ...base,
     id: input.id,
     code: input.code.toUpperCase(),
     branding: {
       name: input.name,
       logoUrl: "",
       receiptFooter: `Thank you for dining with ${input.name}`,
+    },
+    shop: {
+      address: "",
+      phone: "",
+      whatsapp: "",
+      currency: "PKR",
+      taxRate: 0,
+      openHours: "",
+      deliveryFee: 0,
+      packingFee: 0,
+      serviceChargePercent: 0,
     },
     users: [
       {
@@ -87,18 +107,21 @@ export async function createEmptyTenantMongo(input: {
         password: input.adminPassword,
         role: "admin",
         roleLabel: "Owner",
-        permissions: base.users[0].permissions,
+        permissions: ALL_PERMS,
         active: true,
         mustChangePassword: true,
       },
     ],
+    stock: [],
+    menu: [],
     orders: [],
     reviews: [],
-    tables: base.tables.map((tb) => ({
-      ...tb,
-      status: "empty" as const,
-      currentOrderId: undefined,
-    })),
+    tables: [
+      { id: "t1", label: "1", seats: 4, status: "empty" },
+      { id: "t2", label: "2", seats: 4, status: "empty" },
+      { id: "t3", label: "3", seats: 4, status: "empty" },
+      { id: "t4", label: "4", seats: 4, status: "empty" },
+    ],
     dayCloses: [],
     nextOrderNumber: 1001,
   };
