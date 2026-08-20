@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { AuthError, requireSuper } from "@/lib/session";
 import {
   APK_APPS,
+  parseApkFormat,
   readApk,
   readTenantApk,
   removeApk,
@@ -12,14 +13,16 @@ import { ensureStore, findTenantMetaById } from "@/lib/db";
 
 export const runtime = "nodejs";
 
-/** Super-only. Template or per-restaurant Staff/Customer APK download & remove. */
+/** Super-only. Template or per-restaurant Staff/Customer APK/AAB download & remove. */
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
     await requireSuper(req);
     await ensureStore();
     const { id: raw } = await ctx.params;
-    const tenantId = new URL(req.url).searchParams.get("tenantId");
+    const url = new URL(req.url);
+    const tenantId = url.searchParams.get("tenantId");
+    const format = parseApkFormat(url.searchParams.get("format"));
 
     if (tenantId) {
       const meta = await findTenantMetaById(tenantId);
@@ -27,13 +30,21 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
       if (!["staff", "customer"].includes(raw)) {
         return NextResponse.json({ error: "Unknown APK" }, { status: 404 });
       }
-      const file = readTenantApk(meta.id, meta.code, raw as ApkId);
+      const file = readTenantApk(meta.id, meta.code, raw as ApkId, format);
       if (!file) {
-        return NextResponse.json({ error: "APK not uploaded yet for this restaurant" }, { status: 404 });
+        return NextResponse.json(
+          {
+            error:
+              format === "aab"
+                ? "Play Store AAB not uploaded yet for this restaurant"
+                : "APK not uploaded yet for this restaurant",
+          },
+          { status: 404 },
+        );
       }
       return new NextResponse(new Uint8Array(file.buffer), {
         headers: {
-          "Content-Type": "application/vnd.android.package-archive",
+          "Content-Type": file.contentType,
           "Content-Disposition": `attachment; filename="${file.filename}"`,
           "Content-Length": String(file.buffer.length),
           "Cache-Control": "no-store",
@@ -41,6 +52,9 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
       });
     }
 
+    if (format === "aab") {
+      return NextResponse.json({ error: "Templates have no AAB" }, { status: 404 });
+    }
     if (!APK_APPS.some((a) => a.id === raw)) {
       return NextResponse.json({ error: "Unknown APK" }, { status: 404 });
     }
@@ -50,7 +64,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     }
     return new NextResponse(new Uint8Array(file.buffer), {
       headers: {
-        "Content-Type": "application/vnd.android.package-archive",
+        "Content-Type": file.contentType,
         "Content-Disposition": `attachment; filename="${file.filename}"`,
         "Content-Length": String(file.buffer.length),
         "Cache-Control": "no-store",
@@ -69,7 +83,10 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
     await requireSuper(req);
     await ensureStore();
     const { id: raw } = await ctx.params;
-    const tenantId = new URL(req.url).searchParams.get("tenantId");
+    const url = new URL(req.url);
+    const tenantId = url.searchParams.get("tenantId");
+    const formatParam = url.searchParams.get("format");
+    const format = formatParam ? parseApkFormat(formatParam) : undefined;
 
     if (tenantId) {
       const meta = await findTenantMetaById(tenantId);
@@ -77,7 +94,7 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
       if (!["staff", "customer"].includes(raw)) {
         return NextResponse.json({ error: "Unknown APK" }, { status: 404 });
       }
-      const app = removeTenantApk(meta.id, meta.code, meta.name, raw as ApkId);
+      const app = removeTenantApk(meta.id, meta.code, meta.name, raw as ApkId, format);
       return NextResponse.json({ app, tenant: meta });
     }
 

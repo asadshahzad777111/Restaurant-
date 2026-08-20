@@ -8,8 +8,11 @@ type ApkInfo = {
   id: "staff" | "customer";
   title: string;
   filename: string;
+  aabFilename?: string;
   available: boolean;
+  aabAvailable?: boolean;
   sizeBytes: number;
+  aabSizeBytes?: number;
   updatedAt: string | null;
   loadsPath: string;
 };
@@ -37,13 +40,18 @@ export function AdminApkCard() {
     void load();
   }, [load]);
 
-  async function download(slot: "staff" | "customer", filename: string) {
-    setBusy(slot);
+  async function download(slot: "staff" | "customer", filename: string, format: "apk" | "aab") {
+    setBusy(`${slot}-${format}`);
     try {
-      const res = await api(`/api/admin/apks?download=${slot}`);
+      const res = await api(`/api/admin/apks?download=${slot}&format=${format}`);
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        window.alert((err as { error?: string }).error || "APK not ready — ask ORDO Super to upload yours");
+        window.alert(
+          (err as { error?: string }).error ||
+            (format === "aab"
+              ? "Play Store AAB not ready — ask Super to upload"
+              : "APK not ready — ask ORDO Super to upload yours"),
+        );
         return;
       }
       const blob = await res.blob();
@@ -63,10 +71,11 @@ export function AdminApkCard() {
 
   return (
     <div className={styles.card}>
-      <h3 style={{ marginTop: 0 }}>Your apps (for customers & staff)</h3>
+      <h3 style={{ marginTop: 0 }}>Your apps (customers, staff & Play Store)</h3>
       <p className={styles.muted}>
-        Phone pe naam aur logo isi kitchen ke Settings branding se match karte hain. Customer APK sirf{" "}
-        <strong>{tenant?.code}</strong> ke menu/orders kholti hai — kisi aur restaurant se merge nahi hoti.
+        Phone pe naam/logo isi kitchen ke Settings se. Customer APK diners ko WhatsApp pe do.{" "}
+        <strong>Customer AAB</strong> Google Play pe upload karo — code <strong>{tenant?.code}</strong>{" "}
+        locked, kisi aur restaurant se merge nahi.
       </p>
       <div className={styles.row} style={{ alignItems: "center", marginBottom: "0.75rem" }}>
         {logo ? (
@@ -91,31 +100,46 @@ export function AdminApkCard() {
         <div>
           <strong>{name}</strong>
           <p className={styles.muted} style={{ margin: 0 }}>
-            Code {tenant?.code} · change name/logo above, then Super rebuilds branded APK labels
+            Code {tenant?.code} · Play package com.ordo.customer.
+            {(tenant?.code || "").toLowerCase().replace(/[^a-z0-9]/g, "")}
           </p>
         </div>
       </div>
       {note && <p className={styles.muted}>{note}</p>}
       {error && <p className={styles.muted}>{error}</p>}
-      <div className={styles.row}>
-        {apps.map((app) => (
-          <button
-            key={app.id}
-            type="button"
-            className={app.id === "customer" ? styles.btn : styles.btnGhost}
-            disabled={!app.available || busy === app.id || !token}
-            onClick={() => void download(app.id, app.filename)}
-          >
-            {busy === app.id
-              ? "Downloading…"
-              : app.available
-                ? `Download ${app.id === "customer" ? "Customer APK" : "Staff APK"}`
-                : `${app.id === "customer" ? "Customer" : "Staff"} APK pending (Super upload)`}
-          </button>
-        ))}
-      </div>
+      {apps.map((app) => (
+        <div key={app.id} style={{ marginBottom: "1rem" }}>
+          <strong>{app.id === "customer" ? "Customer" : "Staff"}</strong>
+          <div className={styles.row} style={{ marginTop: "0.35rem" }}>
+            <button
+              type="button"
+              className={app.id === "customer" ? styles.btn : styles.btnGhost}
+              disabled={!app.available || busy === `${app.id}-apk` || !token}
+              onClick={() => void download(app.id, app.filename, "apk")}
+            >
+              {busy === `${app.id}-apk`
+                ? "Downloading…"
+                : app.available
+                  ? `Download ${app.id === "customer" ? "Customer" : "Staff"} APK`
+                  : "APK pending (Super)"}
+            </button>
+            <button
+              type="button"
+              className={styles.btnGhost}
+              disabled={!app.aabAvailable || busy === `${app.id}-aab` || !token}
+              onClick={() => void download(app.id, app.aabFilename || app.filename.replace(/\.apk$/i, ".aab"), "aab")}
+            >
+              {busy === `${app.id}-aab`
+                ? "Downloading…"
+                : app.aabAvailable
+                  ? `Download Play Store AAB`
+                  : "Play AAB pending (Super)"}
+            </button>
+          </div>
+        </div>
+      ))}
       <p className={styles.muted} style={{ marginBottom: 0 }}>
-        Customers ko sirf <strong>Customer APK</strong> do. Staff APK kitchen team ke liye hai.
+        Play Console: Create app → upload <strong>AAB</strong> (not APK). See docs/PLAY-STORE.md.
       </p>
     </div>
   );

@@ -56,3 +56,7 @@ mobile/**/android/local.properties
 mobile/**/android/captures/
 *.apk
 *.aab
+*.jks
+*.keystore
+**/keystore.properties
+!mobile/keystore.properties.example

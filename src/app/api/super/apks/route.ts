@@ -4,6 +4,7 @@ import {
   APK_APPS,
   listApkStatus,
   listTenantApkStatus,
+  parseApkFormat,
   saveApk,
   saveTenantApk,
   type ApkId,
@@ -23,6 +24,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         apps: listTenantApkStatus({ tenantId: meta.id, code: meta.code, name: meta.name }),
         tenant: meta,
+        playStoreNote:
+          "Upload .aab for Google Play Console. Upload .apk for Admin → customer sideload. Same kitchen code — no mix-up.",
       });
     }
     const tenants = await listTenantsMeta();
@@ -53,28 +56,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unknown APK" }, { status: 400 });
     }
     if (!(file instanceof File)) {
-      return NextResponse.json({ error: "APK file required" }, { status: 400 });
+      return NextResponse.json({ error: "APK/AAB file required" }, { status: 400 });
     }
-    if (!file.name.toLowerCase().endsWith(".apk")) {
-      return NextResponse.json({ error: "File must be .apk" }, { status: 400 });
+    const lower = file.name.toLowerCase();
+    const format = lower.endsWith(".aab") ? "aab" : lower.endsWith(".apk") ? "apk" : null;
+    if (!format) {
+      return NextResponse.json({ error: "File must be .apk or .aab (Play Store)" }, { status: 400 });
     }
-    if (file.size > 120 * 1024 * 1024) {
-      return NextResponse.json({ error: "APK too large" }, { status: 400 });
+    if (file.size > 200 * 1024 * 1024) {
+      return NextResponse.json({ error: "File too large" }, { status: 400 });
     }
     const buffer = Buffer.from(await file.arrayBuffer());
 
     if (tenantId) {
       const meta = await findTenantMetaById(tenantId);
       if (!meta) return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
-      const app = saveTenantApk(meta.id, meta.code, meta.name, id, buffer);
-      return NextResponse.json({ app, tenant: meta });
+      const app = saveTenantApk(meta.id, meta.code, meta.name, id, buffer, format);
+      return NextResponse.json({ app, tenant: meta, format });
     }
 
+    if (format === "aab") {
+      return NextResponse.json({ error: "Templates are APK only; use per-restaurant AAB upload" }, { status: 400 });
+    }
     if (!APK_APPS.some((a) => a.id === id)) {
       return NextResponse.json({ error: "Unknown APK" }, { status: 400 });
     }
     const app = saveApk(id, buffer);
-    return NextResponse.json({ app });
+    return NextResponse.json({ app, format: parseApkFormat("apk") });
   } catch (e) {
     if (e instanceof AuthError) {
       return NextResponse.json({ error: e.message }, { status: e.status });

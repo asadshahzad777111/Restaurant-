@@ -35,13 +35,15 @@ After upload, **Admin → Settings → Your apps** downloads **only that kitchen
 
 Legacy template build (Windows): `scripts/build-apks.ps1` → `.data/apks/ORDO-Staff.apk`.
 
-## Admin → customers
-1. Admin sets **name + logo** in Settings (live in-app branding).
-2. Super builds with `--name="…"` (phone home-screen label) and uploads.
-3. Admin downloads **Customer APK** and shares with diners.
-4. Customer APK opens `/guest?app=customer&tenant=CODE` → that menu only.
+## Play Store (Google)
+Use signed **`.aab`** (not APK) — see `docs/PLAY-STORE.md`.
 
-Phone **icon** needs a rebuild when logo changes at build time; **in-app** logo follows Settings live.
+```cmd
+node scripts\build-tenant-apks.cjs --code=DEMO --name="Demo Kitchen" --release --version-code=1 --version-name=1.0.0
+```
+
+Super → Apps → Upload `.aab` · Admin Settings can download AAB for Play Console.
+
 
 ## Rules
 - Tenant code is baked into the start URL — guests/staff of Kitchen A cannot land on Kitchen B.

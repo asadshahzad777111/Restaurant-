@@ -1,16 +1,19 @@
 #!/usr/bin/env node
 /**
- * Build per-restaurant Staff + Customer Capacitor configs (and APKs when Android SDK exists).
+ * Build per-restaurant Staff + Customer Capacitor configs (and APKs/AABs when Android SDK exists).
  *
  * Usage:
- *   node scripts/build-tenant-apks.mjs --code=LAHORE1 --name="Lahore Grill"
- *   node scripts/build-tenant-apks.mjs --code=DEMO --name="Demo Kitchen" --skip-gradle
+ *   node scripts/build-tenant-apks.cjs --code=LAHORE1 --name="Lahore Grill"
+ *   node scripts/build-tenant-apks.cjs --code=DEMO --name="Demo Kitchen" --release --version-code=1 --version-name=1.0.0
+ *   node scripts/build-tenant-apks.cjs --code=DEMO --name="Demo Kitchen" --skip-gradle
  *
- * Output (with SDK):
- *   .data/apks/tenants/<safeCode>/ORDO-<CODE>-Staff.apk
- *   .data/apks/tenants/<safeCode>/ORDO-<CODE>-Customer.apk
+ * Debug output:
+ *   .data/apks/tenants/<CODE>/ORDO-<CODE>-Staff.apk
+ *   .data/apks/tenants/<CODE>/ORDO-<CODE>-Customer.apk
  *
- * Without SDK: writes capacitor.tenant.json + restores note for Super → Apps upload from a build machine.
+ * Release (+ keystore.properties):
+ *   …-Staff.aab / …-Customer.aab  → Google Play
+ *   …-Staff.apk / …-Customer.apk  → sideload / Admin download
  */
 
 const fs = require("fs");
@@ -25,10 +28,15 @@ function arg(name, fallback = "") {
 const codeRaw = arg("code");
 const nameRaw = arg("name", codeRaw || "Restaurant");
 const skipGradle = process.argv.includes("--skip-gradle");
+const release = process.argv.includes("--release");
+const versionCode = arg("version-code", "1");
+const versionName = arg("version-name", "1.0.0");
 const host = (arg("host", "https://ordo.asfins.com") || "https://ordo.asfins.com").replace(/\/$/, "");
 
 if (!codeRaw) {
-  console.error("Required: --code=RESTAURANTCODE [--name=\"Display Name\"]");
+  console.error(
+    'Required: --code=RESTAURANTCODE [--name="Display Name"] [--release] [--version-code=1] [--version-name=1.0.0]',
+  );
   process.exit(1);
 }
 
@@ -45,6 +53,7 @@ const shells = [
     appName: `${displayName} Staff`,
     url: `${host}/login?app=staff&tenant=${encodeURIComponent(code)}`,
     filename: `ORDO-${code}-Staff.apk`,
+    aabFilename: `ORDO-${code}-Staff.aab`,
   },
   {
     folder: "mobile/ordo-guest",
@@ -53,6 +62,7 @@ const shells = [
     appName: `${displayName} Order`,
     url: `${host}/guest?app=customer&tenant=${encodeURIComponent(code)}`,
     filename: `ORDO-${code}-Customer.apk`,
+    aabFilename: `ORDO-${code}-Customer.aab`,
   },
 ];
 
@@ -88,6 +98,10 @@ function writeConfig(shell) {
 function hasSdk() {
   const home = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || "";
   return home && fs.existsSync(path.join(home, "platforms"));
+}
+
+function hasKeystore(androidDir) {
+  return fs.existsSync(path.join(androidDir, "keystore.properties"));
 }
 
 /** AGP 8.x needs JDK 17+. Prefer Android Studio's bundled JBR over old system Java 8. */
@@ -136,11 +150,19 @@ function run(cmd, args, cwd) {
   if (r.status !== 0) throw new Error(`${cmd} ${args.join(" ")} failed`);
 }
 
+function copyIfExists(src, dest) {
+  if (!fs.existsSync(src)) return false;
+  fs.copyFileSync(src, dest);
+  console.log(`Wrote ${dest}`);
+  return true;
+}
+
 ensureJava17();
 
 for (const shell of shells) {
   writeConfig(shell);
   const dir = path.join(root, shell.folder);
+  const androidDir = path.join(dir, "android");
   if (skipGradle || !hasSdk()) {
     console.log(`Skip gradle for ${shell.slot} (no ANDROID_HOME or --skip-gradle).`);
     continue;
@@ -149,22 +171,46 @@ for (const shell of shells) {
     if (!fs.existsSync(path.join(dir, "node_modules"))) {
       run("npm", ["install"], dir);
     }
-    if (!fs.existsSync(path.join(dir, "android"))) {
+    if (!fs.existsSync(androidDir)) {
       run("npx", ["cap", "add", "android"], dir);
     }
     run("npx", ["cap", "sync", "android"], dir);
     const gradlew = process.platform === "win32" ? "gradlew.bat" : "./gradlew";
-    run(gradlew, ["assembleDebug", "--no-daemon"], path.join(dir, "android"));
-    const apk = path.join(dir, "android", "app", "build", "outputs", "apk", "debug", "app-debug.apk");
-    if (!fs.existsSync(apk)) throw new Error(`Missing ${apk}`);
-    const dest = path.join(outRoot, shell.filename);
-    fs.copyFileSync(apk, dest);
-    // Also copy as slot.apk for Super tenant folder layout
-    fs.copyFileSync(apk, path.join(outRoot, `${shell.slot}.apk`));
-    console.log(`Wrote ${dest}`);
+    const versionArgs = [`-PordoVersionCode=${versionCode}`, `-PordoVersionName=${versionName}`];
+
+    if (release) {
+      if (!hasKeystore(androidDir)) {
+        console.error(
+          `Release build needs ${path.join(androidDir, "keystore.properties")} — see docs/PLAY-STORE.md`,
+        );
+        console.error("Falling back to debug APK for this slot.");
+        run(gradlew, ["assembleDebug", "--no-daemon", ...versionArgs], androidDir);
+        const apk = path.join(androidDir, "app", "build", "outputs", "apk", "debug", "app-debug.apk");
+        if (!fs.existsSync(apk)) throw new Error(`Missing ${apk}`);
+        copyIfExists(apk, path.join(outRoot, shell.filename));
+        copyIfExists(apk, path.join(outRoot, `${shell.slot}.apk`));
+        continue;
+      }
+      run(gradlew, ["bundleRelease", "assembleRelease", "--no-daemon", ...versionArgs], androidDir);
+      const aab = path.join(androidDir, "app", "build", "outputs", "bundle", "release", "app-release.aab");
+      const apkRel = path.join(androidDir, "app", "build", "outputs", "apk", "release", "app-release.apk");
+      if (!copyIfExists(aab, path.join(outRoot, shell.aabFilename))) {
+        throw new Error(`Missing ${aab}`);
+      }
+      copyIfExists(aab, path.join(outRoot, `${shell.slot}.aab`));
+      if (copyIfExists(apkRel, path.join(outRoot, shell.filename))) {
+        copyIfExists(apkRel, path.join(outRoot, `${shell.slot}.apk`));
+      }
+    } else {
+      run(gradlew, ["assembleDebug", "--no-daemon", ...versionArgs], androidDir);
+      const apk = path.join(androidDir, "app", "build", "outputs", "apk", "debug", "app-debug.apk");
+      if (!fs.existsSync(apk)) throw new Error(`Missing ${apk}`);
+      copyIfExists(apk, path.join(outRoot, shell.filename));
+      copyIfExists(apk, path.join(outRoot, `${shell.slot}.apk`));
+    }
   } catch (e) {
     console.error(e instanceof Error ? e.message : e);
-    console.error("Upload a manually built APK via Super → Apps for this restaurant.");
+    console.error("Upload a manually built APK/AAB via Super → Apps for this restaurant.");
   }
 }
 
@@ -172,6 +218,9 @@ const manifest = {
   code,
   name: displayName,
   host,
+  release,
+  versionCode: Number(versionCode) || 1,
+  versionName,
   builtAt: new Date().toISOString(),
   apps: shells.map((s) => ({
     slot: s.slot,
@@ -179,9 +228,15 @@ const manifest = {
     appId: s.appId,
     url: s.url,
     filename: s.filename,
+    aabFilename: s.aabFilename,
   })),
-  note: "Super → Apps → select restaurant → Upload Staff/Customer APK. Deep link locks guests/staff to this code only.",
+  note: release
+    ? "Upload .aab to Google Play Console. Upload .apk to Super → Apps for Admin sideload. See docs/PLAY-STORE.md."
+    : "Debug APK only. For Play Store: add keystore.properties and rebuild with --release.",
 };
 fs.writeFileSync(path.join(outRoot, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
 console.log(`\nManifest: ${path.join(outRoot, "manifest.json")}`);
-console.log("Per-restaurant APKs never open Super HQ. Customer APK only sees this kitchen’s menu & orders.");
+console.log("Per-restaurant apps never open Super HQ. Customer app only sees this kitchen’s menu & orders.");
+if (release) {
+  console.log("Play Store: upload the .aab files in Google Play Console (not the .apk).");
+}

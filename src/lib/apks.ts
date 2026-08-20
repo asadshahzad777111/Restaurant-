@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 
 export type ApkId = "staff" | "customer";
+export type ApkFormat = "apk" | "aab";
 
 export interface ApkApp {
   id: ApkId;
@@ -47,9 +48,14 @@ function safeCode(code: string) {
   return code.toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24) || "KITCHEN";
 }
 
-export function tenantApkFilename(code: string, id: ApkId) {
+export function parseApkFormat(raw: string | null | undefined): ApkFormat {
+  return raw === "aab" ? "aab" : "apk";
+}
+
+export function tenantApkFilename(code: string, id: ApkId, format: ApkFormat = "apk") {
   const c = safeCode(code);
-  return id === "staff" ? `ORDO-${c}-Staff.apk` : `ORDO-${c}-Customer.apk`;
+  const base = id === "staff" ? `ORDO-${c}-Staff` : `ORDO-${c}-Customer`;
+  return `${base}.${format}`;
 }
 
 export function tenantApkDisplayTitle(restaurantName: string, id: ApkId) {
@@ -70,21 +76,29 @@ export function apkFilePath(id: ApkId) {
   return path.join(DATA_ROOT, app.filename);
 }
 
-export function tenantApkFilePath(tenantId: string, id: ApkId) {
-  return path.join(DATA_ROOT, "tenants", tenantId, `${id}.apk`);
+export function tenantApkFilePath(tenantId: string, id: ApkId, format: ApkFormat = "apk") {
+  return path.join(DATA_ROOT, "tenants", tenantId, `${id}.${format}`);
+}
+
+function fileStat(file: string) {
+  const stat = fs.existsSync(file) ? fs.statSync(file) : null;
+  return {
+    available: Boolean(stat),
+    sizeBytes: stat?.size ?? 0,
+    updatedAt: stat?.mtime.toISOString() ?? null,
+  };
 }
 
 export function listApkStatus() {
   const host = apkAppHost();
   return APK_APPS.map((app) => {
     const file = apkFilePath(app.id);
-    const stat = fs.existsSync(file) ? fs.statSync(file) : null;
+    const meta = fileStat(file);
     return {
       ...app,
       scope: "template" as const,
-      available: Boolean(stat),
-      sizeBytes: stat?.size ?? 0,
-      updatedAt: stat?.mtime.toISOString() ?? null,
+      format: "apk" as ApkFormat,
+      ...meta,
       loadsUrl: `${host}${app.loadsPath}`,
     };
   });
@@ -97,9 +111,10 @@ export function listTenantApkStatus(input: {
 }) {
   const host = apkAppHost();
   return (["staff", "customer"] as ApkId[]).map((id) => {
-    const file = tenantApkFilePath(input.tenantId, id);
-    const stat = fs.existsSync(file) ? fs.statSync(file) : null;
-    const filename = tenantApkFilename(input.code, id);
+    const apkFile = tenantApkFilePath(input.tenantId, id, "apk");
+    const aabFile = tenantApkFilePath(input.tenantId, id, "aab");
+    const apkMeta = fileStat(apkFile);
+    const aabMeta = fileStat(aabFile);
     const loadsPath = tenantApkLoadsPath(input.code, id);
     return {
       id,
@@ -107,17 +122,22 @@ export function listTenantApkStatus(input: {
       tenantId: input.tenantId,
       code: safeCode(input.code),
       title: tenantApkDisplayTitle(input.name, id),
-      filename,
+      filename: tenantApkFilename(input.code, id, "apk"),
+      aabFilename: tenantApkFilename(input.code, id, "aab"),
       audience: id === "staff" ? "This kitchen’s staff only" : "This kitchen’s guests only",
       loadsPath,
       version: "1.0.0",
       note:
         id === "staff"
-          ? "Opens staff login locked to this restaurant code. Never opens Super HQ."
-          : "Opens guest entry locked to this restaurant code. Never opens Admin.",
-      available: Boolean(stat),
-      sizeBytes: stat?.size ?? 0,
-      updatedAt: stat?.mtime.toISOString() ?? null,
+          ? "APK for staff phones. AAB for Google Play listing. Never opens Super HQ."
+          : "APK for diners (WhatsApp/sideload). AAB for Google Play. Locked to this kitchen only.",
+      format: "apk" as ApkFormat,
+      available: apkMeta.available,
+      sizeBytes: apkMeta.sizeBytes,
+      updatedAt: apkMeta.updatedAt,
+      aabAvailable: aabMeta.available,
+      aabSizeBytes: aabMeta.sizeBytes,
+      aabUpdatedAt: aabMeta.updatedAt,
       loadsUrl: `${host}${loadsPath}`,
     };
   });
@@ -138,34 +158,43 @@ export function saveTenantApk(
   name: string,
   id: ApkId,
   buffer: Buffer,
+  format: ApkFormat = "apk",
 ) {
-  const dest = tenantApkFilePath(tenantId, id);
+  const dest = tenantApkFilePath(tenantId, id, format);
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   fs.writeFileSync(dest, buffer);
-  // Keep a copy with the public download filename for ops clarity
-  const named = path.join(path.dirname(dest), tenantApkFilename(code, id));
+  const named = path.join(path.dirname(dest), tenantApkFilename(code, id, format));
   fs.writeFileSync(named, buffer);
   return listTenantApkStatus({ tenantId, code, name }).find((a) => a.id === id)!;
 }
 
-export function readApk(id: ApkId): { filename: string; buffer: Buffer } | null {
+export function readApk(id: ApkId): { filename: string; buffer: Buffer; contentType: string } | null {
   const app = APK_APPS.find((a) => a.id === id);
   if (!app) return null;
   const file = apkFilePath(id);
   if (!fs.existsSync(file)) return null;
-  return { filename: app.filename, buffer: fs.readFileSync(file) };
+  return {
+    filename: app.filename,
+    buffer: fs.readFileSync(file),
+    contentType: "application/vnd.android.package-archive",
+  };
 }
 
 export function readTenantApk(
   tenantId: string,
   code: string,
   id: ApkId,
-): { filename: string; buffer: Buffer } | null {
-  const file = tenantApkFilePath(tenantId, id);
+  format: ApkFormat = "apk",
+): { filename: string; buffer: Buffer; contentType: string } | null {
+  const file = tenantApkFilePath(tenantId, id, format);
   if (!fs.existsSync(file)) return null;
   return {
-    filename: tenantApkFilename(code, id),
+    filename: tenantApkFilename(code, id, format),
     buffer: fs.readFileSync(file),
+    contentType:
+      format === "aab"
+        ? "application/octet-stream"
+        : "application/vnd.android.package-archive",
   };
 }
 
@@ -175,10 +204,19 @@ export function removeApk(id: ApkId) {
   return listApkStatus().find((a) => a.id === id)!;
 }
 
-export function removeTenantApk(tenantId: string, code: string, name: string, id: ApkId) {
-  const file = tenantApkFilePath(tenantId, id);
-  if (fs.existsSync(file)) fs.unlinkSync(file);
-  const named = path.join(path.dirname(file), tenantApkFilename(code, id));
-  if (fs.existsSync(named)) fs.unlinkSync(named);
+export function removeTenantApk(
+  tenantId: string,
+  code: string,
+  name: string,
+  id: ApkId,
+  format?: ApkFormat,
+) {
+  const formats: ApkFormat[] = format ? [format] : ["apk", "aab"];
+  for (const f of formats) {
+    const file = tenantApkFilePath(tenantId, id, f);
+    if (fs.existsSync(file)) fs.unlinkSync(file);
+    const named = path.join(path.dirname(file), tenantApkFilename(code, id, f));
+    if (fs.existsSync(named)) fs.unlinkSync(named);
+  }
   return listTenantApkStatus({ tenantId, code, name }).find((a) => a.id === id)!;
 }

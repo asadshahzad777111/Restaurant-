@@ -15,9 +15,13 @@ type ApkRow = {
   id: "staff" | "customer";
   title: string;
   filename: string;
+  aabFilename?: string;
   available: boolean;
+  aabAvailable?: boolean;
   sizeBytes: number;
+  aabSizeBytes?: number;
   updatedAt: string | null;
+  aabUpdatedAt?: string | null;
   loadsUrl: string;
   loadsPath: string;
   note: string;
@@ -447,23 +451,26 @@ export default function ControlPage() {
         window.alert(err.error || "Upload failed");
         return;
       }
-      setApkMessage(`${slot === "staff" ? "Staff" : "Customer"} APK uploaded for this restaurant.`);
+      const kind = file.name.toLowerCase().endsWith(".aab") ? "Play Store AAB" : "APK";
+      setApkMessage(`${slot === "staff" ? "Staff" : "Customer"} ${kind} uploaded for this restaurant.`);
       await loadApks(apkTenantId);
     } finally {
       setApkBusy(false);
     }
   }
 
-  async function removeApk(slot: "staff" | "customer") {
+  async function removeApk(slot: "staff" | "customer", format?: "apk" | "aab") {
     if (!apkTenantId) return;
-    if (!window.confirm(`Remove ${slot} APK for this restaurant?`)) return;
+    const label = format === "aab" ? "Play Store AAB" : format === "apk" ? "APK" : "APK + AAB";
+    if (!window.confirm(`Remove ${slot} ${label} for this restaurant?`)) return;
     setApkBusy(true);
     try {
-      const res = await api(`/api/super/apks/${slot}?tenantId=${encodeURIComponent(apkTenantId)}`, {
+      const q = format ? `&format=${format}` : "";
+      const res = await api(`/api/super/apks/${slot}?tenantId=${encodeURIComponent(apkTenantId)}${q}`, {
         method: "DELETE",
       });
       if (!res.ok) {
-        window.alert("Could not remove APK");
+        window.alert("Could not remove file");
         return;
       }
       await loadApks(apkTenantId);
@@ -472,11 +479,13 @@ export default function ControlPage() {
     }
   }
 
-  async function downloadApk(slot: "staff" | "customer", filename: string) {
+  async function downloadApk(slot: "staff" | "customer", filename: string, format: "apk" | "aab" = "apk") {
     if (!apkTenantId) return;
     setApkBusy(true);
     try {
-      const res = await api(`/api/super/apks/${slot}?tenantId=${encodeURIComponent(apkTenantId)}`);
+      const res = await api(
+        `/api/super/apks/${slot}?tenantId=${encodeURIComponent(apkTenantId)}&format=${format}`,
+      );
       if (!res.ok) {
         window.alert("Download failed");
         return;
@@ -873,10 +882,13 @@ export default function ControlPage() {
             <section>
               <h1>Apps · per restaurant</h1>
               <p className={styles.lead}>
-                Every kitchen gets its own named Staff and Customer APKs. Filenames and deep links include
-                the restaurant code so there is no mix-up. APKs never open Super HQ. Build:{" "}
-                <code>node scripts/build-tenant-apks.cjs --code=CODE --name=&quot;Kitchen Name&quot;</code>{" "}
-                then upload here.
+                Every kitchen gets its own Staff + Customer apps (unique package id, baked tenant code — no
+                mix-up). <strong>.apk</strong> = WhatsApp/sideload for Admin → diners.{" "}
+                <strong>.aab</strong> = Google Play Console upload. Build release:{" "}
+                <code>
+                  node scripts/build-tenant-apks.cjs --code=CODE --name=&quot;Kitchen&quot; --release
+                </code>{" "}
+                (see docs/PLAY-STORE.md).
               </p>
               <div className={styles.create}>
                 <h2>Restaurant</h2>
@@ -897,6 +909,17 @@ export default function ControlPage() {
                     Staff opens{" "}
                     <code>/login?app=staff&amp;tenant={selectedTenant.code}</code> · Customer opens{" "}
                     <code>/guest?app=customer&amp;tenant={selectedTenant.code}</code>
+                    <br />
+                    Play packages:{" "}
+                    <code>
+                      com.ordo.customer.
+                      {selectedTenant.code.toLowerCase().replace(/[^a-z0-9]/g, "")}
+                    </code>{" "}
+                    ·{" "}
+                    <code>
+                      com.ordo.staff.
+                      {selectedTenant.code.toLowerCase().replace(/[^a-z0-9]/g, "")}
+                    </code>
                   </p>
                 )}
                 {apkMessage && <p className={styles.muted}>{apkMessage}</p>}
@@ -907,6 +930,12 @@ export default function ControlPage() {
                   {apkRows.map((app) => (
                     <article key={app.id}>
                       <h3>{app.title}</h3>
+                      <p className={styles.muted}>{app.note}</p>
+                      <p className={styles.muted}>
+                        Loads: <code>{app.loadsPath}</code>
+                      </p>
+
+                      <h4 style={{ marginBottom: "0.35rem" }}>Sideload APK</h4>
                       <p className={styles.muted}>{app.filename}</p>
                       <p>
                         {app.available ? (
@@ -915,14 +944,10 @@ export default function ControlPage() {
                             {app.updatedAt ? ` · ${new Date(app.updatedAt).toLocaleString()}` : ""}
                           </>
                         ) : (
-                          <span className={styles.muted}>Not uploaded yet — download stays hidden</span>
+                          <span className={styles.muted}>Not uploaded</span>
                         )}
                       </p>
-                      <p className={styles.muted}>{app.note}</p>
-                      <p className={styles.muted}>
-                        Loads: <code>{app.loadsPath}</code>
-                      </p>
-                      <div className={styles.actions} style={{ marginTop: "0.75rem" }}>
+                      <div className={styles.actions} style={{ marginTop: "0.5rem" }}>
                         <label className={styles.helpBtn} style={{ cursor: apkBusy ? "wait" : "pointer" }}>
                           {apkBusy ? "Working…" : "Upload .apk"}
                           <input
@@ -943,12 +968,62 @@ export default function ControlPage() {
                               type="button"
                               className={styles.primaryBtn}
                               disabled={apkBusy}
-                              onClick={() => void downloadApk(app.id, app.filename)}
+                              onClick={() => void downloadApk(app.id, app.filename, "apk")}
                             >
-                              Download
+                              Download APK
                             </button>
-                            <button type="button" disabled={apkBusy} onClick={() => void removeApk(app.id)}>
-                              Remove
+                            <button type="button" disabled={apkBusy} onClick={() => void removeApk(app.id, "apk")}>
+                              Remove APK
+                            </button>
+                          </>
+                        )}
+                      </div>
+
+                      <h4 style={{ margin: "1rem 0 0.35rem" }}>Google Play AAB</h4>
+                      <p className={styles.muted}>{app.aabFilename || app.filename.replace(/\.apk$/i, ".aab")}</p>
+                      <p>
+                        {app.aabAvailable ? (
+                          <>
+                            Ready · {formatBytes(app.aabSizeBytes || 0)}
+                            {app.aabUpdatedAt ? ` · ${new Date(app.aabUpdatedAt).toLocaleString()}` : ""}
+                          </>
+                        ) : (
+                          <span className={styles.muted}>Not uploaded — build with --release</span>
+                        )}
+                      </p>
+                      <div className={styles.actions} style={{ marginTop: "0.5rem" }}>
+                        <label className={styles.helpBtn} style={{ cursor: apkBusy ? "wait" : "pointer" }}>
+                          {apkBusy ? "Working…" : "Upload .aab"}
+                          <input
+                            type="file"
+                            accept=".aab,application/octet-stream"
+                            hidden
+                            disabled={apkBusy}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              e.target.value = "";
+                              if (file) void uploadApk(app.id, file);
+                            }}
+                          />
+                        </label>
+                        {app.aabAvailable && (
+                          <>
+                            <button
+                              type="button"
+                              className={styles.primaryBtn}
+                              disabled={apkBusy}
+                              onClick={() =>
+                                void downloadApk(
+                                  app.id,
+                                  app.aabFilename || app.filename.replace(/\.apk$/i, ".aab"),
+                                  "aab",
+                                )
+                              }
+                            >
+                              Download AAB
+                            </button>
+                            <button type="button" disabled={apkBusy} onClick={() => void removeApk(app.id, "aab")}>
+                              Remove AAB
                             </button>
                           </>
                         )}
