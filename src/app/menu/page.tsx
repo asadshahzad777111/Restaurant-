@@ -14,6 +14,7 @@ export default function MenuPage() {
     name: "",
     description: "",
     price: "",
+    costPrice: "",
     category: "Burgers",
     isDeal: false,
     dealLabel: "",
@@ -57,6 +58,7 @@ export default function MenuPage() {
       name: item.name,
       description: item.description || "",
       price: String(item.price),
+      costPrice: item.costPrice != null ? String(item.costPrice) : "",
       category: item.isDeal ? "Burgers" : item.category,
       isDeal: !!item.isDeal,
       dealLabel: item.dealLabel || "",
@@ -78,6 +80,7 @@ export default function MenuPage() {
       name: draft.name,
       description: draft.description,
       price: Number(draft.price),
+      costPrice: draft.costPrice !== "" ? Number(draft.costPrice) : undefined,
       category: draft.isDeal ? "Deals" : draft.category,
       isDeal: draft.isDeal,
       dealLabel: draft.dealLabel || undefined,
@@ -126,6 +129,12 @@ export default function MenuPage() {
             placeholder="Price"
             value={draft.price}
             onChange={(e) => setDraft({ ...draft, price: e.target.value })}
+          />
+          <input
+            type="number"
+            placeholder="Cost price (Profit Profile — hidden from guests)"
+            value={draft.costPrice}
+            onChange={(e) => setDraft({ ...draft, costPrice: e.target.value })}
           />
           <input
             placeholder="Image URL (https://...)"

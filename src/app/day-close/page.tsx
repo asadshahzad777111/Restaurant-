@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { PlanGate } from "@/components/PlanGate";
 import { useStore } from "@/lib/store";
 import { money } from "@/lib/fees";
+import type { DayCloseSummary } from "@/lib/tenant-types";
 import styles from "../staff.module.css";
 
 interface Preview {
@@ -20,7 +21,7 @@ interface Preview {
 export default function DayClosePage() {
   const { api, tenant } = useStore();
   const [preview, setPreview] = useState<Preview | null>(null);
-  const [history, setHistory] = useState<unknown[]>([]);
+  const [history, setHistory] = useState<DayCloseSummary[]>([]);
   const [msg, setMsg] = useState("");
 
   const load = useCallback(async () => {
@@ -28,7 +29,7 @@ export default function DayClosePage() {
     const data = await res.json();
     if (res.ok) {
       setPreview(data.preview);
-      setHistory(data.history || []);
+      setHistory((data.history || []) as DayCloseSummary[]);
     }
   }, [api]);
 
@@ -46,7 +47,7 @@ export default function DayClosePage() {
       setMsg(data.error || "Failed");
       return;
     }
-    setMsg("Day/shift closed (no refund accounting)");
+    setMsg("Shift closed — print the summary for the till drawer.");
     await load();
     window.print();
   }
@@ -56,39 +57,90 @@ export default function DayClosePage() {
   return (
     <AppShell title="Day close">
       <PlanGate need="dayClose">
-      <div className={styles.page}>
-        <p className={styles.muted}>
-          End-of-day / shift summary — totals by payment. Cancel/voids counted separately. No refund
-          ledger.
-        </p>
-        {preview && (
-          <div className={styles.card} id="day-close-print">
-            <strong>Last 24h preview</strong>
-            <p>
-              Orders: {preview.orderCount} · Completed: {preview.completedCount} · Voided:{" "}
-              {preview.cancelledCount}
-            </p>
-            <p>
-              Gross (excl. voids): <strong>{money(cur, preview.grossTotal)}</strong>
-            </p>
-            <ul>
-              {Object.entries(preview.byPayment).map(([k, v]) => (
-                <li key={k}>
-                  {k}: {money(cur, v)}
-                </li>
-              ))}
-            </ul>
-            <button type="button" className={styles.btn} onClick={() => void closeShift()}>
-              Close shift & print
-            </button>
+        <div className={styles.page}>
+          <p className={styles.muted}>
+            End-of-day / shift summary — AsFix-style till close. Totals by payment. Voids counted
+            separately. No refund ledger.
+          </p>
+
+          {preview && (
+            <div className={styles.card} id="day-close-print">
+              <h3 style={{ marginTop: 0 }}>Last 24h preview</h3>
+              <div className={styles.statGrid}>
+                <article className={styles.statCard}>
+                  <span>Gross</span>
+                  <strong>{money(cur, preview.grossTotal)}</strong>
+                </article>
+                <article className={styles.statCard}>
+                  <span>Orders</span>
+                  <strong>{preview.orderCount}</strong>
+                  <em>
+                    {preview.completedCount} completed · {preview.cancelledCount} void
+                  </em>
+                </article>
+              </div>
+              <h4>Payment mix</h4>
+              <ul className={styles.reportList}>
+                {Object.entries(preview.byPayment).map(([k, v]) => (
+                  <li key={k}>
+                    <span>{k.replaceAll("_", " ")}</span>
+                    <strong>{money(cur, v)}</strong>
+                  </li>
+                ))}
+                {!Object.keys(preview.byPayment).length && (
+                  <li className={styles.muted}>No sales in window</li>
+                )}
+              </ul>
+              <div className={styles.row}>
+                <button type="button" className={styles.btn} onClick={() => void closeShift()}>
+                  Close shift & print
+                </button>
+                <button type="button" className={styles.btnGhost} onClick={() => window.print()}>
+                  Print preview
+                </button>
+              </div>
+            </div>
+          )}
+
+          {msg && <p className={styles.muted}>{msg}</p>}
+
+          <div className={styles.card}>
+            <h3 style={{ marginTop: 0 }}>Close history</h3>
+            <div className={styles.tableScroll}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Closed</th>
+                    <th>Window</th>
+                    <th>Orders</th>
+                    <th>Gross</th>
+                    <th>Voids</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.slice(0, 20).map((h) => (
+                    <tr key={h.id}>
+                      <td>{new Date(h.closedAt).toLocaleString()}</td>
+                      <td>
+                        {new Date(h.from).toLocaleDateString()} → {new Date(h.to).toLocaleDateString()}
+                      </td>
+                      <td>{h.orderCount}</td>
+                      <td>{money(cur, h.grossTotal)}</td>
+                      <td>{h.cancelledCount}</td>
+                    </tr>
+                  ))}
+                  {!history.length && (
+                    <tr>
+                      <td colSpan={5} className={styles.muted}>
+                        No closes yet
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        )}
-        {msg && <p className={styles.muted}>{msg}</p>}
-        <h3>History</h3>
-        <pre style={{ whiteSpace: "pre-wrap", fontSize: 12 }}>
-          {JSON.stringify(history.slice(0, 5), null, 2)}
-        </pre>
-      </div>
+        </div>
       </PlanGate>
     </AppShell>
   );

@@ -3,17 +3,36 @@
   display: grid;
   place-items: center;
   padding: 2rem 1.25rem;
-  background: var(--guest-bg);
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 55% at 15% 10%, rgba(196, 92, 38, 0.28), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 90% 85%, rgba(47, 158, 107, 0.12), transparent 50%),
+    linear-gradient(165deg, #120d0a 0%, #1a1511 45%, #0e0b09 100%);
+}
+
+.page::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: 0.5;
 }
 
 .card {
+  position: relative;
+  z-index: 1;
   width: min(100%, 420px);
-  background: var(--guest-elevated);
-  border: 1px solid var(--guest-line);
-  border-radius: var(--radius-lg);
+  background: rgba(33, 30, 26, 0.55);
+  border: 1px solid rgba(243, 237, 228, 0.14);
+  border-radius: 18px;
   padding: 1.75rem;
   display: grid;
   gap: 0.85rem;
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
 }
 
 .brand {
@@ -31,6 +50,9 @@
 .card h1 {
   margin: 0;
   font-size: 1.35rem;
+  font-family: var(--display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
 }
 
 .guestStrip {
@@ -38,7 +60,7 @@
   gap: 0.35rem;
   padding: 0.85rem 0.9rem;
   border-radius: var(--radius);
-  background: var(--guest-bg);
+  background: rgba(12, 10, 8, 0.45);
   border: 1px solid var(--guest-line);
   font-size: 0.88rem;
 }
@@ -80,7 +102,7 @@
 .input {
   border-radius: var(--radius);
   border: 1px solid var(--guest-line);
-  background: var(--guest-bg);
+  background: rgba(12, 10, 8, 0.55);
   color: var(--guest-text);
   padding: 0.65rem 0.75rem;
 }
@@ -109,4 +131,11 @@
   margin: 0;
   font-size: 0.8rem;
   color: var(--guest-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    backdrop-filter: none;
+    background: var(--guest-elevated);
+  }
 }

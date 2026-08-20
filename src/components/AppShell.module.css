@@ -2,8 +2,9 @@
   display: grid;
   grid-template-columns: 240px 1fr;
   min-height: 100vh;
-  background: var(--staff-bg);
-  color: var(--staff-text);
+  background: var(--asfix-bg);
+  background-image: var(--asfix-bg-gradient);
+  color: var(--asfix-ink);
 }
 
 .main {
@@ -18,8 +19,9 @@
   align-items: flex-start;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
-  background: var(--staff-surface);
-  border-bottom: 1px solid #e8e4de;
+  background: var(--asfix-surface);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--asfix-line);
 }
 
 .brand {

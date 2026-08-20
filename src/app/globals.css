@@ -34,6 +34,16 @@
   --staff-accent: #c45c26;
   --staff-nav: #1c1916;
 
+  /* AsFix-aligned staff chrome (Admin / POS / Kitchen / Sales) — one background family */
+  --asfix-bg: #f3eee7;
+  --asfix-bg-gradient: linear-gradient(165deg, #f7f2eb 0%, #efe8df 48%, #f3eee7 100%);
+  --asfix-surface: rgba(255, 252, 248, 0.92);
+  --asfix-ink: #1c1916;
+  --asfix-muted: #6b635a;
+  --asfix-line: rgba(28, 25, 22, 0.1);
+  --asfix-accent: #c45c26;
+  --asfix-card-shadow: 0 1px 2px rgba(28, 25, 22, 0.04), 0 12px 32px rgba(28, 25, 22, 0.06);
+
   --bg: var(--guest-bg);
   --bg-elevated: var(--guest-elevated);
   --bg-soft: var(--guest-soft);

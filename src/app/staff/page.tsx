@@ -18,6 +18,21 @@ const PERMS: { id: Permission; label: string }[] = [
   { id: "staff", label: "Staff" },
 ];
 
+const STATION_PRESETS: Record<string, { roleLabel: string; permissions: Permission[] }> = {
+  counter: {
+    roleLabel: "Counter",
+    permissions: ["home", "pos", "orders"],
+  },
+  kitchen: {
+    roleLabel: "Kitchen",
+    permissions: ["home", "kitchen", "orders"],
+  },
+  full: {
+    roleLabel: "Floor",
+    permissions: ["home", "pos", "orders", "kitchen"],
+  },
+};
+
 export default function StaffPage() {
   const { tenant, user, api, applyTenant } = useStore();
   const [msg, setMsg] = useState("");
@@ -102,6 +117,25 @@ export default function StaffPage() {
         {canManage && (
           <form className={styles.form} onSubmit={(e) => void addStaff(e)}>
             <h3 style={{ margin: 0 }}>Add staff</h3>
+            <p className={styles.muted}>Station presets (AsFix Counter / Kitchen)</p>
+            <div className={styles.row}>
+              {Object.entries(STATION_PRESETS).map(([id, preset]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={styles.btnGhost}
+                  onClick={() =>
+                    setDraft((d) => ({
+                      ...d,
+                      roleLabel: preset.roleLabel,
+                      permissions: [...preset.permissions],
+                    }))
+                  }
+                >
+                  {preset.roleLabel}
+                </button>
+              ))}
+            </div>
             <input
               required
               placeholder="Username"

@@ -130,9 +130,11 @@ function itemRows(order: Order, withPrices: boolean) {
 }
 
 export function customerReceiptHtml(tenant: TenantState, order: Order) {
-  const logo = tenant.branding.logoUrl
-    ? `<img class="logo" src="${escapeHtml(tenant.branding.logoUrl)}" alt="" />`
-    : "";
+  const printLogo = tenant.shop.printLogoOnBill !== false;
+  const logo =
+    printLogo && tenant.branding.logoUrl
+      ? `<img class="logo" src="${escapeHtml(tenant.branding.logoUrl)}" alt="" />`
+      : "";
   const stamp = when(order.createdAt);
   const f = order.fees;
   const extras = [

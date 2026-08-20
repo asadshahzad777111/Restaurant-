@@ -124,7 +124,7 @@ export function getPublicMenu(tenantId: string) {
       seats: tb.seats,
       status: tb.status,
     })),
-    menu: t.menu.filter((m) => m.available),
+    menu: t.menu.filter((m) => m.available).map(({ costPrice: _c, ...m }) => m),
   };
 }
 

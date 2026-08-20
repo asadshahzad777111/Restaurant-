@@ -22,6 +22,7 @@ export default function SettingsPage() {
     serviceChargePercent: 0,
     taxRate: 0,
   });
+  const [printLogoOnBill, setPrintLogoOnBill] = useState(true);
   const [fbrEnabled, setFbrEnabled] = useState(false);
   const [pw, setPw] = useState({ current: "", next: "" });
   const [emailDraft, setEmailDraft] = useState("");
@@ -41,6 +42,7 @@ export default function SettingsPage() {
       serviceChargePercent: tenant.shop.serviceChargePercent || 0,
       taxRate: tenant.shop.taxRate || 0,
     });
+    setPrintLogoOnBill(tenant.shop.printLogoOnBill !== false);
     setFbrEnabled(Boolean(tenant.shop.fbrEnabled));
     setEmailDraft(user?.email || "");
   }, [tenant, user]);
@@ -74,7 +76,10 @@ export default function SettingsPage() {
     e.preventDefault();
     const res = await api("/api/admin", {
       method: "PUT",
-      body: JSON.stringify({ action: "fees", shop: fees }),
+      body: JSON.stringify({
+        action: "fees",
+        shop: { ...fees, printLogoOnBill },
+      }),
     });
     const data = await res.json().catch(() => ({}));
     setMsg(res.ok ? "Fees saved" : "Failed");
@@ -261,6 +266,14 @@ export default function SettingsPage() {
             value={fees.taxRate}
             onChange={(e) => setFees({ ...fees, taxRate: Number(e.target.value) })}
           />
+          <label className={styles.muted}>
+            <input
+              type="checkbox"
+              checked={printLogoOnBill}
+              onChange={(e) => setPrintLogoOnBill(e.target.checked)}
+            />{" "}
+            Print logo on 58mm customer bill (AsFix tick-on-print)
+          </label>
           <button type="submit" className={styles.btn}>
             Save fees
           </button>

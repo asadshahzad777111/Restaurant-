@@ -30,6 +30,8 @@ export interface TenantShop {
    * There is no dedicated FBR page — fields stay inside Settings when allowed.
    */
   fbrEnabled?: boolean;
+  /** Print branding logo on 58mm customer bill (AsFix tick-on-print). Default true when logo set. */
+  printLogoOnBill?: boolean;
 }
 
 export interface TenantUser {
@@ -64,6 +66,8 @@ export interface MenuItem {
   name: string;
   description: string;
   price: number;
+  /** Optional kitchen cost for Profit Profile (never shown to guests). */
+  costPrice?: number;
   category: string;
   available: boolean;
   isDeal?: boolean;

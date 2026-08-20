@@ -20,6 +20,7 @@ const STAFF_UI = [
   "/tables",
   "/settings",
   "/day-close",
+  "/sales",
   "/staff",
 ];
 

@@ -154,6 +154,14 @@ export async function hasAnyPermission(session: Session, perms: Permission[]): P
   return perms.some((p) => user.permissions.includes(p));
 }
 
+/** Explicit role gate — never log credentials. */
+export async function requireRole(session: Session, roles: SessionRole[]) {
+  if (!roles.includes(session.role)) {
+    throw new AuthError("Forbidden", 403);
+  }
+  return session;
+}
+
 /** One restaurant only. Super (no tenantId) cannot pass — that is how HQ stays HQ. */
 export async function requireTenantSession(req: NextRequest): Promise<Session> {
   const session = await requireSession(req);

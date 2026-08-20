@@ -88,6 +88,9 @@ export default function HomePage() {
           <Link href="/day-close" prefetch className={styles.btnGhost}>
             Day close / shift
           </Link>
+          <Link href="/sales" prefetch className={styles.btnGhost}>
+            Sales & Profit
+          </Link>
           {can("pos") && (
             <Link href="/tables" prefetch className={styles.btnGhost}>
               Tables
