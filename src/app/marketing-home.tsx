@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
 import { controlUrl } from "@/lib/urls";
+import {
+  listContainer,
+  listItem,
+  pageEnter,
+  sectionEnter,
+  useIsCoarsePointer,
+  usePrefersReducedMotion,
+  viewOnce,
+} from "@/lib/motion";
 import styles from "./marketing.module.css";
 
 const NAV = [
@@ -255,6 +265,11 @@ export function MarketingHome() {
     planId: "starter",
     message: "",
   });
+  const reduced = usePrefersReducedMotion();
+  const coarse = useIsCoarsePointer();
+  const enter = pageEnter(reduced, coarse);
+  const section = sectionEnter(reduced);
+  const item = listItem(reduced, coarse);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("ordo-marketing-theme");
@@ -378,25 +393,40 @@ export function MarketingHome() {
           </div>
         </div>
 
-        {menuOpen ? (
-          <div className={styles.navDrawer}>
-            {NAV.map((item) => (
-              <a key={item.href} href={item.href} onClick={closeMenu}>
-                {item.label}
+        <AnimatePresence>
+          {menuOpen ? (
+            <motion.div
+              key="nav-drawer"
+              className={styles.navDrawer}
+              style={{ display: "flex" }}
+              initial={reduced || coarse ? { opacity: 0 } : { opacity: 0, y: 8 }}
+              animate={reduced || coarse ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              exit={reduced || coarse ? { opacity: 0 } : { opacity: 0, y: -6 }}
+              transition={{ duration: reduced || coarse ? 0.16 : 0.22, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {NAV.map((item) => (
+                <a key={item.href} href={item.href} onClick={closeMenu}>
+                  {item.label}
+                </a>
+              ))}
+              <Link href="/login" className={styles.navOutline} onClick={closeMenu}>
+                Admin Login
+              </Link>
+              <a href="#contact" className={styles.navSolid} onClick={closeMenu}>
+                Talk to ORDO
               </a>
-            ))}
-            <Link href="/login" className={styles.navOutline} onClick={closeMenu}>
-              Admin Login
-            </Link>
-            <a href="#contact" className={styles.navSolid} onClick={closeMenu}>
-              Talk to ORDO
-            </a>
-          </div>
-        ) : null}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </header>
 
       <section className={styles.hero}>
-        <div className={styles.heroCopy}>
+        <motion.div
+          className={styles.heroCopy}
+          variants={enter}
+          initial="hidden"
+          animate="show"
+        >
           <p className={styles.eyebrow}>A restaurant technology company</p>
           <h1 className={styles.heroTitle}>
             Digital systems built for <em>real kitchens.</em>
@@ -421,9 +451,15 @@ export function MarketingHome() {
             <li>Built for Pakistan</li>
             <li>Browser-first systems</li>
           </ul>
-        </div>
+        </motion.div>
 
-        <div className={styles.heroStage}>
+        <motion.div
+          className={styles.heroStage}
+          variants={enter}
+          initial="hidden"
+          animate="show"
+          transition={{ delay: reduced || coarse ? 0 : 0.06 }}
+        >
           <figure className={styles.productShot}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -440,15 +476,23 @@ export function MarketingHome() {
             </div>
           </figure>
           <p className={styles.productCaption}>POS-58 · 58mm thermal · ORDO monthly package</p>
-        </div>
+        </motion.div>
       </section>
 
       <section className={styles.gallery} aria-label="Kitchen stills">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>On the pass</p>
-          <h2>Built to look like the kitchen it serves.</h2>
-          <div className={styles.stills}>
-            <div className={`${styles.still} ${styles.stillKitchen}`}>
+          <motion.div variants={section} initial="hidden" whileInView="show" viewport={viewOnce}>
+            <p className={styles.kicker}>On the pass</p>
+            <h2>Built to look like the kitchen it serves.</h2>
+          </motion.div>
+          <motion.div
+            className={styles.stills}
+            variants={listContainer(0.06)}
+            initial="hidden"
+            whileInView="show"
+            viewport={viewOnce}
+          >
+            <motion.div className={`${styles.still} ${styles.stillKitchen}`} variants={item}>
               <div className={styles.bokeh} aria-hidden>
                 <i />
                 <i />
@@ -456,8 +500,8 @@ export function MarketingHome() {
                 <i />
               </div>
               <p className={styles.stillLabel}>Service light</p>
-            </div>
-            <div className={`${styles.still} ${styles.stillPass}`}>
+            </motion.div>
+            <motion.div className={`${styles.still} ${styles.stillPass}`} variants={item}>
               <div className={styles.rail}>
                 <article>
                   <span>T7 · Dining</span>
@@ -473,8 +517,8 @@ export function MarketingHome() {
                 </article>
               </div>
               <p className={styles.stillLabel}>Ticket rail</p>
-            </div>
-            <div className={`${styles.still} ${styles.stillTicket}`}>
+            </motion.div>
+            <motion.div className={`${styles.still} ${styles.stillTicket}`} variants={item}>
               <div className={styles.ticketCard}>
                 <b>ORDO</b>
                 <em>Demo Kitchen</em>
@@ -485,14 +529,20 @@ export function MarketingHome() {
                 <strong>Total ₨1,130</strong>
               </div>
               <p className={styles.stillLabel}>58mm paper</p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
       <section className={styles.band} id="demo">
         <div className={styles.wrap}>
-          <div className={styles.demoCard}>
+          <motion.div
+            className={styles.demoCard}
+            variants={section}
+            initial="hidden"
+            whileInView="show"
+            viewport={viewOnce}
+          >
             <div>
               <p className={styles.kicker}>Live Demo Kitchen</p>
               <h2>Try the guest path. No account needed.</h2>
@@ -523,7 +573,7 @@ export function MarketingHome() {
                 <span>On the page</span>
               </li>
             </ul>
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -697,9 +747,19 @@ export function MarketingHome() {
             Same three prices on every quote. Hardware is extra and confirmed in the WhatsApp thread — not a
             surprise checkout on this site.
           </p>
-          <div className={styles.plans}>
+          <motion.div
+            className={styles.plans}
+            variants={listContainer(0.05)}
+            initial="hidden"
+            whileInView="show"
+            viewport={viewOnce}
+          >
             {PLANS.map((p) => (
-              <article key={p.id} className={"featured" in p && p.featured ? styles.planFeatured : styles.plan}>
+              <motion.article
+                key={p.id}
+                variants={item}
+                className={"featured" in p && p.featured ? styles.planFeatured : styles.plan}
+              >
                 {"featured" in p && p.featured ? <p className={styles.planBadge}>Most kitchens</p> : null}
                 <h3>{p.name}</h3>
                 <p className={styles.price}>
@@ -715,9 +775,9 @@ export function MarketingHome() {
                 <a href="#contact" className={styles.planCta} onClick={() => pickPlan(p.id)}>
                   Request {p.name}
                 </a>
-              </article>
+              </motion.article>
             ))}
-          </div>
+          </motion.div>
           <div className={styles.printSteps}>
             <article>
               <span>01</span>
