@@ -433,6 +433,21 @@ export default function ControlPage() {
     setCredsUsers(data.users || []);
   }
 
+  async function readApiError(res: Response, fallback: string) {
+    const text = await res.text().catch(() => "");
+    try {
+      const data = JSON.parse(text) as { error?: string; hint?: string };
+      if (data.error) return data.hint ? `${data.error} — ${data.hint}` : data.error;
+    } catch {
+      /* non-JSON (e.g. Vercel 413 HTML) */
+    }
+    if (res.status === 413) {
+      return "Upload too large for Vercel (~4.5MB request limit). Use a smaller APK.";
+    }
+    if (text.trim()) return text.trim().slice(0, 280);
+    return `${fallback} (HTTP ${res.status})`;
+  }
+
   async function uploadApk(slot: "staff" | "customer", file: File) {
     if (!apkTenantId) {
       window.alert("Select a restaurant first");
@@ -447,13 +462,14 @@ export default function ControlPage() {
       fd.set("file", file);
       const res = await api("/api/super/apks", { method: "POST", body: fd });
       if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as { error?: string };
-        window.alert(err.error || "Upload failed");
+        window.alert(await readApiError(res, "Upload failed"));
         return;
       }
       const kind = file.name.toLowerCase().endsWith(".aab") ? "Play Store AAB" : "APK";
       setApkMessage(`${slot === "staff" ? "Staff" : "Customer"} ${kind} uploaded for this restaurant.`);
       await loadApks(apkTenantId);
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : "Upload failed");
     } finally {
       setApkBusy(false);
     }
@@ -470,7 +486,7 @@ export default function ControlPage() {
         method: "DELETE",
       });
       if (!res.ok) {
-        window.alert("Could not remove file");
+        window.alert(await readApiError(res, "Could not remove file"));
         return;
       }
       await loadApks(apkTenantId);
@@ -487,7 +503,7 @@ export default function ControlPage() {
         `/api/super/apks/${slot}?tenantId=${encodeURIComponent(apkTenantId)}&format=${format}`,
       );
       if (!res.ok) {
-        window.alert("Download failed");
+        window.alert(await readApiError(res, "Download failed"));
         return;
       }
       const blob = await res.blob();

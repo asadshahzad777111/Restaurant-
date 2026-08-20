@@ -12,6 +12,12 @@ import {
 import { ensureStore, findTenantMetaById } from "@/lib/db";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
+
+function errorMessage(e: unknown, fallback: string) {
+  if (e instanceof Error && e.message.trim()) return e.message;
+  return fallback;
+}
 
 /** Super-only. Template or per-restaurant Staff/Customer APK/AAB download & remove. */
 
@@ -30,7 +36,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
       if (!["staff", "customer"].includes(raw)) {
         return NextResponse.json({ error: "Unknown APK" }, { status: 404 });
       }
-      const file = readTenantApk(meta.id, meta.code, raw as ApkId, format);
+      const file = await readTenantApk(meta.id, meta.code, raw as ApkId, format);
       if (!file) {
         return NextResponse.json(
           {
@@ -58,7 +64,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     if (!APK_APPS.some((a) => a.id === raw)) {
       return NextResponse.json({ error: "Unknown APK" }, { status: 404 });
     }
-    const file = readApk(raw as ApkId);
+    const file = await readApk(raw as ApkId);
     if (!file) {
       return NextResponse.json({ error: "APK not uploaded yet" }, { status: 404 });
     }
@@ -74,7 +80,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     if (e instanceof AuthError) {
       return NextResponse.json({ error: e.message }, { status: e.status });
     }
-    return NextResponse.json({ error: "Download failed" }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(e, "Download failed") }, { status: 500 });
   }
 }
 
@@ -94,19 +100,19 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
       if (!["staff", "customer"].includes(raw)) {
         return NextResponse.json({ error: "Unknown APK" }, { status: 404 });
       }
-      const app = removeTenantApk(meta.id, meta.code, meta.name, raw as ApkId, format);
+      const app = await removeTenantApk(meta.id, meta.code, meta.name, raw as ApkId, format);
       return NextResponse.json({ app, tenant: meta });
     }
 
     if (!APK_APPS.some((a) => a.id === raw)) {
       return NextResponse.json({ error: "Unknown APK" }, { status: 404 });
     }
-    const app = removeApk(raw as ApkId);
+    const app = await removeApk(raw as ApkId);
     return NextResponse.json({ app });
   } catch (e) {
     if (e instanceof AuthError) {
       return NextResponse.json({ error: e.message }, { status: e.status });
     }
-    return NextResponse.json({ error: "Remove failed" }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(e, "Remove failed") }, { status: 500 });
   }
 }

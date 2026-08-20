@@ -4,6 +4,12 @@ import { ensureStore, findTenantMetaById, readTenant } from "@/lib/db";
 import { listTenantApkStatus, parseApkFormat, readTenantApk, type ApkId } from "@/lib/apks";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
+
+function errorMessage(e: unknown, fallback: string) {
+  if (e instanceof Error && e.message.trim()) return e.message;
+  return fallback;
+}
 
 /**
  * Restaurant Admin only — see/download THIS kitchen’s Staff + Customer APK/AAB.
@@ -25,7 +31,7 @@ export async function GET(req: NextRequest) {
     const slot = url.searchParams.get("download") as ApkId | null;
     const format = parseApkFormat(url.searchParams.get("format"));
     if (slot === "staff" || slot === "customer") {
-      const file = readTenantApk(meta.id, meta.code, slot, format);
+      const file = await readTenantApk(meta.id, meta.code, slot, format);
       if (!file) {
         return NextResponse.json(
           {
@@ -47,7 +53,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const apps = listTenantApkStatus({
+    const apps = await listTenantApkStatus({
       tenantId: meta.id,
       code: meta.code,
       name: tenant.branding.name || meta.name,
@@ -66,6 +72,6 @@ export async function GET(req: NextRequest) {
     if (e instanceof AuthError) {
       return NextResponse.json({ error: e.message }, { status: e.status });
     }
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(e, "Failed") }, { status: 500 });
   }
 }

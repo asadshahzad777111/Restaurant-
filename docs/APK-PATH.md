@@ -36,6 +36,24 @@ Then **Super → Apps → select restaurant → Upload** Staff + Customer.
 
 After upload, **Admin → Settings → Your apps** downloads **only that kitchen’s** Customer/Staff APK (own `tenantId` — no other restaurant).
 
+### Live (Vercel) storage — Cloudflare R2
+
+Super uploads on **control.asfins.com** must not write to `.data/apks` (ephemeral / read-only on serverless). With `R2_*` env vars set, binaries go to R2:
+
+- `tenants/{tenantId}/apks/staff.apk` · `customer.apk` (and `.aab`)
+- Downloads still go through Super/Admin APIs (own-tenant only) — not a public “open folder”
+
+Seed DEMO without the UI (needs R2 credentials in the shell):
+
+```bash
+node scripts/upload-demo-apks-to-r2.cjs \
+  --staff=ORDO-DEMO-Staff.apk \
+  --customer=ORDO-DEMO-Customer.apk \
+  --tenant-id=tenant_demo
+```
+
+Vercel request bodies are capped around **4.5MB**. Keep sideload APKs under ~4.2MB, or use the R2 seed script for larger builds.
+
 Legacy template build (Windows): `scripts/build-apks.ps1` → `.data/apks/ORDO-Staff.apk`.
 
 ## Play Store (Google)

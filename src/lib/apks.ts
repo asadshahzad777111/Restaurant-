@@ -1,5 +1,7 @@
 import fs from "fs";
 import path from "path";
+import { r2Configured } from "./env";
+import { deleteR2Object, getR2Object, headR2Object, putR2Object } from "./r2";
 
 export type ApkId = "staff" | "customer";
 export type ApkFormat = "apk" | "aab";
@@ -48,6 +50,13 @@ function safeCode(code: string) {
   return code.toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24) || "KITCHEN";
 }
 
+function safeTenantId(tenantId: string) {
+  if (!/^[A-Za-z0-9_-]+$/.test(tenantId)) {
+    throw new Error("Invalid tenant id");
+  }
+  return tenantId;
+}
+
 export function parseApkFormat(raw: string | null | undefined): ApkFormat {
   return raw === "aab" ? "aab" : "apk";
 }
@@ -70,6 +79,21 @@ export function tenantApkLoadsPath(code: string, id: ApkId) {
     : `/guest?app=customer&tenant=${c}`;
 }
 
+export function apkContentType(format: ApkFormat) {
+  return format === "aab"
+    ? "application/octet-stream"
+    : "application/vnd.android.package-archive";
+}
+
+/** R2 object keys — per-tenant isolation. Downloads still go through auth APIs. */
+export function tenantApkR2Key(tenantId: string, id: ApkId, format: ApkFormat = "apk") {
+  return `tenants/${safeTenantId(tenantId)}/apks/${id}.${format}`;
+}
+
+export function templateApkR2Key(id: ApkId) {
+  return `templates/apks/${id}.apk`;
+}
+
 export function apkFilePath(id: ApkId) {
   const app = APK_APPS.find((a) => a.id === id);
   if (!app) throw new Error("Unknown APK");
@@ -77,7 +101,20 @@ export function apkFilePath(id: ApkId) {
 }
 
 export function tenantApkFilePath(tenantId: string, id: ApkId, format: ApkFormat = "apk") {
-  return path.join(DATA_ROOT, "tenants", tenantId, `${id}.${format}`);
+  return path.join(DATA_ROOT, "tenants", safeTenantId(tenantId), `${id}.${format}`);
+}
+
+function useR2ApkStore() {
+  return r2Configured();
+}
+
+/** On Vercel, local `.data/` is ephemeral/read-only — R2 is required. */
+function assertWritableLocalStore() {
+  if (process.env.VERCEL) {
+    throw new Error(
+      "APK storage on Vercel requires Cloudflare R2. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, and R2_PUBLIC_URL (or R2_PUBLIC_BASE_URL).",
+    );
+  }
 }
 
 function fileStat(file: string) {
@@ -89,70 +126,102 @@ function fileStat(file: string) {
   };
 }
 
-export function listApkStatus() {
-  const host = apkAppHost();
-  return APK_APPS.map((app) => {
-    const file = apkFilePath(app.id);
-    const meta = fileStat(file);
-    return {
-      ...app,
-      scope: "template" as const,
-      format: "apk" as ApkFormat,
-      ...meta,
-      loadsUrl: `${host}${app.loadsPath}`,
-    };
-  });
+async function objectStat(key: string) {
+  const meta = await headR2Object(key);
+  return {
+    available: Boolean(meta),
+    sizeBytes: meta?.sizeBytes ?? 0,
+    updatedAt: meta?.updatedAt ?? null,
+  };
 }
 
-export function listTenantApkStatus(input: {
+export async function listApkStatus() {
+  const host = apkAppHost();
+  const r2 = useR2ApkStore();
+  return Promise.all(
+    APK_APPS.map(async (app) => {
+      const meta = r2 ? await objectStat(templateApkR2Key(app.id)) : fileStat(apkFilePath(app.id));
+      return {
+        ...app,
+        scope: "template" as const,
+        format: "apk" as ApkFormat,
+        storage: r2 ? ("r2" as const) : ("file-store" as const),
+        ...meta,
+        loadsUrl: `${host}${app.loadsPath}`,
+      };
+    }),
+  );
+}
+
+export async function listTenantApkStatus(input: {
   tenantId: string;
   code: string;
   name: string;
 }) {
   const host = apkAppHost();
-  return (["staff", "customer"] as ApkId[]).map((id) => {
-    const apkFile = tenantApkFilePath(input.tenantId, id, "apk");
-    const aabFile = tenantApkFilePath(input.tenantId, id, "aab");
-    const apkMeta = fileStat(apkFile);
-    const aabMeta = fileStat(aabFile);
-    const loadsPath = tenantApkLoadsPath(input.code, id);
-    return {
-      id,
-      scope: "tenant" as const,
-      tenantId: input.tenantId,
-      code: safeCode(input.code),
-      title: tenantApkDisplayTitle(input.name, id),
-      filename: tenantApkFilename(input.code, id, "apk"),
-      aabFilename: tenantApkFilename(input.code, id, "aab"),
-      audience: id === "staff" ? "This kitchen’s staff only" : "This kitchen’s guests only",
-      loadsPath,
-      version: "1.0.0",
-      note:
-        id === "staff"
-          ? "APK for staff phones. AAB for Google Play listing. Never opens Super HQ."
-          : "APK for diners (WhatsApp/sideload). AAB for Google Play. Locked to this kitchen only.",
-      format: "apk" as ApkFormat,
-      available: apkMeta.available,
-      sizeBytes: apkMeta.sizeBytes,
-      updatedAt: apkMeta.updatedAt,
-      aabAvailable: aabMeta.available,
-      aabSizeBytes: aabMeta.sizeBytes,
-      aabUpdatedAt: aabMeta.updatedAt,
-      loadsUrl: `${host}${loadsPath}`,
-    };
-  });
+  const r2 = useR2ApkStore();
+  const tenantId = safeTenantId(input.tenantId);
+  return Promise.all(
+    (["staff", "customer"] as ApkId[]).map(async (id) => {
+      const apkMeta = r2
+        ? await objectStat(tenantApkR2Key(tenantId, id, "apk"))
+        : fileStat(tenantApkFilePath(tenantId, id, "apk"));
+      const aabMeta = r2
+        ? await objectStat(tenantApkR2Key(tenantId, id, "aab"))
+        : fileStat(tenantApkFilePath(tenantId, id, "aab"));
+      const loadsPath = tenantApkLoadsPath(input.code, id);
+      return {
+        id,
+        scope: "tenant" as const,
+        tenantId,
+        code: safeCode(input.code),
+        title: tenantApkDisplayTitle(input.name, id),
+        filename: tenantApkFilename(input.code, id, "apk"),
+        aabFilename: tenantApkFilename(input.code, id, "aab"),
+        audience: id === "staff" ? "This kitchen’s staff only" : "This kitchen’s guests only",
+        loadsPath,
+        version: "1.0.0",
+        note:
+          id === "staff"
+            ? "APK for staff phones. AAB for Google Play listing. Never opens Super HQ."
+            : "APK for diners (WhatsApp/sideload). AAB for Google Play. Locked to this kitchen only.",
+        format: "apk" as ApkFormat,
+        storage: r2 ? ("r2" as const) : ("file-store" as const),
+        available: apkMeta.available,
+        sizeBytes: apkMeta.sizeBytes,
+        updatedAt: apkMeta.updatedAt,
+        aabAvailable: aabMeta.available,
+        aabSizeBytes: aabMeta.sizeBytes,
+        aabUpdatedAt: aabMeta.updatedAt,
+        loadsUrl: `${host}${loadsPath}`,
+      };
+    }),
+  );
 }
 
-export function saveApk(id: ApkId, buffer: Buffer) {
+export async function saveApk(id: ApkId, buffer: Buffer) {
   const app = APK_APPS.find((a) => a.id === id);
   if (!app) throw new Error("Unknown APK");
-  const dest = path.join(DATA_ROOT, app.filename);
-  fs.mkdirSync(path.dirname(dest), { recursive: true });
-  fs.writeFileSync(dest, buffer);
-  return listApkStatus().find((a) => a.id === id)!;
+
+  if (useR2ApkStore()) {
+    const result = await putR2Object({
+      key: templateApkR2Key(id),
+      body: buffer,
+      contentType: apkContentType("apk"),
+    });
+    if ("error" in result) throw new Error(result.error);
+  } else {
+    assertWritableLocalStore();
+    const dest = path.join(DATA_ROOT, app.filename);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, buffer);
+  }
+
+  const rows = await listApkStatus();
+  return rows.find((a) => a.id === id)!;
 }
 
-export function saveTenantApk(
+export async function saveTenantApk(
   tenantId: string,
   code: string,
   name: string,
@@ -160,63 +229,118 @@ export function saveTenantApk(
   buffer: Buffer,
   format: ApkFormat = "apk",
 ) {
-  const dest = tenantApkFilePath(tenantId, id, format);
-  fs.mkdirSync(path.dirname(dest), { recursive: true });
-  fs.writeFileSync(dest, buffer);
-  const named = path.join(path.dirname(dest), tenantApkFilename(code, id, format));
-  fs.writeFileSync(named, buffer);
-  return listTenantApkStatus({ tenantId, code, name }).find((a) => a.id === id)!;
+  const tid = safeTenantId(tenantId);
+
+  if (useR2ApkStore()) {
+    const result = await putR2Object({
+      key: tenantApkR2Key(tid, id, format),
+      body: buffer,
+      contentType: apkContentType(format),
+    });
+    if ("error" in result) throw new Error(result.error);
+  } else {
+    assertWritableLocalStore();
+    const dest = tenantApkFilePath(tid, id, format);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, buffer);
+    const named = path.join(path.dirname(dest), tenantApkFilename(code, id, format));
+    fs.writeFileSync(named, buffer);
+  }
+
+  const rows = await listTenantApkStatus({ tenantId: tid, code, name });
+  return rows.find((a) => a.id === id)!;
 }
 
-export function readApk(id: ApkId): { filename: string; buffer: Buffer; contentType: string } | null {
+export async function readApk(
+  id: ApkId,
+): Promise<{ filename: string; buffer: Buffer; contentType: string } | null> {
   const app = APK_APPS.find((a) => a.id === id);
   if (!app) return null;
+
+  if (useR2ApkStore()) {
+    const obj = await getR2Object(templateApkR2Key(id));
+    if (!obj) return null;
+    return {
+      filename: app.filename,
+      buffer: obj.body,
+      contentType: apkContentType("apk"),
+    };
+  }
+
   const file = apkFilePath(id);
   if (!fs.existsSync(file)) return null;
   return {
     filename: app.filename,
     buffer: fs.readFileSync(file),
-    contentType: "application/vnd.android.package-archive",
+    contentType: apkContentType("apk"),
   };
 }
 
-export function readTenantApk(
+export async function readTenantApk(
   tenantId: string,
   code: string,
   id: ApkId,
   format: ApkFormat = "apk",
-): { filename: string; buffer: Buffer; contentType: string } | null {
-  const file = tenantApkFilePath(tenantId, id, format);
+): Promise<{ filename: string; buffer: Buffer; contentType: string } | null> {
+  const tid = safeTenantId(tenantId);
+
+  if (useR2ApkStore()) {
+    const obj = await getR2Object(tenantApkR2Key(tid, id, format));
+    if (!obj) return null;
+    return {
+      filename: tenantApkFilename(code, id, format),
+      buffer: obj.body,
+      contentType: apkContentType(format),
+    };
+  }
+
+  const file = tenantApkFilePath(tid, id, format);
   if (!fs.existsSync(file)) return null;
   return {
     filename: tenantApkFilename(code, id, format),
     buffer: fs.readFileSync(file),
-    contentType:
-      format === "aab"
-        ? "application/octet-stream"
-        : "application/vnd.android.package-archive",
+    contentType: apkContentType(format),
   };
 }
 
-export function removeApk(id: ApkId) {
-  const file = apkFilePath(id);
-  if (fs.existsSync(file)) fs.unlinkSync(file);
-  return listApkStatus().find((a) => a.id === id)!;
+export async function removeApk(id: ApkId) {
+  if (useR2ApkStore()) {
+    const result = await deleteR2Object(templateApkR2Key(id));
+    if ("error" in result) throw new Error(result.error);
+  } else {
+    assertWritableLocalStore();
+    const file = apkFilePath(id);
+    if (fs.existsSync(file)) fs.unlinkSync(file);
+  }
+  const rows = await listApkStatus();
+  return rows.find((a) => a.id === id)!;
 }
 
-export function removeTenantApk(
+export async function removeTenantApk(
   tenantId: string,
   code: string,
   name: string,
   id: ApkId,
   format?: ApkFormat,
 ) {
+  const tid = safeTenantId(tenantId);
   const formats: ApkFormat[] = format ? [format] : ["apk", "aab"];
-  for (const f of formats) {
-    const file = tenantApkFilePath(tenantId, id, f);
-    if (fs.existsSync(file)) fs.unlinkSync(file);
-    const named = path.join(path.dirname(file), tenantApkFilename(code, id, f));
-    if (fs.existsSync(named)) fs.unlinkSync(named);
+
+  if (useR2ApkStore()) {
+    for (const f of formats) {
+      const result = await deleteR2Object(tenantApkR2Key(tid, id, f));
+      if ("error" in result) throw new Error(result.error);
+    }
+  } else {
+    assertWritableLocalStore();
+    for (const f of formats) {
+      const file = tenantApkFilePath(tid, id, f);
+      if (fs.existsSync(file)) fs.unlinkSync(file);
+      const named = path.join(path.dirname(file), tenantApkFilename(code, id, f));
+      if (fs.existsSync(named)) fs.unlinkSync(named);
+    }
   }
-  return listTenantApkStatus({ tenantId, code, name }).find((a) => a.id === id)!;
+
+  const rows = await listTenantApkStatus({ tenantId: tid, code, name });
+  return rows.find((a) => a.id === id)!;
 }
