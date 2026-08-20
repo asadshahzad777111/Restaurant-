@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TOKEN_KEY, OWNER_TOKEN_KEY, useStore } from "@/lib/store";
 import { setHelpModeCookieClient } from "@/lib/help-mode";
-import { isCustomerShell, isStaffShell, readAppShell, readLockedStaffTenant } from "@/lib/app-shell";
+import { isCustomerShell, isStaffShell, readAppShell, readLockedCustomerTenant, readLockedStaffTenant } from "@/lib/app-shell";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import styles from "./login.module.css";
 
@@ -32,7 +32,12 @@ export default function LoginPage() {
     const shell = readAppShell();
     setAppShell(shell);
     if (shell === "customer" || isCustomerShell()) {
-      router.replace("/guest?app=customer");
+      const locked = readLockedCustomerTenant();
+      router.replace(
+        locked
+          ? `/guest?app=customer&tenant=${encodeURIComponent(locked)}`
+          : "/guest?app=customer",
+      );
       return;
     }
     const host = window.location.hostname;

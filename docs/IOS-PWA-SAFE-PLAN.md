@@ -113,7 +113,7 @@ Under **Your apps**:
 - [x] Admin iPhone install URLs + copy  
 - [x] Customer locked-shell isolation harden  
 - [x] World-pro plan cross-link  
-- [ ] Commit / push / CI → main  
+- [x] Commit / push (CI → main when green)  
 
 ---
 

@@ -101,3 +101,21 @@ export function stopStaffAlert() {
     loopTimer = null;
   }
 }
+
+/** Best-effort iOS Safari/PWA: resume AudioContext after tab returns (autoplay still needs Enable sound once). */
+export function resumeStaffAlertAudioIfNeeded() {
+  const ctx = getCtx();
+  if (!ctx) return;
+  if (ctx.state === "suspended") void ctx.resume().catch(() => undefined);
+}
+
+let visibilityHooked = false;
+
+/** Call once from StaffAlerts so returning to the PWA can resume the unlocked context. */
+export function ensureStaffAlertVisibilityResume() {
+  if (typeof document === "undefined" || visibilityHooked) return;
+  visibilityHooked = true;
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") resumeStaffAlertAudioIfNeeded();
+  });
+}

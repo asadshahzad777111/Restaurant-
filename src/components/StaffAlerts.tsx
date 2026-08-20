@@ -10,6 +10,7 @@ import {
   unlockStaffAlertAudio,
   startContinuousAlert,
   stopStaffAlert,
+  ensureStaffAlertVisibilityResume,
 } from "@/lib/staff-alert-sound";
 import styles from "./StaffAlerts.module.css";
 import type { Order, StockItem } from "@/lib/tenant-types";
@@ -70,6 +71,7 @@ export function StaffAlerts() {
 
   useEffect(() => {
     setSoundOk(readSoundPref());
+    ensureStaffAlertVisibilityResume();
   }, []);
 
   useEffect(() => {
