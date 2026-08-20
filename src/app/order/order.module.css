@@ -370,19 +370,118 @@
 
 .cartBar {
   position: fixed;
-  left: 1rem;
-  right: 1rem;
-  bottom: 1rem;
+  left: 0.85rem;
+  right: 0.85rem;
+  bottom: max(0.85rem, env(safe-area-inset-bottom));
   z-index: 20;
   border: none;
-  border-radius: 14px;
+  border-radius: 18px;
   background: var(--ember);
   color: var(--ember-ink);
   font-weight: 800;
-  padding: 0.95rem 1.1rem;
+  padding: 1.05rem 1.15rem 1.1rem;
+  min-height: 4.35rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.2rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+.cartBarMeta {
   display: flex;
   justify-content: space-between;
-  box-shadow: var(--shadow);
+  align-items: baseline;
+  font-size: 0.82rem;
+  font-weight: 600;
+  opacity: 0.92;
+}
+
+.cartBarMeta em {
+  font-style: normal;
+}
+
+.cartBarMeta strong {
+  font-size: 0.95rem;
+}
+
+.cartBarCta {
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+}
+
+.flyDot {
+  position: fixed;
+  z-index: 45;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--guest-elevated);
+  border: 1px solid var(--guest-line);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+}
+
+.flyDot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.flyDot span {
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.advanceBlock {
+  margin-top: 0.85rem;
+}
+
+.railDetails {
+  margin: 0.65rem 0 0;
+  padding: 0.7rem 0.8rem;
+  border-radius: var(--radius);
+  border: 1px dashed var(--guest-line);
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+}
+
+.railDetails span {
+  color: var(--guest-muted);
+  margin-right: 0.45rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.proofUpload {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  font-size: 0.88rem;
+  color: var(--guest-muted);
+}
+
+.proofOk {
+  margin: 0.45rem 0 0;
+  font-size: 0.88rem;
+  color: #8fca9a;
+}
+
+.proofOk a {
+  color: var(--ember-bright);
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flyDot {
+    display: none;
+  }
 }
 
 .sheet {
@@ -518,7 +617,7 @@
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 5.5rem;
+  bottom: 7.25rem;
   margin-inline: auto;
   width: fit-content;
   max-width: calc(100% - 2rem);

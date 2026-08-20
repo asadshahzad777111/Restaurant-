@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { modeLabel, trackSteps } from "@/lib/guest";
 import { guestWhatsappLink } from "@/lib/whatsapp";
 import {
+  backdropTransition,
   listContainer,
   listItem,
   pageEnter,
@@ -43,6 +44,10 @@ const LABELS: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
+function isReadyStatus(status: string) {
+  return status === "ready" || status === "out_for_delivery";
+}
+
 export default function TrackPage() {
   const params = useParams<{ token: string }>();
   const token = params.token;
@@ -52,6 +57,9 @@ export default function TrackPage() {
   const [comment, setComment] = useState("");
   const [sent, setSent] = useState(false);
   const [reviewError, setReviewError] = useState("");
+  const [readyOpen, setReadyOpen] = useState(false);
+  const prevStatus = useRef<string | null>(null);
+  const notified = useRef(false);
   const reduced = usePrefersReducedMotion();
   const coarse = useIsCoarsePointer();
   const enter = pageEnter(reduced, coarse);
@@ -73,6 +81,39 @@ export default function TrackPage() {
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  useEffect(() => {
+    if (!data) return;
+    const status = data.order.status;
+    const was = prevStatus.current;
+    prevStatus.current = status;
+
+    if (!isReadyStatus(status)) return;
+
+    const becameReady = was !== null && !isReadyStatus(was);
+    const firstLoadReady = was === null;
+    if (!becameReady && !firstLoadReady) return;
+
+    setReadyOpen(true);
+
+    if (!becameReady || notified.current) return;
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    notified.current = true;
+    const body = `${data.branding.name} · #${data.order.number}`;
+    const fire = () => {
+      try {
+        new Notification("Your order is ready", { body });
+      } catch {
+        /* ignore */
+      }
+    };
+    if (Notification.permission === "granted") fire();
+    else if (Notification.permission === "default") {
+      void Notification.requestPermission().then((perm) => {
+        if (perm === "granted") fire();
+      });
+    }
+  }, [data]);
 
   async function submitReview(e: React.FormEvent) {
     e.preventDefault();
@@ -211,6 +252,54 @@ export default function TrackPage() {
       <p className={styles.footerNav}>
         <Link href="/guest">Order again</Link>
       </p>
+
+      <AnimatePresence>
+        {readyOpen ? (
+          <motion.div
+            key="ready-alert"
+            className={styles.readyBackdrop}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ready-title"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={backdropTransition(reduced)}
+            onClick={() => setReadyOpen(false)}
+          >
+            <motion.div
+              className={styles.readyCard}
+              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 14 }}
+              animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              exit={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
+              transition={backdropTransition(reduced)}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                className={styles.readyClose}
+                aria-label="Close"
+                onClick={() => setReadyOpen(false)}
+              >
+                ×
+              </button>
+              <p className={styles.readyEyebrow}>{data.branding.name}</p>
+              <h2 id="ready-title">Your order is ready</h2>
+              <p className={styles.muted}>
+                #{data.order.number}
+                {current === "out_for_delivery"
+                  ? " is on the way."
+                  : data.order.serviceType === "delivery"
+                    ? " — please wait for the rider."
+                    : " — you can collect it now."}
+              </p>
+              <button type="button" className={styles.readyOk} onClick={() => setReadyOpen(false)}>
+                Got it
+              </button>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </motion.div>
   );
 }

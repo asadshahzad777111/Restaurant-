@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { ensureStore, addOrder, readTenant, findTenantMetaByCode, findTenantMetaById } from "@/lib/db";
 import { AuthError, hasAnyPermission, hasPermission, requireTenantSession } from "@/lib/session";
 import { assertOrderRules } from "@/lib/guest";
+import { assertGuestPaymentAllowed } from "@/lib/payments";
 import { computeFees, lineUnitPrice } from "@/lib/fees";
 import type { LineModifier, OrderLine } from "@/lib/tenant-types";
-import type { PaymentMethod, PaymentStatus, ServiceType } from "@/lib/types";
+import type { AdvanceRail, PaymentMethod, PaymentStatus, ServiceType } from "@/lib/types";
 import { sendNewOrderEmail, tenantAdminEmails } from "@/lib/notify";
 
 export const runtime = "nodejs";
@@ -13,7 +14,13 @@ function trackToken() {
   return `trk_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
 }
 
-function paymentStatusFor(method: PaymentMethod): PaymentStatus {
+function paymentStatusFor(method: PaymentMethod, proofUrl?: string): PaymentStatus {
+  const advance =
+    method === "paid_in_advance" ||
+    method === "bank" ||
+    method === "jazzcash" ||
+    method === "easypaisa";
+  if (advance && proofUrl?.trim()) return "proof_submitted";
   if (method === "paid_in_advance" || method === "card" || method === "wallet") return "paid";
   if (method === "cod") return "cod_pending";
   return "unpaid";
@@ -61,6 +68,8 @@ export async function POST(req: NextRequest) {
       lines: rawLines,
       note,
       paymentMethod,
+      advanceRail,
+      paymentProofUrl,
     } = body as {
       tenantCode?: string;
       channel: "guest" | "pos";
@@ -81,6 +90,8 @@ export async function POST(req: NextRequest) {
       }>;
       note?: string;
       paymentMethod: PaymentMethod;
+      advanceRail?: AdvanceRail;
+      paymentProofUrl?: string;
     };
 
     if (!rawLines?.length) {
@@ -119,6 +130,24 @@ export async function POST(req: NextRequest) {
     }
 
     const tenant = await readTenant(tenantId);
+
+    if (channel === "guest") {
+      const payBlock = assertGuestPaymentAllowed(serviceType, paymentMethod, tenant.payments);
+      if (payBlock) {
+        return NextResponse.json({ error: payBlock }, { status: 400 });
+      }
+      if (paymentMethod === "paid_in_advance") {
+        const rail = advanceRail;
+        if (!rail || !["bank", "jazzcash", "easypaisa"].includes(rail)) {
+          return NextResponse.json({ error: "Select a payment method (bank / JazzCash / EasyPaisa)" }, { status: 400 });
+        }
+        const account = tenant.payments?.methods?.[rail];
+        if (!account?.enabled) {
+          return NextResponse.json({ error: "That payment rail is not available" }, { status: 400 });
+        }
+      }
+    }
+
     for (const line of rawLines) {
       const item = tenant.menu.find((m) => m.id === line.itemId);
       if (!item || !item.available) {
@@ -161,7 +190,13 @@ export async function POST(req: NextRequest) {
       lines,
       note,
       paymentMethod,
-      paymentStatus: paymentStatusFor(paymentMethod),
+      advanceRail:
+        paymentMethod === "paid_in_advance" &&
+        (advanceRail === "bank" || advanceRail === "jazzcash" || advanceRail === "easypaisa")
+          ? advanceRail
+          : undefined,
+      paymentProofUrl: paymentProofUrl?.trim() || undefined,
+      paymentStatus: paymentStatusFor(paymentMethod, paymentProofUrl),
       status: "placed",
       statusHistory: [{ status: "placed", at: now }],
       trackToken: trackToken(),

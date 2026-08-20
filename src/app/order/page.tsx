@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { LineModifier, MenuItem, ModifierGroup } from "@/lib/tenant-types";
-import type { PaymentMethod, ServiceType } from "@/lib/types";
+import type { LineModifier, MenuItem, ModifierGroup, TenantPayments, TenantSpecialOffer } from "@/lib/tenant-types";
+import type { AdvanceRail, PaymentMethod, ServiceType } from "@/lib/types";
 import { lineUnitPrice } from "@/lib/fees";
 import {
   LAST_GUEST_TENANT_KEY,
@@ -14,9 +14,10 @@ import {
   cartStorageKey,
   guestOrderPath,
   modeLabel,
-  paymentChoices,
   type GuestMode,
 } from "@/lib/guest";
+import { enabledAdvanceRails, normalizeTenantPayments, paymentChoicesFor } from "@/lib/payments";
+import { GuestSpecialOfferPopup } from "@/components/GuestSpecialOfferPopup";
 import { isCustomerShell, readLockedCustomerTenant } from "@/lib/app-shell";
 import {
   backdropTransition,
@@ -94,6 +95,12 @@ function CheckoutForm({
   total,
   paymentMethod,
   setPaymentMethod,
+  payments,
+  advanceRail,
+  setAdvanceRail,
+  paymentProofUrl,
+  onUploadProof,
+  proofBusy,
   customerName,
   setCustomerName,
   customerPhone,
@@ -116,6 +123,12 @@ function CheckoutForm({
   total: number;
   paymentMethod: PaymentMethod;
   setPaymentMethod: (m: PaymentMethod) => void;
+  payments: TenantPayments;
+  advanceRail: AdvanceRail | "";
+  setAdvanceRail: (r: AdvanceRail | "") => void;
+  paymentProofUrl: string;
+  onUploadProof: (file: File) => void;
+  proofBusy: boolean;
   customerName: string;
   setCustomerName: (v: string) => void;
   customerPhone: string;
@@ -132,7 +145,10 @@ function CheckoutForm({
   onClear: () => void;
   cart: CartLine[];
 }) {
-  const pays = paymentChoices(mode);
+  const pays = paymentChoicesFor(mode, payments);
+  const rails = enabledAdvanceRails(payments);
+  const selectedRail = rails.find((r) => r.id === advanceRail);
+
   return (
     <div className={styles.checkout}>
       <ul className={styles.cartList}>
@@ -166,7 +182,10 @@ function CheckoutForm({
               type="radio"
               name="pay"
               checked={paymentMethod === p.id}
-              onChange={() => setPaymentMethod(p.id)}
+              onChange={() => {
+                setPaymentMethod(p.id);
+                if (p.id !== "paid_in_advance") setAdvanceRail("");
+              }}
             />
             <span>
               <strong>{p.label}</strong>
@@ -177,10 +196,86 @@ function CheckoutForm({
       </fieldset>
 
       {paymentMethod === "paid_in_advance" && (
-        <label className={styles.ack}>
-          <input type="checkbox" checked={paidAck} onChange={(e) => setPaidAck(e.target.checked)} />
-          I confirm this should be recorded as already paid. No card or wallet is charged in ORDO.
-        </label>
+        <div className={styles.advanceBlock}>
+          <p className={styles.muted}>Transfer to one of these accounts, then upload your screenshot.</p>
+          {rails.length === 0 ? (
+            <p className={styles.error}>Admin has not published transfer details yet.</p>
+          ) : (
+            <fieldset className={styles.pay}>
+              <legend>Pay via</legend>
+              {rails.map(({ id, account }) => (
+                <label key={id} className={advanceRail === id ? styles.payOn : styles.payOff}>
+                  <input
+                    type="radio"
+                    name="rail"
+                    checked={advanceRail === id}
+                    onChange={() => setAdvanceRail(id)}
+                  />
+                  <span>
+                    <strong>{account.title || id}</strong>
+                    <em>
+                      {[account.accountName, account.accountNumber, account.bankName, account.iban]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </em>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          )}
+          {selectedRail && (
+            <div className={styles.railDetails}>
+              {selectedRail.account.accountName && (
+                <p>
+                  <span>Name</span> {selectedRail.account.accountName}
+                </p>
+              )}
+              {selectedRail.account.accountNumber && (
+                <p>
+                  <span>Number</span> {selectedRail.account.accountNumber}
+                </p>
+              )}
+              {selectedRail.account.bankName && (
+                <p>
+                  <span>Bank</span> {selectedRail.account.bankName}
+                </p>
+              )}
+              {selectedRail.account.iban && (
+                <p>
+                  <span>IBAN</span> {selectedRail.account.iban}
+                </p>
+              )}
+            </div>
+          )}
+          <label className={styles.proofUpload}>
+            Payment screenshot
+            <input
+              type="file"
+              accept="image/*"
+              disabled={proofBusy}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file) onUploadProof(file);
+              }}
+            />
+          </label>
+          {proofBusy && <p className={styles.muted}>Uploading screenshot…</p>}
+          {paymentProofUrl ? (
+            <p className={styles.proofOk}>
+              Screenshot attached.{" "}
+              <a href={paymentProofUrl} target="_blank" rel="noreferrer">
+                Preview
+              </a>
+            </p>
+          ) : (
+            <p className={styles.muted}>Screenshot required before placing an advance order.</p>
+          )}
+          <label className={styles.ack}>
+            <input type="checkbox" checked={paidAck} onChange={(e) => setPaidAck(e.target.checked)} />
+            I transferred the amount to the account above.
+          </label>
+        </div>
       )}
 
       {(mode === "pickup" || mode === "delivery") && (
@@ -246,6 +341,8 @@ function OrderInner() {
 
   const [branding, setBranding] = useState<{ name: string; logoUrl: string } | null>(null);
   const [shop, setShop] = useState<PublicShop | null>(null);
+  const [payments, setPayments] = useState<TenantPayments>(() => normalizeTenantPayments(null));
+  const [specialOffer, setSpecialOffer] = useState<TenantSpecialOffer | null>(null);
   const [orderingClosed, setOrderingClosed] = useState(false);
   const [billingPastDue, setBillingPastDue] = useState(false);
   const [menu, setMenu] = useState<MenuItem[]>([]);
@@ -255,6 +352,9 @@ function OrderInner() {
   const [toast, setToast] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pay_at_counter");
+  const [advanceRail, setAdvanceRail] = useState<AdvanceRail | "">("");
+  const [paymentProofUrl, setPaymentProofUrl] = useState("");
+  const [proofBusy, setProofBusy] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
@@ -266,6 +366,11 @@ function OrderInner() {
   const [cartReady, setCartReady] = useState(false);
   const [modItem, setModItem] = useState<MenuItem | null>(null);
   const [modSel, setModSel] = useState<Record<string, string[]>>({});
+  const [flyers, setFlyers] = useState<
+    Array<{ id: number; x: number; y: number; tx: number; ty: number; src?: string; letter: string }>
+  >([]);
+  const cartBarRef = useRef<HTMLButtonElement | null>(null);
+  const flyerId = useRef(0);
   const reduced = usePrefersReducedMotion();
   const coarse = useIsCoarsePointer();
   const enter = pageEnter(reduced, coarse);
@@ -298,6 +403,8 @@ function OrderInner() {
         setBranding(d.public.branding);
         setShop(d.public.shop);
         setMenu(d.public.menu);
+        setPayments(normalizeTenantPayments(d.public.payments));
+        setSpecialOffer(d.public.specialOffer || null);
         setOrderingClosed(Boolean(d.orderingClosed));
         setBillingPastDue(Boolean(d.billingPastDue));
         localStorage.setItem(LAST_GUEST_TENANT_KEY, tenantCode);
@@ -332,10 +439,12 @@ function OrderInner() {
 
   useEffect(() => {
     if (!mode) return;
-    setPaymentMethod(paymentChoices(mode)[0].id);
+    setPaymentMethod(paymentChoicesFor(mode, payments)[0].id);
+    setAdvanceRail("");
+    setPaymentProofUrl("");
     setPaidAck(false);
     setError("");
-  }, [mode]);
+  }, [mode, payments]);
 
   useEffect(() => {
     if (!toast) return;
@@ -360,7 +469,31 @@ function OrderInner() {
   const count = cart.reduce((s, c) => s + c.qty, 0);
   const currency = shop?.currency || "PKR";
 
-  function pushLine(item: MenuItem, modifiers: LineModifier[]) {
+  function flyToCart(fromEl: HTMLElement | null, item: MenuItem) {
+    if (reduced || !fromEl) return;
+    const start = fromEl.getBoundingClientRect();
+    const bag = cartBarRef.current?.getBoundingClientRect();
+    const endX = bag ? bag.left + bag.width * 0.72 : window.innerWidth - 56;
+    const endY = bag ? bag.top + bag.height / 2 : window.innerHeight - 48;
+    const id = ++flyerId.current;
+    setFlyers((prev) => [
+      ...prev,
+      {
+        id,
+        x: start.left + start.width / 2,
+        y: start.top + start.height / 2,
+        tx: endX,
+        ty: endY,
+        src: item.imageUrl || undefined,
+        letter: item.name.slice(0, 1),
+      },
+    ]);
+    window.setTimeout(() => {
+      setFlyers((prev) => prev.filter((f) => f.id !== id));
+    }, 700);
+  }
+
+  function pushLine(item: MenuItem, modifiers: LineModifier[], fromEl?: HTMLElement | null) {
     const unitPrice = lineUnitPrice(item.price, modifiers);
     const key = `${item.id}:${modifiers.map((m) => m.optionId).sort().join(",")}`;
     setCart((prev) => {
@@ -368,10 +501,11 @@ function OrderInner() {
       if (hit) return prev.map((p) => (p.key === key ? { ...p, qty: p.qty + 1 } : p));
       return [...prev, { key, item, qty: 1, modifiers, unitPrice }];
     });
+    flyToCart(fromEl || null, item);
     setToast(`Added ${item.name}`);
   }
 
-  function addItem(item: MenuItem) {
+  function addItem(item: MenuItem, fromEl?: HTMLElement | null) {
     if (!item.available) {
       setToast(`${item.name} is 86 / unavailable`);
       return;
@@ -385,7 +519,26 @@ function OrderInner() {
       setModItem(item);
       return;
     }
-    pushLine(item, []);
+    pushLine(item, [], fromEl);
+  }
+
+  async function uploadProof(file: File) {
+    setProofBusy(true);
+    setError("");
+    try {
+      const body = new FormData();
+      body.append("tenantCode", tenantCode);
+      body.append("file", file);
+      const res = await fetch("/api/guest/payment-proof", { method: "POST", body });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !(data as { url?: string }).url) {
+        setError((data as { error?: string }).error || "Screenshot upload failed");
+        return;
+      }
+      setPaymentProofUrl((data as { url: string }).url);
+    } finally {
+      setProofBusy(false);
+    }
   }
 
   function removeItem(itemId: string) {
@@ -430,8 +583,18 @@ function OrderInner() {
       return;
     }
     if (paymentMethod === "paid_in_advance" && !paidAck) {
-      setError("Confirm that this order should be recorded as already paid.");
+      setError("Confirm that you transferred the payment.");
       return;
+    }
+    if (paymentMethod === "paid_in_advance") {
+      if (!advanceRail) {
+        setError("Select JazzCash, EasyPaisa, or bank.");
+        return;
+      }
+      if (!paymentProofUrl.trim()) {
+        setError("Upload a payment screenshot before placing the order.");
+        return;
+      }
     }
     const ruleError = assertOrderRules({
       channel: "guest",
@@ -460,6 +623,8 @@ function OrderInner() {
         deliveryAddress: mode === "delivery" ? deliveryAddress : undefined,
         note: note || undefined,
         paymentMethod,
+        advanceRail: paymentMethod === "paid_in_advance" ? advanceRail || undefined : undefined,
+        paymentProofUrl: paymentMethod === "paid_in_advance" ? paymentProofUrl || undefined : undefined,
         lines: cart.map((c) => ({
           itemId: c.item.id,
           name: c.item.name,
@@ -506,6 +671,12 @@ function OrderInner() {
       total={total}
       paymentMethod={paymentMethod}
       setPaymentMethod={setPaymentMethod}
+      payments={payments}
+      advanceRail={advanceRail}
+      setAdvanceRail={setAdvanceRail}
+      paymentProofUrl={paymentProofUrl}
+      onUploadProof={(file) => void uploadProof(file)}
+      proofBusy={proofBusy}
       customerName={customerName}
       setCustomerName={setCustomerName}
       customerPhone={customerPhone}
@@ -676,7 +847,7 @@ function OrderInner() {
                         key={d.id}
                         type="button"
                         className={styles.deal}
-                        onClick={() => addItem(d)}
+                        onClick={(e) => addItem(d, e.currentTarget)}
                         variants={itemVar}
                       >
                         {d.imageUrl ? (
@@ -751,7 +922,7 @@ function OrderInner() {
                             <span>{qtyOf(cart, menuItem.id)}</span>
                             <button
                               type="button"
-                              onClick={() => addItem(menuItem)}
+                              onClick={(e) => addItem(menuItem, e.currentTarget.closest("article") as HTMLElement)}
                               aria-label={`Add ${menuItem.name}`}
                             >
                               +
@@ -780,13 +951,43 @@ function OrderInner() {
       </div>
 
       {showMenu && count > 0 && (
-        <button type="button" className={styles.cartBar} onClick={() => setSheetOpen(true)}>
-          <span>{count} items</span>
-          <strong>
-            View cart · {currency} {total}
-          </strong>
+        <button
+          type="button"
+          ref={cartBarRef}
+          className={styles.cartBar}
+          onClick={() => setSheetOpen(true)}
+        >
+          <span className={styles.cartBarMeta}>
+            <em>{count} item{count === 1 ? "" : "s"}</em>
+            <strong>
+              {currency} {total}
+            </strong>
+          </span>
+          <span className={styles.cartBarCta}>Place order · {currency} {total}</span>
         </button>
       )}
+
+      <GuestSpecialOfferPopup tenantCode={tenantCode} offer={specialOffer} />
+
+      <AnimatePresence>
+        {flyers.map((f) => (
+          <motion.div
+            key={f.id}
+            className={styles.flyDot}
+            initial={{ left: f.x, top: f.y, opacity: 1, scale: 1, x: "-50%", y: "-50%" }}
+            animate={{ left: f.tx, top: f.ty, opacity: 0.35, scale: 0.45 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {f.src ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={f.src} alt="" />
+            ) : (
+              <span>{f.letter}</span>
+            )}
+          </motion.div>
+        ))}
+      </AnimatePresence>
 
       <AnimatePresence>
         {sheetOpen && showMenu ? (

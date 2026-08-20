@@ -188,3 +188,64 @@
   color: var(--ember-bright);
   font-weight: 700;
 }
+
+.readyBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(14, 12, 10, 0.58);
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.readyCard {
+  width: min(100%, 360px);
+  background: var(--guest-elevated);
+  border: 1px solid var(--guest-line);
+  border-radius: 16px;
+  padding: 1.25rem 1.2rem 1.3rem;
+  position: relative;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+}
+
+.readyClose {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--guest-line);
+  background: transparent;
+  color: inherit;
+  font-size: 1.15rem;
+  cursor: pointer;
+}
+
+.readyEyebrow {
+  margin: 0 1.5rem 0.35rem 0;
+  font-family: var(--display);
+  color: var(--ember-bright);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  font-size: 0.9rem;
+}
+
+.readyCard h2 {
+  margin: 0 0 0.45rem;
+  font-family: var(--display);
+  font-size: 1.35rem;
+}
+
+.readyOk {
+  margin-top: 1rem;
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  background: var(--ember);
+  color: var(--ember-ink);
+  font-weight: 800;
+  padding: 0.75rem;
+  cursor: pointer;
+}

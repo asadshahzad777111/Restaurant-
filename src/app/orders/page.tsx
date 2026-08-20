@@ -115,6 +115,19 @@ export default function OrdersPage() {
                   {o.tableNumber ? ` · T${o.tableNumber}` : ""} · {o.paymentStatus} ·{" "}
                   {tenant ? money(tenant.shop.currency, o.total) : o.total}
                 </p>
+                {o.paymentProofUrl ? (
+                  <p className={styles.muted} style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <a href={o.paymentProofUrl} target="_blank" rel="noreferrer">
+                      <img
+                        src={o.paymentProofUrl}
+                        alt="Payment proof"
+                        style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 6 }}
+                      />
+                    </a>
+                    <span>Proof · {o.paymentStatus}</span>
+                  </p>
+                ) : null}
               </div>
               <div className={styles.cardActions}>
                 {NEXT[o.status] && (
@@ -186,7 +199,28 @@ export default function OrdersPage() {
                   {o.status}
                   {o.cancelReason ? ` · ${o.cancelReason}` : ""}
                 </td>
-                <td>{o.paymentStatus}</td>
+                <td>
+                  {o.paymentStatus}
+                  {o.paymentProofUrl ? (
+                    <>
+                      {" "}
+                      <a href={o.paymentProofUrl} target="_blank" rel="noreferrer">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={o.paymentProofUrl}
+                          alt="Proof"
+                          style={{
+                            width: 36,
+                            height: 36,
+                            objectFit: "cover",
+                            borderRadius: 4,
+                            verticalAlign: "middle",
+                          }}
+                        />
+                      </a>
+                    </>
+                  ) : null}
+                </td>
                 <td>
                   {tenant ? money(tenant.shop.currency, o.total) : o.total}
                 </td>
