@@ -55,16 +55,16 @@ function LoginForm() {
   }
 
   return (
-    <div className={styles.page}>
-      <form className={styles.card} onSubmit={onSubmit}>
-        <Link href={ownerOnly ? "/control" : "/"} className={styles.brand}>
-          ORDO
+    <div className={ownerOnly ? styles.pageHq : styles.page}>
+      <form className={ownerOnly ? styles.cardHq : styles.card} onSubmit={onSubmit}>
+        <Link href={ownerOnly ? "/control" : "/"} className={ownerOnly ? styles.brandHq : styles.brand}>
+          {ownerOnly ? "ORDO HQ" : "ORDO"}
         </Link>
-        <h1>{ownerOnly ? "Owner control" : "Staff login"}</h1>
+        <h1>{ownerOnly ? "ORDO HQ login" : "Restaurant staff login"}</h1>
         <p className={styles.hint} style={{ marginTop: 0 }}>
           {ownerOnly
-            ? "Private host — open any restaurant without their password (Open)."
-            : "Restaurant staff only. Owner panel is on a separate host."}
+            ? "Platform owner only — manage restaurants and help them without their password."
+            : "Use your restaurant code. This is not the owner HQ."}
         </p>
         {!ownerOnly && (
           <label className={styles.field}>
@@ -97,14 +97,16 @@ function LoginForm() {
           />
         </label>
         {error && <p className={styles.error}>{error}</p>}
-        <button type="submit" className={styles.submit} disabled={busy}>
+        <button
+          type="submit"
+          className={ownerOnly ? styles.submitHq : styles.submit}
+          disabled={busy}
+        >
           {busy ? "Signing in…" : "Sign in"}
         </button>
         {!ownerOnly && (
           <p className={styles.hint}>
             Demo: code <strong>DEMO</strong> · admin / admin123
-            <br />
-            Production pe passwords Settings se change karein.
           </p>
         )}
       </form>

@@ -14,6 +14,8 @@ import type { TenantState, MenuItem, Order, StockItem, TenantUser } from "./tena
 import { apiUrl } from "./urls";
 
 export const TOKEN_KEY = "restaurant_pos_token_v2";
+/** Saved before Help mode so owner can return to ORDO HQ */
+export const OWNER_TOKEN_KEY = "ordo_owner_token_v1";
 
 export interface AuthUser {
   id: string;

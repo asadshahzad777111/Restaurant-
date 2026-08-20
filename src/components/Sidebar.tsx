@@ -34,7 +34,9 @@ export function Sidebar() {
         )}
         <div>
           <strong>{tenant?.branding.name}</strong>
-          <p className={styles.code}>{tenant?.code}</p>
+          <p className={styles.code}>
+            {tenant?.code} · Staff tools
+          </p>
         </div>
       </div>
       <nav className={styles.nav}>

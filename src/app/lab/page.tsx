@@ -3,13 +3,13 @@ import styles from "./lab.module.css";
 
 const LINKS = [
   { href: "/", label: "Marketing home", note: "ORDO landing" },
-  { href: "/login", label: "Staff login", note: "DEMO · admin / admin123" },
   {
     href: "/login?owner=1",
-    label: "Owner control (local)",
-    note: "Private — Open restaurant without their password",
+    label: "ORDO HQ login (you)",
+    note: "Platform owner — WordPress-simple control",
   },
-  { href: "/control", label: "Control panel", note: "After owner login" },
+  { href: "/control", label: "ORDO HQ panel", note: "After owner login" },
+  { href: "/login", label: "Restaurant staff login", note: "DEMO · admin / admin123" },
   { href: "/order?tenant=DEMO", label: "Guest hub", note: "EN/Urdu · fees · modifiers" },
   { href: "/order?tenant=DEMO&table=3", label: "Table 3 QR", note: "Dine-in + table status" },
   { href: "/order?tenant=DEMO&mode=pickup", label: "Pickup", note: "Packing fee applies" },
