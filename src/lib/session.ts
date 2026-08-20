@@ -6,6 +6,7 @@ import {
   deleteSession,
   findTenantMetaByCode,
   findUser,
+  findUserByEmail,
   readTenant,
 } from "@/lib/db";
 import type { Permission, Session, SessionRole } from "./types";
@@ -66,6 +67,28 @@ export async function loginTenant(
   if (meta.status === "suspended") throw new AuthError("Restaurant is suspended", 403);
   const user = await findUser(meta.id, username);
   if (!user || user.password !== password) throw new AuthError("Invalid credentials", 401);
+  const role: SessionRole = user.role === "admin" ? "tenant_admin" : "staff";
+  return addSession({
+    token: newToken(),
+    role,
+    tenantId: meta.id,
+    userId: user.id,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+/** Staff/Admin Google login — email must already be set on that kitchen user. */
+export async function loginTenantByEmail(code: string, email: string): Promise<Session> {
+  const meta = await findTenantMetaByCode(code);
+  if (!meta) throw new AuthError("Restaurant code not found", 404);
+  if (meta.status === "suspended") throw new AuthError("Restaurant is suspended", 403);
+  const user = await findUserByEmail(meta.id, email);
+  if (!user) {
+    throw new AuthError(
+      "No staff account with this Gmail on that restaurant. Super/Admin must add the email first.",
+      404,
+    );
+  }
   const role: SessionRole = user.role === "admin" ? "tenant_admin" : "staff";
   return addSession({
     token: newToken(),

@@ -189,6 +189,23 @@ export async function findUser(tenantId: string, username: string) {
     : fileTenant.findUser(tenantId, username);
 }
 
+export async function findUserByEmail(tenantId: string, email: string) {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.findUserByEmailMongo(tenantId, email)
+    : fileTenant.findUserByEmail(tenantId, email);
+}
+
+export async function upsertGuestClient(
+  tenantId: string,
+  input: { email: string; name: string; googleSub?: string },
+) {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.upsertGuestClientMongo(tenantId, input)
+    : fileTenant.upsertGuestClient(tenantId, input);
+}
+
 export async function updateMenu(tenantId: string, menu: MenuItem[]) {
   await ensureStore();
   return useMongo()

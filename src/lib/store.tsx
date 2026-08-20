@@ -9,7 +9,7 @@ import React, {
   useState,
   startTransition,
 } from "react";
-import type { Permission, PlatformFeatures, SessionRole } from "./types";
+import type { Permission, PlatformFeatures, SessionRole, TenantStatus } from "./types";
 import type { DiningTable, TenantState, MenuItem, Order, StockItem, TenantUser } from "./tenant-types";
 import { setHelpModeCookieClient } from "./help-mode";
 
@@ -24,6 +24,7 @@ export interface AuthUser {
   roleLabel: string;
   permissions: Permission[];
   mustChangePassword?: boolean;
+  email?: string;
 }
 
 export interface AuthState {
@@ -34,6 +35,8 @@ export interface AuthState {
   user: AuthUser | null;
   tenant: TenantState | null;
   platformFeatures: PlatformFeatures | null;
+  billingPastDue: boolean;
+  tenantStatus: TenantStatus | null;
   loading: boolean;
 }
 
@@ -69,6 +72,8 @@ type MemorySession = {
   user: AuthUser | null;
   tenant: TenantState | null;
   platformFeatures: PlatformFeatures | null;
+  billingPastDue: boolean;
+  tenantStatus: TenantStatus | null;
 };
 
 /** Survives StoreProvider remounts during client navigation (React state does not). */
@@ -107,6 +112,8 @@ function emptyAuth(): Omit<AuthState, "loading"> {
     user: null,
     tenant: null,
     platformFeatures: null,
+    billingPastDue: false,
+    tenantStatus: null,
   };
 }
 
@@ -138,6 +145,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [platformFeatures, setPlatformFeatures] = useState<PlatformFeatures | null>(
     boot.platformFeatures,
   );
+  const [billingPastDue, setBillingPastDue] = useState(boot.billingPastDue);
+  const [tenantStatus, setTenantStatus] = useState<TenantStatus | null>(boot.tenantStatus);
   const [loading, setLoading] = useState(boot.loading);
 
   const setToken = useCallback((t: string | null) => {
@@ -169,6 +178,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setUser(payload.user);
       setTenant(payload.tenant);
       setPlatformFeatures(payload.platformFeatures);
+      setBillingPastDue(Boolean(payload.billingPastDue));
+      setTenantStatus(payload.tenantStatus ?? null);
       if (doneLoading) setLoading(false);
     });
   }, []);
@@ -191,6 +202,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       user: payload.user ?? null,
       tenant: payload.tenant ?? null,
       platformFeatures: null,
+      billingPastDue: false,
+      tenantStatus: null,
     });
   }, [applySession]);
 
@@ -230,6 +243,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setTenant(null);
       setPlatformFeatures(null);
+      setBillingPastDue(false);
+      setTenantStatus(null);
       setImpersonating(false);
       setLoading(false);
       return;
@@ -258,6 +273,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setRole(null);
       setTenant(null);
       setPlatformFeatures(null);
+      setBillingPastDue(false);
+      setTenantStatus(null);
       setUser(null);
       setImpersonating(false);
       setLoading(false);
@@ -272,6 +289,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       user: data.user ?? null,
       tenant: data.tenant ?? null,
       platformFeatures: data.features ?? null,
+      billingPastDue: Boolean(data.billingPastDue || data.meta?.status === "past_due"),
+      tenantStatus: data.meta?.status ?? null,
     });
   }, [applySession]);
 
@@ -309,6 +328,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setTenant(null);
       setPlatformFeatures(null);
+      setBillingPastDue(false);
+      setTenantStatus(null);
       setImpersonating(false);
       setLoading(false);
       return;
@@ -319,6 +340,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setTenant(null);
     setPlatformFeatures(null);
+    setBillingPastDue(false);
+    setTenantStatus(null);
     setImpersonating(false);
   }, [setToken]);
 
@@ -346,6 +369,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setTenant(null);
     setPlatformFeatures(null);
+    setBillingPastDue(false);
+    setTenantStatus(null);
     setImpersonating(false);
   }, [setToken]);
 
@@ -377,8 +402,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       user,
       tenant,
       platformFeatures,
+      billingPastDue,
+      tenantStatus,
     });
-  }, [token, role, tenantId, impersonating, user, tenant, platformFeatures]);
+  }, [token, role, tenantId, impersonating, user, tenant, platformFeatures, billingPastDue, tenantStatus]);
 
   const value = useMemo(
     () => ({
@@ -389,6 +416,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       user,
       tenant,
       platformFeatures,
+      billingPastDue,
+      tenantStatus,
       loading,
       setToken,
       refresh,
@@ -409,6 +438,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       user,
       tenant,
       platformFeatures,
+      billingPastDue,
+      tenantStatus,
       loading,
       setToken,
       refresh,

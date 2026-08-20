@@ -14,7 +14,8 @@ export function AppShell({
   children: React.ReactNode;
   title?: string;
 }) {
-  const { loading, token, role, tenant, user, impersonating, logout, refresh, exitHelp } = useStore();
+  const { loading, token, role, tenant, user, impersonating, logout, refresh, exitHelp, billingPastDue } =
+    useStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export function AppShell({
             <strong>Help mode · Super</strong>
             <span>
               You are helping {tenant.branding.name} ({tenant.code}). This is not ORDO HQ and not their
-              Admin login.
+              Admin login — open any Admin screen without their password.
             </span>
             <button
               type="button"
@@ -59,6 +60,17 @@ export function AppShell({
             >
               Back to ORDO HQ
             </button>
+          </div>
+        )}
+        {billingPastDue && !impersonating && (
+          <div className={styles.billingBanner} role="status">
+            <strong>Billing past due</strong>
+            <span>
+              Contact ORDO Super to renew. Staff tools stay open. Guests can still use Scanner → menu.
+            </span>
+            <a href="/scan" className={styles.helpExit}>
+              Open scanner
+            </a>
           </div>
         )}
         <header className={styles.top}>
@@ -76,6 +88,7 @@ export function AppShell({
             )}
             <span className={styles.user}>
               {user.roleLabel} · {user.username}
+              {user.email ? ` · ${user.email}` : ""}
             </span>
             <button
               type="button"

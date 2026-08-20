@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
+import { showApkNotify } from "@/lib/apk-notify";
 import styles from "./StaffAlerts.module.css";
 import type { Order } from "@/lib/tenant-types";
 
@@ -30,7 +31,9 @@ export function StaffAlerts() {
     );
     if (fresh.length) {
       fresh.forEach((o) => seen.current.add(o.id));
-      setToast(`New guest order #${fresh[0].number}`);
+      const msg = `New guest order #${fresh[0].number}`;
+      setToast(msg);
+      showApkNotify("ORDO · New order", msg, `order-${fresh[0].id}`);
       if (soundOk) {
         try {
           const Ctx =

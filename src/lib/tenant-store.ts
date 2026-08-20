@@ -36,6 +36,7 @@ function normalizeTenant(raw: TenantState): TenantState {
     },
     tables: raw.tables ?? [],
     dayCloses: raw.dayCloses ?? [],
+    guestClients: raw.guestClients ?? [],
     menu: (raw.menu ?? []).map((m) => ({ ...m, modifiers: m.modifiers ?? [] })),
     orders: (raw.orders ?? []).map((o) => ({
       ...o,
@@ -133,6 +134,43 @@ export function findUser(tenantId: string, username: string) {
   );
 }
 
+export function findUserByEmail(tenantId: string, email: string) {
+  const needle = email.trim().toLowerCase();
+  return readTenant(tenantId).users.find(
+    (u) => u.active && (u.email || "").trim().toLowerCase() === needle,
+  );
+}
+
+export function upsertGuestClient(
+  tenantId: string,
+  input: { email: string; name: string; googleSub?: string },
+) {
+  const t = readTenant(tenantId);
+  const email = input.email.trim().toLowerCase();
+  const list = t.guestClients ?? [];
+  const hit = list.find(
+    (g) => g.email === email || (input.googleSub && g.googleSub === input.googleSub),
+  );
+  if (hit) {
+    hit.name = input.name || hit.name;
+    hit.email = email;
+    if (input.googleSub) hit.googleSub = input.googleSub;
+    t.guestClients = list;
+    writeTenant(t);
+    return hit;
+  }
+  const row = {
+    id: `guest_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    email,
+    name: input.name.trim() || email.split("@")[0],
+    googleSub: input.googleSub,
+    createdAt: new Date().toISOString(),
+  };
+  t.guestClients = [...list, row];
+  writeTenant(t);
+  return row;
+}
+
 export function updateMenu(tenantId: string, menu: MenuItem[]) {
   const t = readTenant(tenantId);
   t.menu = menu;
@@ -149,7 +187,13 @@ export function updateStock(tenantId: string, stock: StockItem[]) {
 
 export function updateUsers(tenantId: string, users: TenantUser[]) {
   const t = readTenant(tenantId);
-  t.users = users;
+  t.users = users.map((u) => {
+    const prev = t.users.find((x) => x.id === u.id);
+    if (prev && (!u.password || u.password === "")) {
+      return { ...u, password: prev.password };
+    }
+    return u;
+  });
   writeTenant(t);
   return t;
 }

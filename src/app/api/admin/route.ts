@@ -98,6 +98,19 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    if (action === "changeEmail") {
+      const t = await readTenant(tenantId);
+      const user = t.users.find((u) => u.id === session.userId);
+      if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      const email = String(body.email || "").trim().toLowerCase();
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+      }
+      user.email = email;
+      await updateUsers(tenantId, t.users);
+      return NextResponse.json({ ok: true, email, tenant: await readTenantStaffView(tenantId) });
+    }
+
     if (action === "get") {
       return NextResponse.json({ tenant: await readTenantStaffView(tenantId) });
     }

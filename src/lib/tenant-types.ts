@@ -149,6 +149,15 @@ export interface DiningTable {
   currentOrderId?: string;
 }
 
+/** Guest who signed in with Google for this kitchen (Customer APK / web). */
+export interface GuestClient {
+  id: string;
+  email: string;
+  name: string;
+  googleSub?: string;
+  createdAt: string;
+}
+
 export interface DayCloseSummary {
   id: string;
   closedAt: string;
@@ -183,6 +192,8 @@ export interface TenantState {
   orders: Order[];
   reviews: Review[];
   tables: DiningTable[];
+  /** Google-registered diners for this kitchen only */
+  guestClients?: GuestClient[];
   dayCloses: DayCloseSummary[];
   nextOrderNumber: number;
 }

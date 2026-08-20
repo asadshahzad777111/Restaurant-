@@ -7,7 +7,7 @@ import { uploadTenantMedia } from "@/lib/media-client";
 import styles from "../staff.module.css";
 
 export default function SettingsPage() {
-  const { tenant, api, applyTenant, user, token, loading, platformFeatures } = useStore();
+  const { tenant, api, applyTenant, user, token, loading, platformFeatures, refresh } = useStore();
   const [msg, setMsg] = useState("");
   const [branding, setBranding] = useState({
     name: "",
@@ -24,6 +24,7 @@ export default function SettingsPage() {
   });
   const [fbrEnabled, setFbrEnabled] = useState(false);
   const [pw, setPw] = useState({ current: "", next: "" });
+  const [emailDraft, setEmailDraft] = useState("");
 
   useEffect(() => {
     if (!tenant) return;
@@ -41,7 +42,8 @@ export default function SettingsPage() {
       taxRate: tenant.shop.taxRate || 0,
     });
     setFbrEnabled(Boolean(tenant.shop.fbrEnabled));
-  }, [tenant]);
+    setEmailDraft(user?.email || "");
+  }, [tenant, user]);
 
   async function saveBranding(e: React.FormEvent) {
     e.preventDefault();
@@ -110,6 +112,22 @@ export default function SettingsPage() {
     setMsg(res.ok ? "Password updated" : data.error || "Failed");
     if (res.ok) {
       setPw({ current: "", next: "" });
+    }
+  }
+
+  async function changeEmail(e: React.FormEvent) {
+    e.preventDefault();
+    const res = await api("/api/admin", {
+      method: "PUT",
+      body: JSON.stringify({ action: "changeEmail", email: emailDraft }),
+    });
+    const data = await res.json();
+    setMsg(res.ok ? "Gmail / email saved — use it for Google staff login" : data.error || "Failed");
+    if (res.ok) {
+      await refresh({ force: true });
+      if ((data as { tenant?: typeof tenant }).tenant) {
+        applyTenant((data as { tenant: NonNullable<typeof tenant> }).tenant);
+      }
     }
   }
 
@@ -281,6 +299,22 @@ export default function SettingsPage() {
           />
           <button type="submit" className={styles.btn}>
             Update password
+          </button>
+        </form>
+
+        <form className={styles.form} onSubmit={(e) => void changeEmail(e)}>
+          <h3 style={{ margin: 0 }}>Gmail / login email</h3>
+          <p className={styles.muted}>
+            Save your Gmail here so you can Sign in with Google on Staff login (with this kitchen’s code).
+          </p>
+          <input
+            type="email"
+            placeholder="you@gmail.com"
+            value={emailDraft}
+            onChange={(e) => setEmailDraft(e.target.value)}
+          />
+          <button type="submit" className={styles.btn}>
+            Save email
           </button>
         </form>
 

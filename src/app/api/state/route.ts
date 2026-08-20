@@ -39,6 +39,9 @@ export async function GET(req: NextRequest) {
           readTenantStaffView(session.tenantId),
           getPlatformFeatures(),
         ]);
+        if (meta?.status === "suspended" && !session.impersonating) {
+          return NextResponse.json({ error: "Restaurant is suspended" }, { status: 403 });
+        }
         const user =
           session.userId && tenant
             ? publicUser(tenant.users.find((u) => u.id === session.userId) ?? null)
@@ -49,6 +52,7 @@ export async function GET(req: NextRequest) {
           meta,
           tenant,
           features,
+          billingPastDue: meta?.status === "past_due",
           storage: storageMode(),
         });
       } catch (e) {
@@ -63,14 +67,14 @@ export async function GET(req: NextRequest) {
     }
     const meta = await findTenantMetaByCode(tenantCode);
     if (!meta) return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
-    if (meta.status === "suspended") {
-      return NextResponse.json({ error: "Restaurant suspended" }, { status: 403 });
-    }
+    // Suspended kitchens still allow scanner → menu browse; ordering is blocked on POST.
     const pub = await getPublicMenu(meta.id);
     return NextResponse.json(
       {
         public: pub,
         meta,
+        orderingClosed: meta.status === "suspended",
+        billingPastDue: meta.status === "past_due",
         storage: storageMode(),
       },
       {

@@ -30,6 +30,7 @@ function normalize(raw: TenantState): TenantState {
     },
     tables: raw.tables ?? [],
     dayCloses: raw.dayCloses ?? [],
+    guestClients: raw.guestClients ?? [],
     menu: (raw.menu ?? []).map((m) => ({ ...m, modifiers: m.modifiers ?? [] })),
     orders: (raw.orders ?? []).map((o) => ({
       ...o,
@@ -192,6 +193,42 @@ export async function findUserMongo(tenantId: string, username: string) {
   return t.users.find((u) => u.username.toLowerCase() === username.toLowerCase() && u.active);
 }
 
+export async function findUserByEmailMongo(tenantId: string, email: string) {
+  const t = await readTenantMongo(tenantId);
+  const needle = email.trim().toLowerCase();
+  return t.users.find((u) => u.active && (u.email || "").trim().toLowerCase() === needle);
+}
+
+export async function upsertGuestClientMongo(
+  tenantId: string,
+  input: { email: string; name: string; googleSub?: string },
+) {
+  const t = await readTenantMongo(tenantId);
+  const email = input.email.trim().toLowerCase();
+  const list = t.guestClients ?? [];
+  const hit = list.find(
+    (g) => g.email === email || (input.googleSub && g.googleSub === input.googleSub),
+  );
+  if (hit) {
+    hit.name = input.name || hit.name;
+    hit.email = email;
+    if (input.googleSub) hit.googleSub = input.googleSub;
+    t.guestClients = list;
+    await writeTenantMongo(t);
+    return hit;
+  }
+  const row = {
+    id: `guest_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    email,
+    name: input.name.trim() || email.split("@")[0],
+    googleSub: input.googleSub,
+    createdAt: new Date().toISOString(),
+  };
+  t.guestClients = [...list, row];
+  await writeTenantMongo(t);
+  return row;
+}
+
 export async function updateMenuMongo(tenantId: string, menu: MenuItem[]) {
   const t = await readTenantMongo(tenantId);
   t.menu = menu;
@@ -208,7 +245,13 @@ export async function updateStockMongo(tenantId: string, stock: StockItem[]) {
 
 export async function updateUsersMongo(tenantId: string, users: TenantUser[]) {
   const t = await readTenantMongo(tenantId);
-  t.users = users;
+  t.users = users.map((u) => {
+    const prev = t.users.find((x) => x.id === u.id);
+    if (prev && (!u.password || u.password === "")) {
+      return { ...u, password: prev.password };
+    }
+    return u;
+  });
   await writeTenantMongo(t);
   return t;
 }

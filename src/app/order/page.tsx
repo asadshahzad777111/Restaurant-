@@ -245,6 +245,8 @@ function OrderInner() {
 
   const [branding, setBranding] = useState<{ name: string; logoUrl: string } | null>(null);
   const [shop, setShop] = useState<PublicShop | null>(null);
+  const [orderingClosed, setOrderingClosed] = useState(false);
+  const [billingPastDue, setBillingPastDue] = useState(false);
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [loadError, setLoadError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -288,7 +290,18 @@ function OrderInner() {
         setBranding(d.public.branding);
         setShop(d.public.shop);
         setMenu(d.public.menu);
+        setOrderingClosed(Boolean(d.orderingClosed));
+        setBillingPastDue(Boolean(d.billingPastDue));
         localStorage.setItem(LAST_GUEST_TENANT_KEY, tenantCode);
+        try {
+          const raw = localStorage.getItem("ordo_guest_client_v1");
+          if (raw) {
+            const g = JSON.parse(raw) as { tenant?: string; name?: string; email?: string };
+            if (g.tenant === tenantCode) {
+              if (g.name) setCustomerName(g.name);
+            }
+          }
+        } catch { /* ignore */ }
       })
       .finally(() => setLoading(false));
   }, [tenantCode]);
@@ -400,6 +413,10 @@ function OrderInner() {
 
   async function placeOrder() {
     if (!mode) return;
+    if (orderingClosed) {
+      setError("This kitchen is paused for billing. You can still browse the menu — ordering opens again after Super renews.");
+      return;
+    }
     if (mode === "pickup" && !customerPhone.trim() && !customerName.trim()) {
       setError("Add a name or phone so the counter can call you.");
       return;
@@ -612,6 +629,13 @@ function OrderInner() {
                 <Link href={`/order?tenant=${tenantCode}`}>Change</Link>
               </div>
 
+              {(orderingClosed || billingPastDue) && (
+                <p className={styles.error} role="status">
+                  {orderingClosed
+                    ? "Billing paused — browse the menu; placing orders is closed until Super renews."
+                    : "Billing past due — you can still order. Scanner → menu always works."}
+                </p>
+              )}
               {loading && <p className={styles.muted}>Loading this kitchen’s menu…</p>}
 
               {!loading && menu.length === 0 && (

@@ -11,6 +11,8 @@ import {
   updateTenantMeta,
   getPlatformFeatures,
   setPlatformFeatures,
+  readTenant,
+  updateUsers,
 } from "@/lib/db";
 import { AuthError, impersonateTenant, requireSuper } from "@/lib/session";
 import type { PlanId, TenantStatus } from "@/lib/types";
@@ -170,6 +172,71 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ features });
       }
       return NextResponse.json({ features: await getPlatformFeatures() });
+    }
+
+    if (action === "credentials") {
+      if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
+      const tenant = await readTenant(body.id);
+      const meta = (await listTenantsMeta()).find((t) => t.id === body.id);
+      if (!meta) return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
+      return NextResponse.json({
+        tenant: meta,
+        users: tenant.users.map((u) => ({
+          id: u.id,
+          username: u.username,
+          password: u.password,
+          email: u.email || "",
+          role: u.role,
+          roleLabel: u.roleLabel,
+          active: u.active,
+        })),
+        guestClients: (tenant.guestClients || []).map((g) => ({
+          id: g.id,
+          email: g.email,
+          name: g.name,
+          createdAt: g.createdAt,
+        })),
+      });
+    }
+
+    if (action === "setUserCreds") {
+      if (!body.id || !body.userId) {
+        return NextResponse.json({ error: "id and userId required" }, { status: 400 });
+      }
+      const tenant = await readTenant(body.id);
+      const email = typeof body.email === "string" ? body.email.trim() : undefined;
+      if (email && !looksLikeEmail(email)) {
+        return NextResponse.json({ error: "Invalid Gmail / email" }, { status: 400 });
+      }
+      const password = typeof body.password === "string" ? body.password : undefined;
+      if (password !== undefined && password.length > 0 && password.length < 6) {
+        return NextResponse.json({ error: "Password min 6 characters" }, { status: 400 });
+      }
+      const users = tenant.users.map((u) => {
+        if (u.id !== body.userId) return u;
+        return {
+          ...u,
+          ...(email !== undefined ? { email } : {}),
+          ...(password ? { password, mustChangePassword: Boolean(body.mustChangePassword) } : {}),
+        };
+      });
+      await updateUsers(body.id, users);
+      const admin = users.find((u) => u.role === "admin");
+      if (admin?.email) {
+        await updateTenantMeta(body.id, { adminEmail: admin.email });
+      }
+      return NextResponse.json({
+        ok: true,
+        users: users.map((u) => ({
+          id: u.id,
+          username: u.username,
+          password: u.password,
+          email: u.email || "",
+          role: u.role,
+          roleLabel: u.roleLabel,
+          active: u.active,
+        })),
+      });
     }
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });

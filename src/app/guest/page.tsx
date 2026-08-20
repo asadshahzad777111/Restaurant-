@@ -6,7 +6,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { LAST_GUEST_TENANT_KEY, guestOrderPath, isTenantCode, parseGuestQr } from "@/lib/guest";
 import { isCustomerShell, readAppShell } from "@/lib/app-shell";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import styles from "./guest.module.css";
+
+const GUEST_CLIENT_KEY = "ordo_guest_client_v1";
 
 function GuestInner() {
   const router = useRouter();
@@ -68,6 +71,39 @@ function GuestInner() {
     await openRestaurant(parsed.tenant, { table: parsed.table, mode: parsed.mode });
   }
 
+  async function onGoogleGuest(idToken: string) {
+    if (!isTenantCode(code)) {
+      setError("Enter a valid restaurant code first.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "guest", code, idToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Google register failed");
+        return;
+      }
+      localStorage.setItem(
+        GUEST_CLIENT_KEY,
+        JSON.stringify({
+          tenant: code.trim().toUpperCase(),
+          email: data.client?.email,
+          name: data.client?.name,
+        }),
+      );
+      localStorage.setItem(LAST_GUEST_TENANT_KEY, code.trim().toUpperCase());
+      await openRestaurant(code);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className={styles.page}>
       <header className={styles.top}>
@@ -118,6 +154,13 @@ function GuestInner() {
           <button type="submit" className={styles.primary} disabled={busy}>
             {busy ? "Opening…" : "Open menu"}
           </button>
+          <GoogleSignInButton
+            mode="guest"
+            code={code}
+            disabled={busy}
+            label="Register / continue with Gmail for this kitchen"
+            onToken={onGoogleGuest}
+          />
           {lastKitchen && lastKitchen !== code.trim().toUpperCase() && (
             <button
               type="button"

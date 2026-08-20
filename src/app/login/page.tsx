@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { TOKEN_KEY, OWNER_TOKEN_KEY, useStore } from "@/lib/store";
 import { setHelpModeCookieClient } from "@/lib/help-mode";
 import { isCustomerShell, isStaffShell, readAppShell } from "@/lib/app-shell";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import styles from "./login.module.css";
 
 const CODE_KEY = "ordo_staff_tenant_code";
@@ -89,6 +90,34 @@ export default function LoginPage() {
     });
     if (mode === "super") router.push("/control");
     else router.push("/home");
+  }
+
+  async function onGoogleStaff(idToken: string) {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "staff", code, idToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Google sign-in failed");
+        return;
+      }
+      localStorage.setItem(CODE_KEY, code.trim().toUpperCase());
+      localStorage.setItem(TOKEN_KEY, data.token);
+      hydrate({
+        token: data.token,
+        session: data.session,
+        user: data.user ?? null,
+        tenant: data.tenant ?? null,
+      });
+      router.push("/home");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -183,6 +212,15 @@ export default function LoginPage() {
         <button type="submit" className={styles.submit} disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
         </button>
+        {mode === "tenant" && (
+          <GoogleSignInButton
+            mode="staff"
+            code={code}
+            disabled={busy}
+            label="Or continue with Gmail (email must be saved on this kitchen’s user)"
+            onToken={onGoogleStaff}
+          />
+        )}
         <p className={styles.hint}>
           {hideSuper
             ? "Restaurant code required. Demo kitchen: DEMO · admin / admin123"

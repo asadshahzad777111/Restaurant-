@@ -24,6 +24,7 @@ export default function StaffPage() {
   const [draft, setDraft] = useState({
     username: "",
     password: "",
+    email: "",
     roleLabel: "Cashier",
     permissions: ["home", "pos", "orders"] as Permission[],
   });
@@ -57,6 +58,7 @@ export default function StaffPage() {
       id: `user_${Date.now()}`,
       username: draft.username.trim(),
       password: draft.password,
+      email: draft.email.trim() || undefined,
       role: "staff",
       roleLabel: draft.roleLabel.trim() || "Staff",
       permissions: draft.permissions,
@@ -66,6 +68,7 @@ export default function StaffPage() {
     setDraft({
       username: "",
       password: "",
+      email: "",
       roleLabel: "Cashier",
       permissions: ["home", "pos", "orders"],
     });
@@ -115,6 +118,12 @@ export default function StaffPage() {
               onChange={(e) => setDraft({ ...draft, password: e.target.value })}
             />
             <input
+              type="email"
+              placeholder="Gmail (optional — for Google staff login)"
+              value={draft.email}
+              onChange={(e) => setDraft({ ...draft, email: e.target.value })}
+            />
+            <input
               required
               placeholder="Role label (Cashier, Kitchen…)"
               value={draft.roleLabel}
@@ -144,6 +153,7 @@ export default function StaffPage() {
               <strong>{u.username}</strong>
               <p className={styles.muted}>
                 {u.roleLabel} · {u.role} · {u.active ? "active" : "off"}
+                {u.email ? ` · ${u.email}` : ""}
               </p>
               {canManage && u.id !== user?.id && (
                 <button type="button" className={styles.btnGhost} onClick={() => void toggleActive(u.id)}>

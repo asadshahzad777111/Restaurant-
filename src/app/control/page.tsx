@@ -38,6 +38,74 @@ function formatBytes(n: number) {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+
+function CredsRow({
+  user,
+  onSave,
+}: {
+  user: {
+    id: string;
+    username: string;
+    password: string;
+    email: string;
+    role: string;
+    roleLabel: string;
+    active: boolean;
+  };
+  onSave: (userId: string, email: string, password: string) => Promise<void>;
+}) {
+  const [email, setEmail] = useState(user.email || "");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  return (
+    <tr>
+      <td>
+        <code>{user.username}</code>
+        {!user.active ? " · off" : ""}
+      </td>
+      <td>
+        {user.roleLabel} ({user.role})
+      </td>
+      <td>
+        <div className={styles.muted} style={{ marginBottom: 4 }}>
+          Current: <code>{user.password || "—"}</code>
+        </div>
+        <input
+          type="text"
+          placeholder="New password (optional)"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{ width: "100%" }}
+        />
+      </td>
+      <td>
+        <input
+          type="email"
+          placeholder="gmail@"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={{ width: "100%" }}
+        />
+      </td>
+      <td>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            setBusy(true);
+            void onSave(user.id, email, password).finally(() => {
+              setBusy(false);
+              setPassword("");
+            });
+          }}
+        >
+          Save
+        </button>
+      </td>
+    </tr>
+  );
+}
+
 export default function ControlPage() {
   const router = useRouter();
   const { setToken, logout, enterHelp } = useStore();
@@ -54,6 +122,22 @@ export default function ControlPage() {
   const [apkBusy, setApkBusy] = useState(false);
   const [apkMessage, setApkMessage] = useState("");
   const [billingBusy, setBillingBusy] = useState("");
+  const [credsTenantId, setCredsTenantId] = useState<string | null>(null);
+  const [credsLoading, setCredsLoading] = useState(false);
+  const [credsUsers, setCredsUsers] = useState<
+    Array<{
+      id: string;
+      username: string;
+      password: string;
+      email: string;
+      role: string;
+      roleLabel: string;
+      active: boolean;
+    }>
+  >([]);
+  const [credsGuests, setCredsGuests] = useState<
+    Array<{ id: string; email: string; name: string; createdAt: string }>
+  >([]);
   const emptyForm = {
     code: "",
     name: "",
@@ -300,6 +384,49 @@ export default function ControlPage() {
     enterHelp(data.token);
     setToken(data.token);
     router.push("/home");
+  }
+
+  async function openCredentials(id: string) {
+    setCredsTenantId(id);
+    setCredsLoading(true);
+    setCredsUsers([]);
+    setCredsGuests([]);
+    try {
+      const res = await api("/api/super/tenants", {
+        method: "POST",
+        body: JSON.stringify({ action: "credentials", id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        window.alert(data.error || "Could not load credentials");
+        setCredsTenantId(null);
+        return;
+      }
+      setCredsUsers(data.users || []);
+      setCredsGuests(data.guestClients || []);
+    } finally {
+      setCredsLoading(false);
+    }
+  }
+
+  async function saveUserCreds(userId: string, email: string, password: string) {
+    if (!credsTenantId) return;
+    const res = await api("/api/super/tenants", {
+      method: "POST",
+      body: JSON.stringify({
+        action: "setUserCreds",
+        id: credsTenantId,
+        userId,
+        email,
+        ...(password ? { password, mustChangePassword: true } : {}),
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      window.alert(data.error || "Save failed");
+      return;
+    }
+    setCredsUsers(data.users || []);
   }
 
   async function uploadApk(slot: "staff" | "customer", file: File) {
@@ -619,7 +746,10 @@ export default function ControlPage() {
                             className={styles.helpBtn}
                             onClick={() => void helpRestaurant(t.id)}
                           >
-                            Help this restaurant
+                            Open Admin (no password)
+                          </button>
+                          <button type="button" onClick={() => void openCredentials(t.id)}>
+                            Passwords & Gmail
                           </button>
                           <button
                             type="button"
@@ -681,6 +811,61 @@ export default function ControlPage() {
                   </tbody>
                 </table>
               </div>
+
+              {credsTenantId && (
+                <div className={styles.create} style={{ marginTop: "1.25rem" }}>
+                  <h2>
+                    Passwords & Gmail ·{" "}
+                    {tenants.find((x) => x.id === credsTenantId)?.name || "Restaurant"}
+                  </h2>
+                  <p className={styles.muted}>
+                    Super-only view. Use <em>Open Admin (no password)</em> for Help mode. Edit Gmail so
+                    staff can Sign in with Google. Leave password blank to keep the current one.
+                  </p>
+                  {credsLoading ? (
+                    <p className={styles.muted}>Loading…</p>
+                  ) : (
+                    <div className={styles.tableWrap}>
+                      <table className={styles.table}>
+                        <thead>
+                          <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Password</th>
+                            <th>Gmail</th>
+                            <th>Save</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {credsUsers.map((u) => (
+                            <CredsRow key={u.id} user={u} onSave={saveUserCreds} />
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {credsGuests.length > 0 && (
+                    <>
+                      <h2 style={{ marginTop: "1rem" }}>Guest Gmail clients</h2>
+                      <ul className={styles.muted}>
+                        {credsGuests.map((g) => (
+                          <li key={g.id}>
+                            {g.name} · {g.email}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    className={styles.helpBtn}
+                    style={{ marginTop: "0.75rem" }}
+                    onClick={() => setCredsTenantId(null)}
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
             </section>
           )}
 

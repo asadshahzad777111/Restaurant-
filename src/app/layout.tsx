@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Plus_Jakarta_Sans } from "next/font/google";
 import { StoreProvider } from "@/lib/store";
+import { ApkExperience } from "@/components/ApkExperience";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -48,7 +49,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${jakarta.variable} ${display.variable}`}>
-        <StoreProvider>{children}</StoreProvider>
+        <StoreProvider>
+          <ApkExperience />
+          {children}
+        </StoreProvider>
       </body>
     </html>
   );

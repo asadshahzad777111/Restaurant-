@@ -100,6 +100,32 @@
   border-radius: 6px;
   padding: 0.4rem 0.85rem;
   cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.billingBanner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  padding: 0.7rem 1.25rem;
+  background: #fde8e8;
+  border-bottom: 2px solid #b32d2e;
+  color: #5c1212;
+  font-size: 0.88rem;
+}
+
+.billingBanner strong {
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.billingBanner span {
+  flex: 1;
+  min-width: 12rem;
 }
 
 .logout {
