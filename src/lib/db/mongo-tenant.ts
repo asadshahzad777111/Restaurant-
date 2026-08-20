@@ -442,6 +442,8 @@ export async function readTenantStaffViewMongo(tenantId: string) {
           code: 1,
           branding: 1,
           shop: 1,
+          payments: 1,
+          specialOffer: 1,
           users: 1,
           stock: 1,
           menu: 1,
