@@ -25,6 +25,8 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [hideSuper, setHideSuper] = useState(() => isStaffShell() || appShell === "staff");
   const [ownerDesk, setOwnerDesk] = useState(false);
+  const [kitchenBrand, setKitchenBrand] = useState<{ name: string; logoUrl: string } | null>(null);
+  const [codeLocked, setCodeLocked] = useState(false);
 
   useEffect(() => {
     const shell = readAppShell();
@@ -50,10 +52,37 @@ export default function LoginPage() {
     const saved = localStorage.getItem(CODE_KEY);
     const urlTenant = new URLSearchParams(window.location.search).get("tenant");
     setCode((urlTenant || saved || (staff ? "" : "DEMO")).toUpperCase());
+    setCodeLocked(Boolean(staff && urlTenant));
     setPassword(staff ? "" : desk ? "super123" : "admin123");
     if (desk) router.prefetch("/control");
     else router.prefetch("/home");
   }, [router]);
+
+  // Live kitchen branding on Staff APK / when a restaurant code is known.
+  useEffect(() => {
+    const staff = appShell === "staff" || isStaffShell() || hideSuper;
+    const kitchen = code.trim().toUpperCase();
+    if (!staff || mode !== "tenant" || kitchen.length < 2) {
+      setKitchenBrand(null);
+      return;
+    }
+    let cancelled = false;
+    void fetch(`/api/state?tenant=${encodeURIComponent(kitchen)}`)
+      .then(async (r) => {
+        const d = await r.json();
+        if (cancelled || !r.ok) return;
+        setKitchenBrand({
+          name: d.public?.branding?.name || kitchen,
+          logoUrl: d.public?.branding?.logoUrl || "",
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setKitchenBrand(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [code, appShell, hideSuper, mode]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -120,10 +149,25 @@ export default function LoginPage() {
     }
   }
 
+  const showKitchenBrand = Boolean(kitchenBrand && mode === "tenant" && (hideSuper || appShell === "staff"));
+
   return (
     <div className={styles.page}>
       <form className={styles.card} onSubmit={onSubmit}>
-        {hideSuper ? (
+        {showKitchenBrand ? (
+          <div className={styles.kitchenBrand}>
+            {kitchenBrand!.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={kitchenBrand!.logoUrl} alt="" className={styles.kitchenLogo} />
+            ) : (
+              <div className={styles.kitchenMark}>{kitchenBrand!.name.slice(0, 1)}</div>
+            )}
+            <div>
+              <strong className={styles.kitchenName}>{kitchenBrand!.name}</strong>
+              <p className={styles.kitchenCode}>Staff · {code || "—"}</p>
+            </div>
+          </div>
+        ) : hideSuper ? (
           <span className={styles.brand}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/ordo-logo-on-dark.svg" alt="ORDO" className={styles.brandImg} height={34} width={148} />
@@ -136,7 +180,11 @@ export default function LoginPage() {
         )}
         <h1>{ownerDesk ? "ORDO HQ" : "Staff login"}</h1>
         {hideSuper ? (
-          <p className={styles.hint}>Use your restaurant code. Platform HQ is not part of this app.</p>
+          <p className={styles.hint}>
+            {showKitchenBrand
+              ? "This Staff app is locked to your kitchen. Logo & name match Settings."
+              : "Use your restaurant code. Platform HQ is not part of this app."}
+          </p>
         ) : ownerDesk ? (
           <p className={styles.hint}>ORDO HQ login — restaurants use ordo.asfins.com/login.</p>
         ) : (
@@ -186,6 +234,7 @@ export default function LoginPage() {
               autoComplete="off"
               placeholder="Kitchen code"
               required
+              readOnly={codeLocked}
             />
           </label>
         )}

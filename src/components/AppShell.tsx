@@ -74,9 +74,23 @@ export function AppShell({
           </div>
         )}
         <header className={styles.top}>
-          <div>
-            <p className={styles.brand}>{tenant.branding.name}</p>
-            <h1 className={styles.title}>{title}</h1>
+          <div className={styles.brandBlock}>
+            {tenant.branding.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={tenant.branding.logoUrl}
+                alt=""
+                className={styles.brandLogo}
+              />
+            ) : (
+              <div className={styles.brandMark} aria-hidden>
+                {(tenant.branding.name || tenant.code || "R").slice(0, 1)}
+              </div>
+            )}
+            <div>
+              <p className={styles.brand}>{tenant.branding.name}</p>
+              <h1 className={styles.title}>{title}</h1>
+            </div>
           </div>
           <div className={styles.meta}>
             {impersonating ? (

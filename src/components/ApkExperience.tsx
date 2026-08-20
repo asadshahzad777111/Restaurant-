@@ -36,8 +36,8 @@ function tipsForShell(shell: string): Tip[] {
     return [
       {
         id: "staff-alerts",
-        title: "New guest orders",
-        body: "Enable notifications so new guest tickets pop up while the Staff APK is in the background.",
+        title: "Order alerts + sound",
+        body: "Tap Enable order sound once. New dine-in, delivery, and pickup tickets beep until you tap Stop alert.",
       },
       {
         id: "billing-scan",

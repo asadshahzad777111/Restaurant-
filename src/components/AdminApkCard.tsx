@@ -71,11 +71,12 @@ export function AdminApkCard() {
 
   return (
     <div className={styles.card}>
-      <h3 style={{ marginTop: 0 }}>Your apps (customers, staff & Play Store)</h3>
+      <h3 style={{ marginTop: 0 }}>Your apps — share Staff & Customer APKs</h3>
       <p className={styles.muted}>
-        Phone pe naam/logo isi kitchen ke Settings se. Customer APK diners ko WhatsApp pe do.{" "}
-        <strong>Customer AAB</strong> Google Play pe upload karo — code <strong>{tenant?.code}</strong>{" "}
-        locked, kisi aur restaurant se merge nahi.
+        <strong>Customer APK</strong> diners ko do (WhatsApp / sideload). <strong>Staff APK</strong>{" "}
+        team / POS / kitchen phones pe. In-app logo & name = Settings (live). Phone home-screen icon
+        ke liye Super se naya branded build chahiye. Code{" "}
+        <strong>{tenant?.code}</strong> locked — kisi aur kitchen se merge nahi.
       </p>
       <div className={styles.row} style={{ alignItems: "center", marginBottom: "0.75rem" }}>
         {logo ? (
@@ -139,7 +140,8 @@ export function AdminApkCard() {
         </div>
       ))}
       <p className={styles.muted} style={{ marginBottom: 0 }}>
-        Play Console: Create app → upload <strong>AAB</strong> (not APK). See docs/PLAY-STORE.md.
+        Play Console (optional): upload <strong>AAB</strong> not APK — docs/PLAY-STORE.md. Super Apps
+        tab uploads binaries; this card only downloads <em>your</em> kitchen’s files.
       </p>
     </div>
   );
