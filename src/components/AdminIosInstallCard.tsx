@@ -90,8 +90,10 @@ export function AdminIosInstallCard() {
       </div>
 
       <ol className={styles.muted} style={{ margin: "0 0 0.75rem", paddingLeft: "1.2rem" }}>
-        <li>iPhone Safari mein link kholo (Messages / WhatsApp Share Sheet se bhi).</li>
-        <li>Share → <strong>Add to Home Screen</strong> → Add.</li>
+        <li>iPhone pe Customer/Staff link WhatsApp se bhejo (Copy buttons upar).</li>
+        <li>
+          Link kholte hi <strong>picture guide</strong> aati hai: Share → Add to Home Screen → Add.
+        </li>
         <li>Home icon se kholo — same kitchen code locked rehti hai.</li>
         <li>
           Staff: login ke baad <strong>Enable order sound</strong> — naya order beep,{" "}
@@ -99,9 +101,8 @@ export function AdminIosInstallCard() {
         </li>
       </ol>
       <p className={styles.muted} style={{ marginBottom: 0 }}>
-        Needs internet. Background Safari audio often pauses — beep jab app open / PWA foreground
-        ho. Home Screen icon/label change ke baad kabhi remove + re-add chahiye. Detail:{" "}
-        docs/IOS-PWA-SAFE-PLAN.md
+        Jis customer ko Add to Home Screen nahi aata, guide usi link ke andar steps dikhati hai — alag
+        video bhejne ki zaroorat nahi. Needs internet. Detail: docs/IOS-HOME-SCREEN-GUIDE-PLAN.md
       </p>
     </div>
   );

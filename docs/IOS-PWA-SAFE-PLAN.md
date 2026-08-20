@@ -123,3 +123,9 @@ Under **Your apps**:
 2. Share → Add to Home Screen → open icon → still same kitchen  
 3. Copy Staff URL → login → logo/name match Settings → Enable sound → order beep → Stop  
 4. Confirm no path to ORDO HQ from Staff PWA  
+
+---
+
+## 11. In-link Home Screen guide
+
+Shared URLs include `guide=1`. iPhone Safari (not standalone) shows a **picture-step sheet**: Share → Add to Home Screen (Urdu + English). See `docs/IOS-HOME-SCREEN-GUIDE-PLAN.md`.

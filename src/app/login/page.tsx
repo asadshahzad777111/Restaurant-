@@ -7,6 +7,7 @@ import { TOKEN_KEY, OWNER_TOKEN_KEY, useStore } from "@/lib/store";
 import { setHelpModeCookieClient } from "@/lib/help-mode";
 import { isCustomerShell, isStaffShell, readAppShell, readLockedCustomerTenant, readLockedStaffTenant } from "@/lib/app-shell";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { IosHomeScreenGuide } from "@/components/IosHomeScreenGuide";
 import styles from "./login.module.css";
 
 const CODE_KEY = "ordo_staff_tenant_code";
@@ -27,6 +28,7 @@ export default function LoginPage() {
   const [ownerDesk, setOwnerDesk] = useState(false);
   const [kitchenBrand, setKitchenBrand] = useState<{ name: string; logoUrl: string } | null>(null);
   const [codeLocked, setCodeLocked] = useState(false);
+  const [forceIosGuide, setForceIosGuide] = useState(false);
 
   useEffect(() => {
     const shell = readAppShell();
@@ -57,6 +59,9 @@ export default function LoginPage() {
     const saved = localStorage.getItem(CODE_KEY);
     const urlTenant = new URLSearchParams(window.location.search).get("tenant");
     const lockedStaff = readLockedStaffTenant();
+    const guide = new URLSearchParams(window.location.search).get("guide") === "1"
+      || new URLSearchParams(window.location.search).get("install") === "1";
+    setForceIosGuide(guide);
     setCode((urlTenant || lockedStaff || saved || (staff ? "" : "DEMO")).toUpperCase());
     setCodeLocked(Boolean(staff && (urlTenant || lockedStaff)));
     setPassword(staff ? "" : desk ? "super123" : "admin123");
@@ -159,6 +164,13 @@ export default function LoginPage() {
 
   return (
     <div className={styles.page}>
+      {!ownerDesk && (hideSuper || appShell === "staff" || forceIosGuide) ? (
+        <IosHomeScreenGuide
+          audience="staff"
+          restaurantName={kitchenBrand?.name}
+          force={forceIosGuide}
+        />
+      ) : null}
       <form className={styles.card} onSubmit={onSubmit}>
         {showKitchenBrand ? (
           <div className={styles.kitchenBrand}>

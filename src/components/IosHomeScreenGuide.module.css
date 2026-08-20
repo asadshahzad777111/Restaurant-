@@ -1,0 +1,194 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(18, 14, 10, 0.72);
+  display: grid;
+  place-items: end center;
+  padding: 0.75rem;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+.panel {
+  width: min(28rem, 100%);
+  max-height: min(92vh, 40rem);
+  overflow: auto;
+  background: linear-gradient(165deg, #fff9f2 0%, #f3ebe0 55%, #efe4d6 100%);
+  color: #1c1916;
+  border-radius: 1.25rem 1.25rem 1rem 1rem;
+  padding: 1.15rem 1.15rem 1.25rem;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.25);
+}
+
+.kicker {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7a6550;
+  font-weight: 700;
+}
+
+.panel h2 {
+  margin: 0.25rem 0 0.4rem;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.lead {
+  margin: 0 0 0.85rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: #4a3f35;
+}
+
+.stepCard {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 0.85rem 0.85rem 1rem;
+  border: 1px solid rgba(28, 25, 22, 0.08);
+  text-align: center;
+}
+
+.stepCard h3 {
+  margin: 0.35rem 0 0.35rem;
+  font-size: 1.05rem;
+}
+
+.ur {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  color: #1c1916;
+}
+
+.en {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: #6b5c4d;
+}
+
+.art {
+  width: 100%;
+  max-width: 11rem;
+  height: auto;
+  margin: 0 auto;
+  display: block;
+}
+
+.phone,
+.sheet {
+  fill: #f7f1e8;
+  stroke: #1c1916;
+  stroke-width: 2;
+}
+
+.accent {
+  fill: #c45c26;
+}
+
+.arrow {
+  stroke: #c45c26;
+}
+
+.row {
+  fill: #e8dfd2;
+}
+
+.rowHi {
+  fill: #fde8d8;
+  stroke: #c45c26;
+  stroke-width: 1.5;
+}
+
+.mini {
+  font-size: 5px;
+  fill: #1c1916;
+  font-family: system-ui, sans-serif;
+}
+
+.miniOn {
+  font-size: 6px;
+  fill: #fff;
+  font-family: system-ui, sans-serif;
+  font-weight: 700;
+}
+
+.icon {
+  fill: #c45c26;
+  opacity: 0.95;
+}
+
+.iconDim {
+  fill: #d9cfc2;
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0.85rem 0 0.75rem;
+}
+
+.dot,
+.dotOn {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: #cbbba8;
+}
+
+.dotOn {
+  background: #c45c26;
+  width: 1.1rem;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.primary,
+.ghost {
+  appearance: none;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.primary {
+  border: none;
+  background: #1c1916;
+  color: #fff9f2;
+}
+
+.ghost {
+  border: 1px solid rgba(28, 25, 22, 0.2);
+  background: transparent;
+  color: #1c1916;
+}
+
+.foot {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: #7a6550;
+}
+
+@media (min-width: 640px) {
+  .overlay {
+    place-items: center;
+  }
+
+  .panel {
+    border-radius: 1.25rem;
+  }
+}

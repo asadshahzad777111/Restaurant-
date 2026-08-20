@@ -7,6 +7,8 @@ import { Suspense } from "react";
 import { LAST_GUEST_TENANT_KEY, guestOrderPath, isTenantCode, parseGuestQr } from "@/lib/guest";
 import { isCustomerShell, readAppShell, readLockedCustomerTenant } from "@/lib/app-shell";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { IosHomeScreenGuide } from "@/components/IosHomeScreenGuide";
+import { isIosDevice, isStandaloneDisplay } from "@/lib/ios-guide";
 import styles from "./guest.module.css";
 
 const GUEST_CLIENT_KEY = "ordo_guest_client_v1";
@@ -15,6 +17,7 @@ function GuestInner() {
   const router = useRouter();
   const params = useSearchParams();
   const preset = (params.get("tenant") || params.get("code") || "").toUpperCase();
+  const wantGuide = params.get("guide") === "1" || params.get("install") === "1";
   const [code, setCode] = useState(preset);
   const [paste, setPaste] = useState("");
   const [error, setError] = useState("");
@@ -25,6 +28,7 @@ function GuestInner() {
     typeof window === "undefined" ? "web" : readAppShell(),
   );
   const [brand, setBrand] = useState<{ name: string; logoUrl: string } | null>(null);
+  const [iosGuideReady, setIosGuideReady] = useState(false);
 
   useEffect(() => {
     const shell = readAppShell();
@@ -76,17 +80,25 @@ function GuestInner() {
   }, [preset, code]);
 
   // Customer APK/PWA with baked tenant: go straight to that kitchen’s menu (no mix-up).
+  // On iPhone Safari, wait until Add-to-Home-Screen guide finishes so diners see the steps.
   useEffect(() => {
     const shell = readAppShell();
     if (shell !== "customer" && !isCustomerShell()) return;
     const locked = (preset || readLockedCustomerTenant() || "").toUpperCase();
     if (!locked || !isTenantCode(locked)) return;
+    if (isIosDevice() && !isStandaloneDisplay() && !iosGuideReady) return;
     const t = window.setTimeout(() => {
       localStorage.setItem(LAST_GUEST_TENANT_KEY, locked);
       router.replace(guestOrderPath({ tenant: locked }));
-    }, 900);
+    }, iosGuideReady ? 200 : 900);
     return () => window.clearTimeout(t);
-  }, [preset, router]);
+  }, [preset, router, iosGuideReady]);
+
+  // Desktop / Android / already-installed: don't block on iOS guide.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!isIosDevice() || isStandaloneDisplay()) setIosGuideReady(true);
+  }, []);
 
   async function openRestaurant(tenant: string, extra?: { table?: string; mode?: "pickup" | "delivery" | "table" }) {
     const next = tenant.trim().toUpperCase();
@@ -156,6 +168,12 @@ function GuestInner() {
 
   return (
     <div className={styles.page}>
+      <IosHomeScreenGuide
+        audience="customer"
+        restaurantName={brand?.name}
+        force={wantGuide}
+        onFinished={() => setIosGuideReady(true)}
+      />
       <header className={styles.top}>
         {appShell === "customer" || isCustomerShell() ? (
           <span className={styles.brand} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
