@@ -1,28 +1,17 @@
 import Link from "next/link";
 import styles from "./lab.module.css";
 
-const LINKS = [
-  { href: "/", label: "Marketing home", note: "ORDO landing" },
-  {
-    href: "/login?owner=1",
-    label: "ORDO HQ login (you)",
-    note: "Platform owner — WordPress-simple control",
-  },
-  { href: "/control", label: "ORDO HQ panel", note: "After owner login" },
-  { href: "/login", label: "Restaurant staff login", note: "DEMO · admin / admin123" },
-  { href: "/order?tenant=DEMO", label: "Guest hub", note: "EN/Urdu · fees · modifiers" },
-  { href: "/order?tenant=DEMO&table=3", label: "Table 3 QR", note: "Dine-in + table status" },
-  { href: "/order?tenant=DEMO&mode=pickup", label: "Pickup", note: "Packing fee applies" },
-  { href: "/order?tenant=DEMO&mode=delivery", label: "Delivery", note: "Delivery fee applies" },
-  { href: "/home", label: "Staff Home", note: "Low stock + day close link" },
-  { href: "/pos", label: "POS", note: "Modifiers · fees · print bill" },
-  { href: "/orders", label: "Orders", note: "Cancel/void · msgs · print" },
-  { href: "/kitchen", label: "Kitchen", note: "Mods on tickets" },
-  { href: "/tables", label: "Tables", note: "empty / occupied / bill" },
-  { href: "/menu", label: "Menu admin", note: "One-tap 86" },
-  { href: "/day-close", label: "Day close", note: "Shift summary" },
-  { href: "/settings", label: "Settings", note: "Fees · export · R2 backup · password" },
-  { href: "/api/health", label: "Health (uptime)", note: "Mongo/file + integrations flags" },
+/** Internal / local demo hub — not linked from public marketing. */
+const GUEST = [
+  { href: "/order?tenant=DEMO", label: "Guest menu", note: "Main demo" },
+  { href: "/order?tenant=DEMO&table=3", label: "Table 3 QR", note: "Dine-in" },
+  { href: "/order?tenant=DEMO&mode=pickup", label: "Pickup", note: "Counter collect" },
+  { href: "/order?tenant=DEMO&mode=delivery", label: "Delivery", note: "Address + COD" },
+];
+
+const PRIVATE = [
+  { href: "/staff", label: "Restaurant staff access", note: "Separate login page — share privately" },
+  { href: "/login?owner=1", label: "ORDO HQ (owner)", note: "You only — not for clients" },
 ];
 
 export default function LabPage() {
@@ -30,14 +19,26 @@ export default function LabPage() {
     <div className={styles.page}>
       <header>
         <p className={styles.brand}>ORDO</p>
-        <h1>Lab — demo links</h1>
+        <h1>Internal demo hub</h1>
         <p className={styles.sub}>
-          Localhost only. Live: restaurants on ordo.asfins.com · owner on control.asfins.com (no owner
-          button on restaurant login). Cancel/void ≠ refund.
+          Not linked from the public homepage. Guests use the demo menu; staff get a private /staff link.
         </p>
       </header>
+      <h2 style={{ fontSize: "1rem", margin: "1.5rem 0 0.5rem" }}>Guest demos</h2>
       <ul className={styles.list}>
-        {LINKS.map((l) => (
+        {GUEST.map((l) => (
+          <li key={l.href}>
+            <Link href={l.href}>
+              <strong>{l.label}</strong>
+              <span>{l.note}</span>
+              <code>{l.href}</code>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <h2 style={{ fontSize: "1rem", margin: "1.5rem 0 0.5rem" }}>Private access (do not put on demo site)</h2>
+      <ul className={styles.list}>
+        {PRIVATE.map((l) => (
           <li key={l.href}>
             <Link href={l.href}>
               <strong>{l.label}</strong>

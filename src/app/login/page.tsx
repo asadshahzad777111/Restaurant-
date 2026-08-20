@@ -60,11 +60,11 @@ function LoginForm() {
         <Link href={ownerOnly ? "/control" : "/"} className={ownerOnly ? styles.brandHq : styles.brand}>
           {ownerOnly ? "ORDO HQ" : "ORDO"}
         </Link>
-        <h1>{ownerOnly ? "ORDO HQ login" : "Restaurant staff login"}</h1>
+        <h1>{ownerOnly ? "ORDO HQ login" : "Restaurant access"}</h1>
         <p className={styles.hint} style={{ marginTop: 0 }}>
           {ownerOnly
             ? "Platform owner only — manage restaurants and help them without their password."
-            : "Use your restaurant code. This is not the owner HQ."}
+            : "Private staff page. Guests use the public demo menu — they never need this login."}
         </p>
         {!ownerOnly && (
           <label className={styles.field}>

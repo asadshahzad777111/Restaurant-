@@ -115,10 +115,10 @@ export function MarketingHome() {
         <nav className={styles.navLinks}>
           <a href="#product">Product</a>
           <a href="#plans">Plans</a>
+          <a href="#demo">Live demo</a>
           <a href="#contact">Contact</a>
-          <Link href="/lab">Lab</Link>
-          <Link href="/login" className={styles.navCta}>
-            Staff login
+          <Link href="/order?tenant=DEMO" className={styles.navCta}>
+            Try demo
           </Link>
         </nav>
       </header>
@@ -131,18 +131,19 @@ export function MarketingHome() {
           initial="hidden"
           animate="show"
         >
+          <p className={styles.demoPill}>Live demo — no account needed</p>
           <p className={styles.heroBrand}>ORDO</p>
           <h1 className={styles.heroTitle}>Restaurant OS for every outlet — isolated by design.</h1>
           <p className={styles.heroSub}>
-            Each kitchen gets its own login, menu, stock, staff, and guest QR — never mixed across restaurants.
+            See how guests order from a QR menu. This public site is a demo — staff tools stay on a separate page.
           </p>
           <div className={styles.heroCtas}>
-            <a href="#plans" className={styles.primary}>
-              See plans
-            </a>
-            <Link href="/order?tenant=DEMO" className={styles.secondary}>
+            <Link href="/order?tenant=DEMO" className={styles.primary}>
               Try guest demo
             </Link>
+            <a href="#plans" className={styles.secondary}>
+              See plans
+            </a>
           </div>
         </motion.div>
         <motion.div
@@ -264,6 +265,31 @@ export function MarketingHome() {
       </motion.section>
 
       <motion.section
+        className={styles.section}
+        id="demo"
+        variants={section}
+        initial="hidden"
+        whileInView="show"
+        viewport={viewOnce}
+      >
+        <h2>Try the live demo</h2>
+        <p className={styles.lead}>
+          Open as a guest — pick food, place an order, track status. No password. No staff login on this page.
+        </p>
+        <div className={styles.heroCtas}>
+          <Link href="/order?tenant=DEMO" className={styles.primary}>
+            Guest menu (DEMO)
+          </Link>
+          <Link href="/order?tenant=DEMO&table=3" className={styles.secondary}>
+            Table 3 QR demo
+          </Link>
+          <Link href="/order?tenant=DEMO&mode=delivery" className={styles.secondary}>
+            Delivery demo
+          </Link>
+        </div>
+      </motion.section>
+
+      <motion.section
         className={styles.sectionAlt}
         variants={section}
         initial="hidden"
@@ -292,13 +318,16 @@ export function MarketingHome() {
         </details>
         <details className={styles.faq}>
           <summary>How do guests order?</summary>
-          <p>Scan a table QR or open `/order?tenant=CODE` for pickup and delivery with the right payment choices.</p>
+          <p>
+            Open the live demo above, or scan a table QR. Guests never need a staff password — they only use the
+            guest menu.
+          </p>
         </details>
         <details className={styles.faq}>
-          <summary>Who runs the platform?</summary>
+          <summary>Where do restaurant staff sign in?</summary>
           <p>
-            The platform owner uses a private control host (not on the restaurant site) to create restaurants and
-            open them for support — without needing the restaurant password.
+            Staff use a separate access page (not this demo site). We share that link privately when your restaurant
+            goes live.
           </p>
         </details>
       </motion.section>
@@ -371,8 +400,7 @@ export function MarketingHome() {
 
       <footer className={styles.footer}>
         <strong>ORDO</strong>
-        <span>Multi-tenant restaurant OS</span>
-        <Link href="/login">Staff login</Link>
+        <span>Multi-tenant restaurant OS · public demo</span>
       </footer>
     </div>
   );

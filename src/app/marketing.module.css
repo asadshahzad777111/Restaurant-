@@ -75,6 +75,20 @@
   max-width: 36rem;
 }
 
+.demoPill {
+  display: inline-block;
+  margin: 0 0 0.85rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 138, 61, 0.45);
+  background: rgba(255, 106, 26, 0.12);
+  color: #ffb07a;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .heroBrand {
   margin: 0 0 0.75rem;
   font-size: clamp(2.2rem, 6vw, 4.25rem);
