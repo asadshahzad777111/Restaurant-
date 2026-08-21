@@ -1,6 +1,6 @@
 :root {
   --font: var(--font-jakarta), "Plus Jakarta Sans", sans-serif;
-  --display: var(--font-display), Fraunces, "Times New Roman", serif;
+  --display: var(--font-display), "Instrument Serif", "Times New Roman", serif;
 
   --ember: #c45c26;
   --ember-bright: #d96a30;
@@ -61,6 +61,11 @@ body {
   color: var(--guest-text);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+body:has([data-marketing-page]) {
+  background: #f6eee2;
+  color: #1a1612;
 }
 
 a {

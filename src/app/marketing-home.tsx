@@ -319,7 +319,7 @@ export function MarketingHome() {
   }
 
   return (
-    <div className={styles.page} data-theme={theme}>
+    <div className={styles.page} data-theme={theme} data-marketing-page>
       <header className={styles.nav}>
         <div className={styles.navInner}>
           <Link href="/" className={styles.navBrand} onClick={closeMenu}>
@@ -423,70 +423,124 @@ export function MarketingHome() {
           </ul>
         </div>
 
-        <div className={styles.heroPreview} aria-label="ORDO live workspace preview">
-          <div className={styles.laptop}>
-            <div className={styles.laptopChrome}>
-              <span className={styles.dots} aria-hidden>
-                <i />
-                <i />
-                <i />
-              </span>
-              <strong>ORDO OS</strong>
-              <em>System connected</em>
+        <div className={styles.heroStage}>
+          <figure className={styles.productShot}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/thermal-printer.svg"
+              alt="Compact 58mm thermal receipt printer printing an ORDO bill"
+              width={640}
+              height={760}
+            />
+            <div className={styles.phoneFloat} aria-hidden>
+              <div className={styles.laptop}>
+                <div className={styles.laptopChrome}>
+                  <span className={styles.dots}>
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                  <strong>ORDO OS</strong>
+                  <em>Live</em>
+                </div>
+                <div className={styles.workspace}>
+                  <div className={styles.wsHead}>
+                    <div>
+                      <span>Operations</span>
+                      <strong>LIVE WORKSPACE</strong>
+                    </div>
+                    <b className={styles.liveDot}>LIVE</b>
+                  </div>
+                  <div className={styles.wsPills}>
+                    <article>
+                      <span>Orders</span>
+                      <strong>Live</strong>
+                    </article>
+                    <article>
+                      <span>Kitchen</span>
+                      <strong>Sync</strong>
+                    </article>
+                    <article>
+                      <span>Print</span>
+                      <strong>58mm</strong>
+                    </article>
+                  </div>
+                  <div className={styles.wsSplit}>
+                    <div className={styles.wsTickets}>
+                      <article>
+                        <span>Dining · T7</span>
+                        <strong>Karahi + naan</strong>
+                        <small>Preparing</small>
+                      </article>
+                      <article>
+                        <span>Takeaway</span>
+                        <strong>Seekh + chai</strong>
+                        <small>Ready</small>
+                      </article>
+                    </div>
+                    <div className={styles.wsRows}>
+                      <div>
+                        <span>Customer order</span>
+                        <p>Menu and counter</p>
+                        <em>In</em>
+                      </div>
+                      <div>
+                        <span>Kitchen rail</span>
+                        <p>Same kitchen only</p>
+                        <em>Sync</em>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className={styles.workspace}>
-              <div className={styles.wsHead}>
-                <div>
-                  <span>Operations overview</span>
-                  <strong>LIVE WORKSPACE</strong>
-                </div>
-                <b className={styles.liveDot}>LIVE</b>
+          </figure>
+          <p className={styles.productCaption}>POS-58 · 58mm thermal · ORDO monthly package</p>
+        </div>
+      </section>
+
+      <section className={styles.gallery} aria-label="Kitchen stills">
+        <div className={styles.wrap}>
+          <p className={styles.kicker}>On the pass</p>
+          <h2>Built to look like the kitchen it serves.</h2>
+          <div className={styles.stills}>
+            <div className={`${styles.still} ${styles.stillKitchen}`}>
+              <div className={styles.bokeh} aria-hidden>
+                <i />
+                <i />
+                <i />
+                <i />
               </div>
-              <div className={styles.wsPills}>
+              <p className={styles.stillLabel}>Service light</p>
+            </div>
+            <div className={`${styles.still} ${styles.stillPass}`}>
+              <div className={styles.rail}>
                 <article>
-                  <span>Orders</span>
-                  <strong>Live flow</strong>
+                  <span>T7 · Dining</span>
+                  <strong>Karahi, naan</strong>
                 </article>
                 <article>
-                  <span>Kitchen</span>
-                  <strong>Connected</strong>
+                  <span>Ayesha · Pickup</span>
+                  <strong>Seekh, chai</strong>
                 </article>
                 <article>
-                  <span>Accounts</span>
-                  <strong>Synced</strong>
+                  <span>COD · Delivery</span>
+                  <strong>Biryani box</strong>
                 </article>
               </div>
-              <div className={styles.wsSplit}>
-                <div className={styles.wsTickets}>
-                  <article>
-                    <span>Dining · T7</span>
-                    <strong>Karahi + naan</strong>
-                    <small>Preparing</small>
-                  </article>
-                  <article>
-                    <span>Takeaway · Ayesha</span>
-                    <strong>Seekh + chai</strong>
-                    <small>Ready</small>
-                  </article>
-                </div>
-                <div className={styles.wsRows}>
-                  <div>
-                    <span>Customer order</span>
-                    <p>Menu and counter channels</p>
-                    <em>Received</em>
-                  </div>
-                  <div>
-                    <span>Kitchen production</span>
-                    <p>Station-aware ticket rail</p>
-                    <em>In sync</em>
-                  </div>
-                  <div>
-                    <span>Stock movement</span>
-                    <p>This kitchen’s ledger only</p>
-                    <em>Tracked</em>
-                  </div>
-                </div>
+              <p className={styles.stillLabel}>Ticket rail</p>
+            </div>
+            <div className={`${styles.still} ${styles.stillTicket}`}>
+              <div className={styles.ticketCard}>
+                <b>ORDO</b>
+                <em>Demo Kitchen</em>
+                Karahi · ₨890
+                <br />
+                Naan ×2 · ₨160
+                <br />
+                <strong>Total ₨1,130</strong>
               </div>
+              <p className={styles.stillLabel}>58mm paper</p>
             </div>
           </div>
         </div>
@@ -642,13 +696,61 @@ export function MarketingHome() {
         </div>
       </section>
 
-      <section className={styles.sectionSoft} id="shop">
+      <section className={styles.shopHero} id="shop">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>ORDO shop</p>
-          <h2>Software and a 58mm thermal printer, on a monthly package.</h2>
+          <div className={styles.shopGrid}>
+            <figure className={styles.shopVisual}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/thermal-printer.svg"
+                alt="ORDO 58mm thermal printer with a printed kitchen receipt"
+                width={640}
+                height={760}
+              />
+            </figure>
+            <div className={styles.shopCopy}>
+              <p className={styles.kicker}>ORDO shop</p>
+              <h2>Software and a 58mm thermal printer, on a monthly package.</h2>
+              <p>
+                Launch pricing for Pakistan kitchens. Month to month. No per-order cut. Confirm ORDO OS plus a
+                compact POS-58 printer on WhatsApp — no fake checkout on this page.
+              </p>
+              <h3>POS software and paper, together.</h3>
+              <p>
+                Guest QR, counter POS, and kitchen tickets on the plan you pick — plus a quoted 58mm thermal
+                printer when you want a bill in the hand. Browser print is included on every plan. Hardware,
+                paper width, and delivery are confirmed on WhatsApp.
+              </p>
+              <ul className={styles.shopTags}>
+                <li>ORDO OS</li>
+                <li>POS-58 · 58mm</li>
+                <li>Setup guidance</li>
+                <li>Starter ₨999 / Pro ₨1,999 / Enterprise ₨4,499</li>
+              </ul>
+              <div className={styles.heroCtas}>
+                <a href="#contact" className={styles.primary}>
+                  Request POS + printer quote
+                </a>
+                <a href="#plans" className={styles.shopSecondary}>
+                  See monthly plans
+                </a>
+              </div>
+              <p className={styles.shopNote}>
+                The workspace on the printer picture demonstrates ORDO OS. A phone is not included unless we
+                agree separately.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.sectionSoft} id="plans">
+        <div className={styles.wrap}>
+          <p className={styles.kicker}>Monthly plans</p>
+          <h2>Pick a kitchen plan. Add paper when you need it.</h2>
           <p className={styles.lead}>
-            Launch pricing for Pakistan kitchens. Month to month. No per-order cut. Confirm ORDO OS plus a
-            compact POS-58 printer on WhatsApp — no fake checkout on this page.
+            Same three prices on every quote. Hardware is extra and confirmed in the WhatsApp thread — not a
+            surprise checkout on this site.
           </p>
           <div className={styles.plans}>
             {PLANS.map((p) => (
@@ -670,42 +772,6 @@ export function MarketingHome() {
                 </a>
               </article>
             ))}
-          </div>
-
-          <div className={styles.printBox} id="print">
-            <div className={styles.printVisual}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/thermal-printer.svg"
-                alt="Compact 58mm thermal receipt printer for ORDO POS"
-                width={480}
-                height={420}
-              />
-              <p>POS-58 · 58mm thermal</p>
-            </div>
-            <div>
-              <p className={styles.kicker}>ORDO + printer package</p>
-              <h3>POS software and a 58mm thermal printer, with a monthly plan.</h3>
-              <p>
-                Sell the counter and the paper together: ORDO OS (guest QR, POS, kitchen tickets) plus a
-                compact 58mm thermal receipt printer. Browser print is included on every plan. Hardware is
-                confirmed on WhatsApp — model, paper width, and delivery — with Starter ₨999, Pro ₨1,999, or
-                Enterprise ₨4,499 per month.
-              </p>
-              <ul className={styles.printIncluded}>
-                <li>ORDO OS on the plan you pick — isolated per kitchen.</li>
-                <li>58mm thermal receipt layout: name, items, qty, rates, totals, footer.</li>
-                <li>Quoted compact ESC/POS printer (POS-58 class) when you want paper at the counter.</li>
-                <li>Setup guidance for the printer and the software workflow.</li>
-              </ul>
-              <p className={styles.printNote}>
-                Any phone in product pictures demonstrates ORDO OS. It is not included in a printer package
-                unless we agree separately.
-              </p>
-              <a href="#contact" className={styles.planCta} style={{ display: "inline-flex", width: "auto" }}>
-                Request POS + printer quote
-              </a>
-            </div>
           </div>
           <div className={styles.printSteps}>
             <article>

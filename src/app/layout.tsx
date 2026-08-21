@@ -1,19 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
+import { Instrument_Serif, Plus_Jakarta_Sans } from "next/font/google";
 import { StoreProvider } from "@/lib/store";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-jakarta",
-  weight: ["400", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-const display = Fraunces({
+const display = Instrument_Serif({
   subsets: ["latin"],
   variable: "--font-display",
-  weight: ["600", "700"],
+  weight: "400",
+  style: ["normal", "italic"],
   display: "swap",
 });
 
