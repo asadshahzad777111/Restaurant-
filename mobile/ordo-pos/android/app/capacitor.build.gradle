@@ -9,7 +9,8 @@ android {
 
 apply from: "../capacitor-cordova-android-plugins/cordova.variables.gradle"
 dependencies {
-
+    implementation project(':asfixgear-asfix-thermal-print')
+    implementation project(':capacitor-preferences')
 
 }
 
