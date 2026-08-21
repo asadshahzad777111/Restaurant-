@@ -7,6 +7,7 @@ import {
   listPlans,
   listTenantsMeta,
   setTenantStatus,
+  updateBranding,
   updateTenantMeta,
 } from "@/lib/db";
 import { AuthError, impersonateTenant, requireSuper } from "@/lib/session";
@@ -102,8 +103,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ tenant: meta });
     }
 
-    if (action === "rename") {
-      const meta = await updateTenantMeta(body.id, { name: body.name });
+    if (action === "rename" || action === "update") {
+      const name = String(body.name || "").trim();
+      if (!body.id || !name) {
+        return NextResponse.json({ error: "id and name required" }, { status: 400 });
+      }
+      const adminEmail = String(body.adminEmail || "").trim();
+      if (adminEmail && !looksLikeEmail(adminEmail)) {
+        return NextResponse.json({ error: "Invalid Admin email" }, { status: 400 });
+      }
+      const patch: { name: string; planId?: PlanId; adminEmail?: string } = { name };
+      if (body.planId && ["starter", "pro", "enterprise"].includes(body.planId)) {
+        patch.planId = body.planId as PlanId;
+      }
+      if (adminEmail) patch.adminEmail = adminEmail;
+      const meta = await updateTenantMeta(body.id, patch);
+      await updateBranding(body.id, { name });
       return NextResponse.json({ tenant: meta });
     }
 

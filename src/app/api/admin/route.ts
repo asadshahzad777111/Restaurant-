@@ -71,6 +71,13 @@ export async function PUT(req: NextRequest) {
       if (!(await hasPermission(session, "settings"))) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
+      if (action === "branding") {
+        const name = String(body.branding?.name ?? "").trim();
+        if (!name) {
+          return NextResponse.json({ error: "Restaurant name required" }, { status: 400 });
+        }
+        body.branding = { ...body.branding, name };
+      }
       await updateBranding(tenantId, body.branding ?? {}, body.shop);
       return NextResponse.json({ tenant: await readTenantStaffView(tenantId) });
     }

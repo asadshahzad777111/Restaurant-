@@ -3,7 +3,6 @@ import { getDb } from "../mongo";
 import { demoSeedEnabled } from "../env";
 import { PLATFORM_CONTACT_WHATSAPP } from "../contact";
 import { defaultPlatformSeed, demoTenantSeed, secondTenantSeed } from "./seeds";
-import { demoMenu, demoStock } from "../demo-catalog";
 
 const OLD_PLATFORM_WHATSAPP = ["+923001234567", "+923000000000", "03001234567"];
 
@@ -40,12 +39,8 @@ export async function ensureMongoBootstrap() {
   if (!demo) {
     const d = demoTenantSeed();
     await tcol.insertOne({ _id: d.id, ...d } as never);
-  } else {
-    await tcol.updateOne(
-      { _id: "tenant_demo" } as never,
-      { $set: { menu: demoMenu(), stock: demoStock() } },
-    );
   }
+  /* Existing DEMO/ISO2 kitchens keep Mongo menu, stock, branding — never reset on deploy. */
   const second = await tcol.findOne({ _id: "tenant_iso2" } as never);
   if (!second) {
     const s = secondTenantSeed();

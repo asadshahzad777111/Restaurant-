@@ -187,6 +187,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [applySession]);
 
   const applyTenant = useCallback((next: TenantState) => {
+    if (memorySession) writeMemory({ ...memorySession, tenant: next });
     startTransition(() => setTenant(next));
   }, []);
 

@@ -7,7 +7,7 @@ import { uploadTenantMedia } from "@/lib/media-client";
 import styles from "../staff.module.css";
 
 export default function SettingsPage() {
-  const { tenant, api, applyTenant, user, token } = useStore();
+  const { tenant, api, applyTenant, user, token, loading } = useStore();
   const [msg, setMsg] = useState("");
   const [branding, setBranding] = useState({
     name: "",
@@ -43,6 +43,10 @@ export default function SettingsPage() {
 
   async function saveBranding(e: React.FormEvent) {
     e.preventDefault();
+    if (!branding.name.trim()) {
+      setMsg("Restaurant name required");
+      return;
+    }
     const res = await api("/api/admin", {
       method: "PUT",
       body: JSON.stringify({
@@ -118,6 +122,14 @@ export default function SettingsPage() {
   }
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
+
+  if (loading || !tenant) {
+    return (
+      <AppShell title="Settings">
+        <p className={styles.muted}>Loading current values…</p>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell title="Settings">

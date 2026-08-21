@@ -10,7 +10,7 @@ import styles from "../staff.module.css";
 
 export default function MenuPage() {
   const { tenant, api, applyTenant, token } = useStore();
-  const [draft, setDraft] = useState({
+  const emptyDraft = {
     name: "",
     description: "",
     price: "",
@@ -19,7 +19,9 @@ export default function MenuPage() {
     dealLabel: "",
     compareAtPrice: "",
     imageUrl: "",
-  });
+  };
+  const [draft, setDraft] = useState(emptyDraft);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
 
   async function saveMenu(menu: MenuItem[]) {
@@ -49,34 +51,56 @@ export default function MenuPage() {
     }
   }
 
+  function startEdit(item: MenuItem) {
+    setEditingId(item.id);
+    setDraft({
+      name: item.name,
+      description: item.description || "",
+      price: String(item.price),
+      category: item.isDeal ? "Burgers" : item.category,
+      isDeal: !!item.isDeal,
+      dealLabel: item.dealLabel || "",
+      compareAtPrice: item.compareAtPrice != null ? String(item.compareAtPrice) : "",
+      imageUrl: item.imageUrl || "",
+    });
+    setMsg("");
+  }
+
+  function clearDraft() {
+    setEditingId(null);
+    setDraft(emptyDraft);
+  }
+
   async function addItem(e: React.FormEvent) {
     e.preventDefault();
     if (!tenant) return;
-    const item: MenuItem = {
-      id: `m_${Date.now()}`,
+    const fields = {
       name: draft.name,
       description: draft.description,
       price: Number(draft.price),
       category: draft.isDeal ? "Deals" : draft.category,
-      available: true,
       isDeal: draft.isDeal,
       dealLabel: draft.dealLabel || undefined,
       compareAtPrice: draft.compareAtPrice ? Number(draft.compareAtPrice) : undefined,
       imageUrl: draft.imageUrl || undefined,
       imageEmoji: draft.isDeal ? "🔥" : "🍽️",
-      modifiers: [],
     };
-    await saveMenu([item, ...tenant.menu]);
-    setDraft({
-      name: "",
-      description: "",
-      price: "",
-      category: "Burgers",
-      isDeal: false,
-      dealLabel: "",
-      compareAtPrice: "",
-      imageUrl: "",
-    });
+    if (editingId) {
+      await saveMenu(
+        tenant.menu.map((m) =>
+          m.id === editingId ? { ...m, ...fields, modifiers: m.modifiers ?? [] } : m,
+        ),
+      );
+    } else {
+      const item: MenuItem = {
+        id: `m_${Date.now()}`,
+        available: true,
+        modifiers: [],
+        ...fields,
+      };
+      await saveMenu([item, ...tenant.menu]);
+    }
+    clearDraft();
   }
 
   return (
@@ -84,7 +108,7 @@ export default function MenuPage() {
       <PlanGate need="menu">
       <div className={styles.stack}>
         <form className={styles.form} onSubmit={addItem}>
-          <h3 style={{ margin: 0 }}>Add item / deal</h3>
+          <h3 style={{ margin: 0 }}>{editingId ? "Edit item" : "Add item / deal"}</h3>
           <input
             required
             placeholder="Name"
@@ -158,9 +182,16 @@ export default function MenuPage() {
               />
             </>
           )}
-          <button type="submit" className={styles.btn}>
-            Add
-          </button>
+          <div className={styles.row}>
+            <button type="submit" className={styles.btn}>
+              {editingId ? "Save changes" : "Add"}
+            </button>
+            {editingId && (
+              <button type="button" className={styles.btnGhost} onClick={clearDraft}>
+                Cancel
+              </button>
+            )}
+          </div>
           {msg && <p className={styles.muted}>{msg}</p>}
         </form>
         <ul className={styles.mobileCards}>
@@ -176,6 +207,9 @@ export default function MenuPage() {
                   {m.category} · {tenant?.shop.currency} {m.price}
                 </p>
               </div>
+              <button type="button" className={styles.btnGhost} onClick={() => startEdit(m)}>
+                Edit
+              </button>
               <button
                 type="button"
                 className={m.available ? styles.btnGhost : styles.btn}
@@ -194,6 +228,7 @@ export default function MenuPage() {
               <th>Category</th>
               <th>Price</th>
               <th>86 / Available</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -213,6 +248,11 @@ export default function MenuPage() {
                     onClick={() => void toggle86(m.id)}
                   >
                     {m.available ? "Available · tap 86" : "86 · tap to restore"}
+                  </button>
+                </td>
+                <td>
+                  <button type="button" className={styles.btnGhost} onClick={() => startEdit(m)}>
+                    Edit
                   </button>
                 </td>
               </tr>

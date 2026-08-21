@@ -29,14 +29,16 @@ export default function ControlPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [error, setError] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [form, setForm] = useState({
+  const emptyForm = {
     code: "",
     name: "",
     planId: "starter",
     adminUsername: "admin",
     adminPassword: "admin123",
     adminEmail: "",
-  });
+  };
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const api = useCallback(
     async (path: string, init?: RequestInit) => {
@@ -110,9 +112,48 @@ export default function ControlPage() {
     void load();
   }, [load]);
 
+  function startEdit(t: PlatformTenantMeta) {
+    setEditingId(t.id);
+    setForm({
+      code: t.code,
+      name: t.name,
+      planId: t.planId,
+      adminUsername: "admin",
+      adminPassword: "",
+      adminEmail: t.adminEmail || "",
+    });
+    setError("");
+    setTab("restaurants");
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setForm(emptyForm);
+  }
+
   async function createRestaurant(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (editingId) {
+      const res = await api("/api/super/tenants", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "update",
+          id: editingId,
+          name: form.name,
+          planId: form.planId,
+          adminEmail: form.adminEmail,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Could not save restaurant");
+        return;
+      }
+      cancelEdit();
+      await load();
+      return;
+    }
     const res = await api("/api/super/tenants", {
       method: "POST",
       body: JSON.stringify({ action: "create", ...form }),
@@ -122,14 +163,7 @@ export default function ControlPage() {
       setError(data.error || "Could not add restaurant");
       return;
     }
-    setForm({
-      code: "",
-      name: "",
-      planId: "starter",
-      adminUsername: "admin",
-      adminPassword: "admin123",
-      adminEmail: "",
-    });
+    setForm(emptyForm);
     await load();
     setTab("restaurants");
   }
@@ -289,12 +323,13 @@ export default function ControlPage() {
                 package you assign — not a restaurant Settings screen.
               </p>
               <form className={styles.create} onSubmit={createRestaurant}>
-                <h2>Add restaurant + Admin</h2>
+                <h2>{editingId ? "Edit restaurant" : "Add restaurant + Admin"}</h2>
                 <div className={styles.grid}>
                   <input
                     required
                     placeholder="Code (e.g. LAHORE1)"
                     value={form.code}
+                    readOnly={!!editingId}
                     onChange={(e) => setForm({ ...form, code: e.target.value })}
                   />
                   <input
@@ -313,16 +348,20 @@ export default function ControlPage() {
                       </option>
                     ))}
                   </select>
-                  <input
-                    placeholder="Admin username"
-                    value={form.adminUsername}
-                    onChange={(e) => setForm({ ...form, adminUsername: e.target.value })}
-                  />
-                  <input
-                    placeholder="Admin password"
-                    value={form.adminPassword}
-                    onChange={(e) => setForm({ ...form, adminPassword: e.target.value })}
-                  />
+                  {!editingId && (
+                    <input
+                      placeholder="Admin username"
+                      value={form.adminUsername}
+                      onChange={(e) => setForm({ ...form, adminUsername: e.target.value })}
+                    />
+                  )}
+                  {!editingId && (
+                    <input
+                      placeholder="Admin password"
+                      value={form.adminPassword}
+                      onChange={(e) => setForm({ ...form, adminPassword: e.target.value })}
+                    />
+                  )}
                   <input
                     type="email"
                     placeholder="Admin email (optional)"
@@ -332,8 +371,13 @@ export default function ControlPage() {
                 </div>
                 {error && <p className={styles.error}>{error}</p>}
                 <button type="submit" className={styles.primaryBtn}>
-                  Add restaurant
+                  {editingId ? "Save restaurant" : "Add restaurant"}
                 </button>
+                {editingId && (
+                  <button type="button" className={styles.helpBtn} onClick={cancelEdit}>
+                    Cancel edit
+                  </button>
+                )}
               </form>
               <div className={styles.tableWrap}>
                 <table className={styles.table}>
@@ -373,6 +417,9 @@ export default function ControlPage() {
                         <td>{renewLabel(t.renewsAt)}</td>
                         <td>{t.status === "suspended" ? "Paused" : t.status}</td>
                         <td className={styles.actions}>
+                          <button type="button" onClick={() => startEdit(t)}>
+                            Edit
+                          </button>
                           <button
                             type="button"
                             className={styles.helpBtn}
