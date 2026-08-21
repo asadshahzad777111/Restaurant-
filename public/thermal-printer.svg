@@ -1,122 +1,117 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 760" role="img" aria-labelledby="tpTitle tpDesc">
-  <title id="tpTitle">ORDO 58mm thermal receipt printer</title>
-  <desc id="tpDesc">Compact POS-58 thermal printer with an ORDO receipt — sold with monthly kitchen plans.</desc>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="760" viewBox="0 0 640 760">
   <defs>
-    <linearGradient id="studio" x1="0" x2="0" y1="0" y2="1">
-      <stop offset="0%" stop-color="#fbf4e8"/>
-      <stop offset="55%" stop-color="#efe4d2"/>
-      <stop offset="100%" stop-color="#e4d4bc"/>
+    <linearGradient id="ordoTpStudio" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff8ee"/>
+      <stop offset="42%" stop-color="#f6e6cc"/>
+      <stop offset="100%" stop-color="#e7d0ae"/>
     </linearGradient>
-    <radialGradient id="spot" cx="42%" cy="18%" r="70%">
-      <stop offset="0%" stop-color="#fffaf2" stop-opacity="0.95"/>
-      <stop offset="55%" stop-color="#f3e6d0" stop-opacity="0.2"/>
-      <stop offset="100%" stop-color="#d9c7ab" stop-opacity="0"/>
+    <radialGradient id="ordoTpSpot" cx="38%" cy="16%" r="68%">
+      <stop offset="0%" stop-color="#fffdf8" stop-opacity="0.95"/>
+      <stop offset="55%" stop-color="#f3dfc0" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#d9c19a" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="bodyFront" x1="0" x2="0" y1="0" y2="1">
-      <stop offset="0%" stop-color="#3a3d43"/>
-      <stop offset="18%" stop-color="#2a2d32"/>
-      <stop offset="70%" stop-color="#16181c"/>
-      <stop offset="100%" stop-color="#0e1013"/>
+    <linearGradient id="ordoTpBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fffaf3"/>
+      <stop offset="45%" stop-color="#f4e6d0"/>
+      <stop offset="100%" stop-color="#e4d0b4"/>
     </linearGradient>
-    <linearGradient id="bodySide" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0%" stop-color="#1b1e23"/>
-      <stop offset="100%" stop-color="#0a0c0e"/>
+    <linearGradient id="ordoTpSide" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e2cba8"/>
+      <stop offset="100%" stop-color="#c9ad86"/>
     </linearGradient>
-    <linearGradient id="lidTop" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0%" stop-color="#5a5f68"/>
-      <stop offset="35%" stop-color="#3e434b"/>
-      <stop offset="100%" stop-color="#25282e"/>
+    <linearGradient id="ordoTpLid" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fffdf8"/>
+      <stop offset="55%" stop-color="#f0ddc2"/>
+      <stop offset="100%" stop-color="#ddc49e"/>
     </linearGradient>
-    <linearGradient id="lidFront" x1="0" x2="0" y1="0" y2="1">
-      <stop offset="0%" stop-color="#4a4f57"/>
-      <stop offset="100%" stop-color="#2c3036"/>
+    <linearGradient id="ordoTpPaper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fffefb"/>
+      <stop offset="100%" stop-color="#f4ead6"/>
     </linearGradient>
-    <linearGradient id="paper" x1="0" x2="0" y1="0" y2="1">
-      <stop offset="0%" stop-color="#fffef9"/>
-      <stop offset="100%" stop-color="#f3ead6"/>
-    </linearGradient>
-    <linearGradient id="roll" x1="0" x2="0" y1="0" y2="1">
+    <linearGradient id="ordoTpRoll" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#fff8ea"/>
-      <stop offset="45%" stop-color="#e8d9bc"/>
-      <stop offset="100%" stop-color="#cbb896"/>
+      <stop offset="100%" stop-color="#d7bb90"/>
     </linearGradient>
-    <linearGradient id="btn" x1="0" x2="0" y1="0" y2="1">
+    <linearGradient id="ordoTpBtn" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#ff9a3c"/>
       <stop offset="100%" stop-color="#e06a12"/>
     </linearGradient>
-    <filter id="soft" x="-20%" y="-10%" width="140%" height="130%">
-      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#7a6448" flood-opacity="0.28"/>
-    </filter>
-    <filter id="paperShadow" x="-15%" y="-8%" width="130%" height="125%">
-      <feDropShadow dx="4" dy="8" stdDeviation="6" flood-color="#6b573e" flood-opacity="0.22"/>
-    </filter>
+    <linearGradient id="ordoTpPlate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a241c"/>
+      <stop offset="100%" stop-color="#16120e"/>
+    </linearGradient>
   </defs>
 
-  <rect width="640" height="760" rx="36" fill="url(#studio)"/>
-  <rect width="640" height="760" rx="36" fill="url(#spot)"/>
-  <ellipse cx="320" cy="678" rx="210" ry="28" fill="#c4b195" opacity="0.45"/>
+  <rect width="640" height="760" rx="36" fill="url(#ordoTpStudio)"/>
+  <rect width="640" height="760" rx="36" fill="url(#ordoTpSpot)"/>
+  <ellipse cx="320" cy="692" rx="236" ry="34" fill="#c4a87e" opacity="0.38"/>
+  <ellipse cx="320" cy="686" rx="190" ry="18" fill="#a88860" opacity="0.18"/>
 
-  <!-- receipt -->
-  <g filter="url(#paperShadow)" transform="translate(232 28)">
-    <path fill="url(#paper)" stroke="#e6d9c2" stroke-width="1.2" d="M0 0 H176 V318 l-8 8 8 8 -8 8 8 8 -8 8 8 8 -8 8 8 8 -8 8 8 8 H0 l8 -8 -8 -8 8 -8 -8 -8 8 -8 -8 -8 8 -8 -8 -8 8 -8 -8 -8 Z"/>
-    <text x="88" y="32" text-anchor="middle" font-family="ui-serif, Georgia, serif" font-size="20" font-weight="700" fill="#1c1916" letter-spacing="3">ORDO</text>
-    <text x="88" y="52" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#f58220" letter-spacing="1.6">DEMO KITCHEN</text>
-    <rect x="18" y="64" width="140" height="1" fill="#e2d6c0"/>
-    <text x="18" y="86" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#3a342e">Karahi</text>
-    <text x="158" y="86" text-anchor="end" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#3a342e">?890</text>
-    <text x="18" y="106" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#3a342e">Naan ×2</text>
-    <text x="158" y="106" text-anchor="end" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#3a342e">?160</text>
-    <text x="18" y="126" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#3a342e">Chai</text>
-    <text x="158" y="126" text-anchor="end" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#3a342e">?80</text>
-    <rect x="18" y="140" width="140" height="1" fill="#e2d6c0"/>
-    <text x="18" y="162" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#1c1916">TOTAL</text>
-    <text x="158" y="162" text-anchor="end" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="700" fill="#1c1916">?1,130</text>
-    <text x="18" y="184" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#6b635a">Cash · Dining · T7</text>
-    <rect x="48" y="200" width="80" height="28" rx="3" fill="#1c1916"/>
-    <rect x="54" y="206" width="8" height="16" fill="#f3ead6"/>
-    <rect x="66" y="210" width="6" height="12" fill="#f3ead6"/>
-    <rect x="76" y="204" width="7" height="18" fill="#f3ead6"/>
-    <rect x="87" y="208" width="5" height="14" fill="#f3ead6"/>
-    <rect x="96" y="206" width="9" height="16" fill="#f3ead6"/>
-    <rect x="109" y="212" width="6" height="10" fill="#f3ead6"/>
-    <text x="88" y="248" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8" fill="#8a8176">58mm thermal · ORDO OS</text>
-    <text x="88" y="268" text-anchor="middle" font-family="ui-serif, Georgia, serif" font-size="10" font-style="italic" fill="#5c534a">Thank you — come again</text>
+  <g transform="translate(214 18)">
+    <path fill="#cbb79a" d="M8 12 H204 V352 l-10 8 10 8 -10 8 10 8 -10 8 10 8 -10 8 10 8 H8 l10 -8 -10 -8 10 -8 -10 -8 10 -8 -10 -8 10 -8 -10 -8 Z"/>
+    <path fill="url(#ordoTpPaper)" stroke="#e4d3b6" stroke-width="1.4" d="M0 0 H196 V340 l-10 8 10 8 -10 8 10 8 -10 8 10 8 -10 8 10 8 H0 l10 -8 -10 -8 10 -8 -10 -8 10 -8 -10 -8 10 -8 -10 -8 Z"/>
+    <text x="98" y="38" text-anchor="middle" font-family="Georgia, Times New Roman, serif" font-size="26" font-weight="700" fill="#1a1612" letter-spacing="4">ORDO</text>
+    <text x="98" y="58" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10" fill="#f58220" letter-spacing="2.2">DEMO KITCHEN</text>
+    <rect x="22" y="70" width="152" height="1.4" fill="#e2d4bb"/>
+    <text x="22" y="94" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3a342e">Karahi</text>
+    <text x="174" y="94" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3a342e">Rs 890</text>
+    <text x="22" y="116" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3a342e">Naan x2</text>
+    <text x="174" y="116" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3a342e">Rs 160</text>
+    <text x="22" y="138" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3a342e">Chai</text>
+    <text x="174" y="138" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#3a342e">Rs 80</text>
+    <rect x="22" y="152" width="152" height="1.4" fill="#e2d4bb"/>
+    <text x="22" y="176" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#1a1612">TOTAL</text>
+    <text x="174" y="176" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#1a1612">Rs 1,130</text>
+    <text x="22" y="200" font-family="Arial, Helvetica, sans-serif" font-size="10" fill="#6b635a">Cash  |  Dining  |  T7</text>
+    <rect x="52" y="214" width="92" height="32" rx="3" fill="#1a1612"/>
+    <rect x="60" y="220" width="8" height="20" fill="#f4ead6"/>
+    <rect x="72" y="226" width="6" height="14" fill="#f4ead6"/>
+    <rect x="82" y="218" width="7" height="22" fill="#f4ead6"/>
+    <rect x="93" y="224" width="5" height="16" fill="#f4ead6"/>
+    <rect x="102" y="221" width="10" height="19" fill="#f4ead6"/>
+    <rect x="116" y="227" width="6" height="13" fill="#f4ead6"/>
+    <rect x="126" y="222" width="8" height="18" fill="#f4ead6"/>
+    <text x="98" y="268" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="9" fill="#8a8176">58mm thermal  |  ORDO OS</text>
+    <text x="98" y="290" text-anchor="middle" font-family="Georgia, Times New Roman, serif" font-size="12" font-style="italic" fill="#5c534a">Thank you - come again</text>
+    <rect x="28" y="304" width="140" height="1" fill="#ead9be"/>
+    <rect x="40" y="312" width="116" height="1" fill="#ead9be"/>
   </g>
 
-  <!-- printer body -->
-  <g filter="url(#soft)">
-    <path fill="url(#bodySide)" d="M438 368 L498 322 L498 538 L438 592 Z"/>
-    <path fill="url(#bodyFront)" d="M142 368 H438 V592 H142 Z"/>
-    <path fill="url(#lidTop)" d="M176 292 L454 292 L498 322 L438 368 H142 L176 292 Z"/>
-    <path fill="url(#lidFront)" d="M142 368 H438 L438 396 H142 Z"/>
+  <path fill="#b8956c" opacity="0.35" d="M128 356 H456 L528 304 V548 L456 620 H128 Z"/>
 
-    <!-- lid window + roll -->
-    <path fill="#121417" d="M214 318 L400 318 L418 332 L232 332 Z"/>
-    <ellipse cx="316" cy="325" rx="78" ry="10" fill="url(#roll)"/>
-    <ellipse cx="316" cy="322" rx="78" ry="7" fill="#fff6e6"/>
-    <ellipse cx="316" cy="322" rx="14" ry="4" fill="#b7a07e"/>
+  <path fill="url(#ordoTpSide)" d="M456 348 L528 296 L528 540 L456 612 Z"/>
+  <path fill="url(#ordoTpBody)" stroke="#d7c09a" stroke-width="1.2" d="M112 348 H456 V612 H112 Z"/>
+  <path fill="url(#ordoTpLid)" stroke="#e8d5b6" stroke-width="1.2" d="M148 262 H478 L528 296 L456 348 H112 Z"/>
+  <path fill="#efe0c8" d="M112 348 H456 V382 H112 Z"/>
+  <path fill="#fffdf8" opacity="0.55" d="M168 272 H430 L456 288 L190 288 Z"/>
 
-    <!-- paper slot -->
-    <rect x="232" y="348" width="176" height="12" rx="3" fill="#07080a"/>
-    <rect x="238" y="350" width="164" height="4" rx="2" fill="#1c1f24"/>
+  <path fill="#2a241c" d="M196 292 H430 L452 308 L214 308 Z"/>
+  <ellipse cx="324" cy="300" rx="96" ry="14" fill="url(#ordoTpRoll)"/>
+  <ellipse cx="324" cy="296" rx="96" ry="10" fill="#fff6e6"/>
+  <ellipse cx="324" cy="296" rx="18" ry="5" fill="#b89a72"/>
+  <rect x="210" y="308" width="236" height="6" rx="2" fill="#1a1612"/>
 
-    <!-- front plate -->
-    <rect x="168" y="424" width="246" height="132" rx="16" fill="#0f1114"/>
-    <rect x="176" y="432" width="230" height="116" rx="12" fill="#171a1f"/>
-    <text x="196" y="468" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="3" fill="#f3ede4">ORDO</text>
-    <text x="196" y="488" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" letter-spacing="1.4" fill="#8a8580">POS-58 · 58mm</text>
-    <rect x="196" y="504" width="92" height="6" rx="3" fill="#2a2e35"/>
-    <rect x="196" y="518" width="64" height="5" rx="2.5" fill="#2a2e35"/>
+  <rect x="214" y="332" width="208" height="16" rx="4" fill="#1a1612"/>
+  <rect x="220" y="336" width="196" height="5" rx="2" fill="#3a342e"/>
 
-    <circle cx="372" cy="500" r="22" fill="url(#btn)"/>
-    <circle cx="372" cy="500" r="8" fill="#fff3e6"/>
-    <circle cx="208" cy="546" r="5" fill="#3ecf8e"/>
-    <circle cx="226" cy="546" r="5" fill="#c45c26" opacity="0.55"/>
+  <rect x="148" y="418" width="272" height="148" rx="18" fill="url(#ordoTpPlate)"/>
+  <rect x="158" y="428" width="252" height="128" rx="14" fill="#211c17"/>
+  <text x="178" y="468" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" letter-spacing="4" fill="#fff8ee">ORDO</text>
+  <text x="178" y="492" font-family="Arial, Helvetica, sans-serif" font-size="12" letter-spacing="1.6" fill="#f58220">POS-58  |  58mm</text>
+  <rect x="178" y="508" width="108" height="7" rx="3.5" fill="#3a342e"/>
+  <rect x="178" y="524" width="72" height="6" rx="3" fill="#3a342e"/>
+  <circle cx="368" cy="500" r="28" fill="url(#ordoTpBtn)"/>
+  <circle cx="368" cy="500" r="11" fill="#fff3e6"/>
+  <circle cx="186" cy="548" r="6" fill="#3ecf8e"/>
+  <circle cx="206" cy="548" r="6" fill="#c45c26" opacity="0.7"/>
 
-    <!-- highlight -->
-    <path fill="#ffffff" opacity="0.06" d="M150 376 H250 L210 584 H150 Z"/>
-    <path fill="#ffffff" opacity="0.08" d="M190 298 L430 298 L454 316 L214 316 Z"/>
-  </g>
+  <rect x="136" y="600" width="52" height="10" rx="4" fill="#c4a87e"/>
+  <rect x="380" y="600" width="52" height="10" rx="4" fill="#c4a87e"/>
+  <rect x="470" y="548" width="36" height="10" rx="4" fill="#b8956c" transform="skewY(-18)"/>
 
-  <text x="320" y="726" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="2.4" fill="#6b5c4a">MONTHLY PACKAGE · SOFTWARE + PAPER</text>
+  <path fill="#ffffff" opacity="0.28" d="M124 360 H220 L188 600 H124 Z"/>
+  <path fill="#ffffff" opacity="0.2" d="M170 270 H430 L468 292 L214 292 Z"/>
+
+  <text x="320" y="734" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" letter-spacing="2.6" fill="#7a6248">MONTHLY PACKAGE  |  SOFTWARE + PAPER</text>
 </svg>

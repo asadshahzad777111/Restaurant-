@@ -431,68 +431,12 @@ export function MarketingHome() {
               alt="Compact 58mm thermal receipt printer printing an ORDO bill"
               width={640}
               height={760}
+              decoding="async"
+              fetchPriority="high"
             />
-            <div className={styles.phoneFloat} aria-hidden>
-              <div className={styles.laptop}>
-                <div className={styles.laptopChrome}>
-                  <span className={styles.dots}>
-                    <i />
-                    <i />
-                    <i />
-                  </span>
-                  <strong>ORDO OS</strong>
-                  <em>Live</em>
-                </div>
-                <div className={styles.workspace}>
-                  <div className={styles.wsHead}>
-                    <div>
-                      <span>Operations</span>
-                      <strong>LIVE WORKSPACE</strong>
-                    </div>
-                    <b className={styles.liveDot}>LIVE</b>
-                  </div>
-                  <div className={styles.wsPills}>
-                    <article>
-                      <span>Orders</span>
-                      <strong>Live</strong>
-                    </article>
-                    <article>
-                      <span>Kitchen</span>
-                      <strong>Sync</strong>
-                    </article>
-                    <article>
-                      <span>Print</span>
-                      <strong>58mm</strong>
-                    </article>
-                  </div>
-                  <div className={styles.wsSplit}>
-                    <div className={styles.wsTickets}>
-                      <article>
-                        <span>Dining · T7</span>
-                        <strong>Karahi + naan</strong>
-                        <small>Preparing</small>
-                      </article>
-                      <article>
-                        <span>Takeaway</span>
-                        <strong>Seekh + chai</strong>
-                        <small>Ready</small>
-                      </article>
-                    </div>
-                    <div className={styles.wsRows}>
-                      <div>
-                        <span>Customer order</span>
-                        <p>Menu and counter</p>
-                        <em>In</em>
-                      </div>
-                      <div>
-                        <span>Kitchen rail</span>
-                        <p>Same kitchen only</p>
-                        <em>Sync</em>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className={styles.osFloat} aria-hidden>
+              <span>ORDO OS</span>
+              <strong>Live</strong>
             </div>
           </figure>
           <p className={styles.productCaption}>POS-58 · 58mm thermal · ORDO monthly package</p>
