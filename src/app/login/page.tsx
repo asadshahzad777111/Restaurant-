@@ -196,11 +196,17 @@ export default function LoginPage() {
             <img src="/ordo-logo-on-dark.svg" alt="ORDO" className={styles.brandImg} height={34} width={148} />
           </Link>
         )}
-        <h1>{ownerDesk ? "ORDO HQ" : "Staff login"}</h1>
+        <h1>
+          {ownerDesk
+            ? "ORDO HQ"
+            : showKitchenBrand
+              ? `Hello — ${kitchenBrand!.name}`
+              : "Staff login"}
+        </h1>
         {hideSuper ? (
           <p className={styles.hint}>
             {showKitchenBrand
-              ? "This Staff app is locked to your kitchen. Logo & name match Settings."
+              ? `Welcome. Sign in as Admin, cashier, or kitchen — POS billing and thermal print are in this Staff app. Logo & name match Settings.`
               : "Use your restaurant code. Platform HQ is not part of this app."}
           </p>
         ) : ownerDesk ? (

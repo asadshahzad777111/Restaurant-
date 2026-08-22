@@ -173,8 +173,8 @@ export async function listTenantApkStatus(input: {
         version: "1.0.0",
         note:
           id === "staff"
-            ? "APK for staff phones. AAB for Google Play listing. Never opens Super HQ."
-            : "APK for diners (WhatsApp/sideload). AAB for Google Play. Locked to this kitchen only.",
+            ? `Home screen: ${tenantApkDisplayTitle(input.name, "staff")}. POS, kitchen, thermal print. Never Super HQ.`
+            : `Home screen: ${tenantApkDisplayTitle(input.name, "customer")}. Guests only — locked to this kitchen.`,
         format: "apk" as ApkFormat,
         storage: r2 ? ("r2" as const) : ("file-store" as const),
         available: apkMeta.available,

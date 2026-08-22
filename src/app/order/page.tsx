@@ -19,6 +19,7 @@ import {
 import { enabledAdvanceRails, normalizeTenantPayments, paymentChoicesFor } from "@/lib/payments";
 import { GuestSpecialOfferPopup } from "@/components/GuestSpecialOfferPopup";
 import { isCustomerShell, readLockedCustomerTenant } from "@/lib/app-shell";
+import { CustomerApkWelcome } from "@/components/CustomerApkWelcome";
 import {
   backdropTransition,
   emptyState,
@@ -697,6 +698,9 @@ function OrderInner() {
 
   return (
     <motion.div className={styles.page} variants={enter} initial="hidden" animate="show">
+      {branding && tenantCode ? (
+        <CustomerApkWelcome restaurantName={branding.name} code={tenantCode} />
+      ) : null}
       <div className={showMenu ? styles.layout : styles.shell}>
         <div>
           <header className={styles.header}>
@@ -707,6 +711,11 @@ function OrderInner() {
               <div className={styles.mark}>{branding?.name?.slice(0, 1) || (loading ? "…" : "R")}</div>
             )}
             <div>
+              {isCustomerShell() ? (
+                <p className={styles.helloLine}>
+                  {customerName ? `Hello, ${customerName}` : "Welcome"}
+                </p>
+              ) : null}
               <h1>{branding?.name || (loading ? "Loading…" : "Restaurant")}</h1>
               <p>
                 {showMenu

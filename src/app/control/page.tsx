@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { TOKEN_KEY, OWNER_TOKEN_KEY, useStore } from "@/lib/store";
 import { setHelpModeCookieClient } from "@/lib/help-mode";
 import { apiUrl } from "@/lib/urls";
+import { tenantApkHomeLabels } from "@/lib/apk-urls";
 import type { Lead, Plan, PlanId, PlatformFeatures, PlatformTenantMeta, TenantStatus } from "@/lib/types";
 import styles from "./hq.module.css";
 
@@ -138,6 +139,7 @@ export default function ControlPage() {
   const [apkRows, setApkRows] = useState<ApkRow[]>([]);
   const [apkBusy, setApkBusy] = useState(false);
   const [apkMessage, setApkMessage] = useState("");
+  const [createNote, setCreateNote] = useState("");
   const [billingBusy, setBillingBusy] = useState("");
   const [credsTenantId, setCredsTenantId] = useState<string | null>(null);
   const [credsLoading, setCredsLoading] = useState(false);
@@ -325,6 +327,14 @@ export default function ControlPage() {
     await load();
     setTab("restaurants");
     if (data.tenant?.id) {
+      const labels = {
+        staff: `${form.name.trim() || data.tenant.name} Staff`,
+        customer: `${form.name.trim() || data.tenant.name} Order`,
+      };
+      setCreateNote(
+        `${data.tenant.name} is live. Phone apps: “${labels.staff}” (Admin / POS / kitchen / thermal print) and “${labels.customer}” (guests). Upload both under Apps. In-app name follows Settings immediately — home-screen name needs those APKs.`,
+      );
+      setApkTenantId(data.tenant.id);
       void openCredentials(data.tenant.id);
     }
   }
@@ -699,6 +709,12 @@ export default function ControlPage() {
                   password.
                 </p>
               </div>
+              {createNote ? (
+                <div className={styles.credsBanner}>
+                  <strong>New kitchen · branded apps</strong>
+                  <p>{createNote}</p>
+                </div>
+              ) : null}
               <form className={styles.create} onSubmit={createRestaurant}>
                 <h2>{editingId ? "Edit restaurant" : "Add restaurant + Admin"}</h2>
                 <div className={styles.grid}>
@@ -970,6 +986,9 @@ export default function ControlPage() {
                 </select>
                 {selectedTenant && (
                   <p className={styles.muted} style={{ marginTop: "0.75rem" }}>
+                    Phone names: <strong>{tenantApkHomeLabels(selectedTenant.name).staff}</strong> ·{" "}
+                    <strong>{tenantApkHomeLabels(selectedTenant.name).customer}</strong>
+                    <br />
                     Staff opens{" "}
                     <code>/login?app=staff&amp;tenant={selectedTenant.code}</code> · Customer opens{" "}
                     <code>/guest?app=customer&amp;tenant={selectedTenant.code}</code>

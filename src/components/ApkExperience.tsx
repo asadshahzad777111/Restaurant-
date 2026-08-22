@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { isCustomerShell, isStaffShell, readAppShell } from "@/lib/app-shell";
+import { isStaffShell, isCustomerShell, readAppShell, readLockedCustomerTenant } from "@/lib/app-shell";
+import { hasSeenApkWelcome } from "@/lib/apk-welcome";
 import {
   markApkInboxSeen,
   markApkNotifyPrompted,
@@ -20,6 +21,11 @@ function tipsForShell(shell: string): Tip[] {
   if (shell === "customer") {
     return [
       {
+        id: "welcome-kitchen",
+        title: "This kitchen only",
+        body: "The restaurant name at the top is yours. Menu, cart, and order tracking stay on this kitchen — other restaurants cannot open here.",
+      },
+      {
         id: "scan-menu",
         title: "Scan to open the menu",
         body: "Use Scanner anytime — even when a kitchen’s billing is paused you can still open their menu from a table QR.",
@@ -34,6 +40,11 @@ function tipsForShell(shell: string): Tip[] {
   }
   if (shell === "staff") {
     return [
+      {
+        id: "hello-staff",
+        title: "Hello — your kitchen app",
+        body: "Top bar shows your name and this restaurant. POS billing, kitchen tickets, and Bluetooth thermal print are in this Staff app. Admin sends the Customer app from Settings → Your apps.",
+      },
       {
         id: "staff-alerts",
         title: "Order alerts + sound",
@@ -63,8 +74,12 @@ export function ApkExperience() {
     if (s !== "staff" && s !== "customer" && !isStaffShell() && !isCustomerShell()) return;
 
     const promptTimer = window.setTimeout(() => {
+      if (s === "customer") {
+        const code = readLockedCustomerTenant();
+        if (code && !hasSeenApkWelcome("customer", code)) return;
+      }
       if (shouldPromptApkNotify()) setPromptOpen(true);
-    }, 9000);
+    }, 16000);
 
     const tipTimer = window.setTimeout(() => {
       const seen = new Set(apkInboxSeen());

@@ -52,6 +52,16 @@ export default function SettingsPage() {
     setEmailDraft(user?.email || "");
   }, [tenant, user]);
 
+  useEffect(() => {
+    if (!tenant) return;
+    const hash = typeof window !== "undefined" ? window.location.hash.replace("#", "") : "";
+    if (hash !== "apps" && hash !== "thermal") return;
+    const t = window.setTimeout(() => {
+      document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 250);
+    return () => window.clearTimeout(t);
+  }, [tenant]);
+
   async function saveBranding(e: React.FormEvent) {
     e.preventDefault();
     if (!branding.name.trim()) {
