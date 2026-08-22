@@ -66,10 +66,33 @@ guest-dark + staff-light + marketing-cream themes, AsFix staff chrome, motion he
 | Phase | Scope | Status |
 |---|---|---|
 | P0 | Isolation, alerts, 58mm, guards, audit script | ✅ shipped |
-| P1 | Scanner terminal upgrade + staff home dashboard + global polish + marketing ticker | ✅ shipped |
-| P2 | POS/Kitchen/Orders micro-interactions + Sales bars | next |
-| P3 | Guest order checkout polish + Track stepper + Login glow | next |
-| P4 | Marketing hero ticket-rail + marquee + demo count-ups | partially in P1 (ticker) |
+| P1 | Scanner terminal upgrade + staff home dashboard + global polish + marketing ticker + theme switch | ✅ shipped |
+| P2 | POS/Kitchen/Orders micro-interactions + Sales bars + track stepper pulse | ✅ shipped |
+| P3 | Guest order checkout polish + Login glow | next |
+| P4 | Marketing hero ticket-rail + demo count-ups | partially in P1 (ticker) |
+
+## A-Z page inventory
+
+| Route | Screen | Animations / polish |
+|---|---|---|
+| `/` | Marketing home | hero entrance, ticker marquee, round theme switch, scroll-reveal sections, plan cards |
+| `/guest` | Guest splash | display headings, code entry |
+| `/scan` | Scanner | laser scanline, corner brackets, camera toggle, recent chips, status pills |
+| `/order` | Guest ordering | fly-to-cart, sheet spring, deal rail, category chips, cart bar total |
+| `/track/[token]` | Guest tracking | timeline stepper (pulsing now-step), star hover scale, ready modal |
+| `/login` | Staff/Super login | glass card, focus glow, mode switch |
+| `/home` | Staff home | Salam greeting + clock, count-up stats, quick tiles hover |
+| `/pos` | POS | menu tiles lift + image zoom, low-stock pulse |
+| `/kitchen` | Kitchen board | lane counts (placed pulses), ticket lift, placed breathing ring |
+| `/orders` | Orders/billing | new-row entrance + highlight, card lift |
+| `/tables` | Floor map | ticket lift, status colors |
+| `/menu` | Menu admin | tile lift |
+| `/settings` | Settings | form focus glow |
+| `/sales` | Sales & Profit | animated payment bars, count-up totals, stat lift |
+| `/day-close` | Shift close | stat cards, print summary |
+| `/staff` | Staff list | table rows |
+| `/control` | Super HQ | slate back-office, tabular stats |
+| `/lab` | Dev index | localhost only |
 
 ## 4. Research references
 

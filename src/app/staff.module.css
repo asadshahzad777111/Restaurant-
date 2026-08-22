@@ -569,6 +569,132 @@
   color: var(--staff-muted);
 }
 
+/* ---- P2 micro-interactions ---- */
+
+/* Menu tiles (POS) lift + photo zoom */
+.item {
+  transition:
+    transform 0.18s var(--ease-primary),
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(196, 92, 38, 0.4);
+  box-shadow: 0 10px 26px rgba(28, 25, 22, 0.08);
+}
+
+.itemImg {
+  transition: transform 0.35s var(--ease-out-alt);
+}
+
+.item:hover .itemImg {
+  transform: scale(1.05);
+}
+
+/* Kitchen / Tables tickets lift */
+.ticket {
+  transition:
+    transform 0.18s var(--ease-primary),
+    box-shadow 0.18s ease;
+}
+
+.ticket:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(28, 25, 22, 0.08);
+}
+
+/* New placed ticket: soft breathing ring */
+.ticket_placed {
+  animation: ticketPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes ticketPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(196, 92, 38, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(196, 92, 38, 0.14);
+  }
+}
+
+/* Orders cards lift + new-row entrance */
+.mobileCard {
+  transition:
+    transform 0.18s var(--ease-primary),
+    box-shadow 0.18s ease;
+}
+
+.mobileCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(28, 25, 22, 0.08);
+}
+
+.rowNew {
+  animation: ordo-rise 0.35s ease both;
+}
+
+/* Stat cards lift */
+.statCard {
+  transition:
+    transform 0.18s var(--ease-primary),
+    box-shadow 0.18s ease;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(28, 25, 22, 0.1);
+}
+
+/* Sales animated bars */
+.barList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.barMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.86rem;
+  margin-bottom: 0.3rem;
+}
+
+.barMeta span {
+  color: var(--staff-muted);
+  text-transform: capitalize;
+}
+
+.barMeta strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.barTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: #ece5da;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--staff-accent), #e8945a);
+  transform-origin: left;
+  animation: barGrow 0.85s var(--ease-primary) both;
+}
+
+@keyframes barGrow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
 @media print {
   .side,
   .meta,

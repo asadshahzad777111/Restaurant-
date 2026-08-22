@@ -6,33 +6,10 @@ import { motion } from "framer-motion";
 import { AppShell } from "@/components/AppShell";
 import { useStore } from "@/lib/store";
 import { money } from "@/lib/fees";
+import { useCountUp } from "@/lib/use-count-up";
 import { listContainer, listItem, usePrefersReducedMotion } from "@/lib/motion";
 import type { Permission } from "@/lib/types";
 import styles from "../staff.module.css";
-
-/** Smooth count-up that respects prefers-reduced-motion. */
-function useCountUp(target: number, duration = 700): number {
-  const reduced = usePrefersReducedMotion();
-  const [value, setValue] = useState(reduced ? target : 0);
-  useEffect(() => {
-    if (reduced) {
-      setValue(target);
-      return;
-    }
-    let raf = 0;
-    const start = performance.now();
-    const from = 0;
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setValue(Math.round(from + (target - from) * eased));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, duration, reduced]);
-  return value;
-}
 
 function StatCard({
   label,

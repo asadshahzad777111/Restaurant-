@@ -81,6 +81,21 @@
   color: var(--guest-text);
 }
 
+/* Active step pulses so the guest sees the live position */
+.timeline li[data-state="now"]::before {
+  animation: trackPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes trackPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(196, 92, 38, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(196, 92, 38, 0.18);
+  }
+}
+
 .timeline li[data-state="wait"] {
   color: var(--guest-muted);
 }
@@ -146,10 +161,22 @@
   font-size: 1.8rem;
   color: #4a4640;
   padding: 0;
+  transition:
+    transform 0.15s var(--ease-primary),
+    color 0.15s ease;
+}
+
+.star:hover {
+  transform: scale(1.18);
+  color: #d89a2e;
 }
 
 .starOn {
   color: #e0a53a;
+}
+
+.starOn:hover {
+  transform: scale(1.12);
 }
 
 .review textarea {

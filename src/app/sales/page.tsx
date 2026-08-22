@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PlanGate } from "@/components/PlanGate";
 import { useStore } from "@/lib/store";
 import { money } from "@/lib/fees";
+import { useCountUp } from "@/lib/use-count-up";
 import styles from "../staff.module.css";
 
 type SalesPayload = {
@@ -38,6 +39,23 @@ export default function SalesPage() {
   const [data, setData] = useState<SalesPayload | null>(null);
   const [error, setError] = useState("");
   const cur = tenant?.shop.currency || "PKR";
+
+  const grossShown = useCountUp(data?.summary.gross ?? 0, 800);
+  const profitShown = useCountUp(data?.summary.estimatedProfit ?? 0, 800);
+  const ordersShown = useCountUp(data?.summary.orderCount ?? 0, 600);
+  const cogsShown = useCountUp(data?.summary.cogs ?? 0, 800);
+
+  const paymentBars = useMemo(() => {
+    const entries = Object.entries(data?.byPayment ?? {});
+    const max = Math.max(1, ...entries.map(([, v]) => v));
+    return entries
+      .map(([key, value]) => ({
+        key: key.replaceAll("_", " "),
+        value,
+        pct: Math.round((value / max) * 100),
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [data]);
 
   const load = useCallback(async () => {
     const days = Number(range);
@@ -128,16 +146,16 @@ export default function SalesPage() {
               <div className={styles.statGrid}>
                 <article className={styles.statCard}>
                   <span>Gross sales</span>
-                  <strong>{money(cur, data.summary.gross)}</strong>
+                  <strong className={styles.statValue}>{money(cur, grossShown)}</strong>
                 </article>
                 <article className={styles.statCard}>
                   <span>Est. profit</span>
-                  <strong>{money(cur, data.summary.estimatedProfit)}</strong>
+                  <strong className={styles.statValue}>{money(cur, profitShown)}</strong>
                   <em>{data.summary.marginPct}% margin</em>
                 </article>
                 <article className={styles.statCard}>
                   <span>Orders</span>
-                  <strong>{data.summary.orderCount}</strong>
+                  <strong className={styles.statValue}>{ordersShown}</strong>
                   <em>
                     {data.summary.completedCount} done · {data.summary.openCount} open ·{" "}
                     {data.summary.cancelledCount} void
@@ -145,7 +163,7 @@ export default function SalesPage() {
                 </article>
                 <article className={styles.statCard}>
                   <span>Est. COGS</span>
-                  <strong>{money(cur, data.summary.cogs)}</strong>
+                  <strong className={styles.statValue}>{money(cur, cogsShown)}</strong>
                   {!data.summary.costsConfigured && (
                     <em>Set cost prices on Menu for real margins</em>
                   )}
@@ -155,17 +173,23 @@ export default function SalesPage() {
               <div className={styles.reportSplit}>
                 <div className={styles.card}>
                   <h3 style={{ marginTop: 0 }}>By payment</h3>
-                  <ul className={styles.reportList}>
-                    {Object.entries(data.byPayment).map(([k, v]) => (
-                      <li key={k}>
-                        <span>{k.replaceAll("_", " ")}</span>
-                        <strong>{money(cur, v)}</strong>
-                      </li>
-                    ))}
-                    {!Object.keys(data.byPayment).length && (
-                      <li className={styles.muted}>No sales in this range</li>
-                    )}
-                  </ul>
+                  {paymentBars.length ? (
+                    <div className={styles.barList}>
+                      {paymentBars.map((b) => (
+                        <div key={b.key} className={styles.barRow}>
+                          <div className={styles.barMeta}>
+                            <span>{b.key}</span>
+                            <strong>{money(cur, b.value)}</strong>
+                          </div>
+                          <div className={styles.barTrack} aria-hidden>
+                            <div className={styles.barFill} style={{ width: `${b.pct}%` }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={styles.muted}>No sales in this range</p>
+                  )}
                 </div>
                 <div className={styles.card}>
                   <h3 style={{ marginTop: 0 }}>By channel</h3>
