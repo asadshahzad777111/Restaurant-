@@ -6,7 +6,8 @@ import { assertGuestPaymentAllowed } from "@/lib/payments";
 import { computeFees, lineUnitPrice } from "@/lib/fees";
 import type { LineModifier, OrderLine } from "@/lib/tenant-types";
 import type { AdvanceRail, PaymentMethod, PaymentStatus, ServiceType } from "@/lib/types";
-import { sendNewOrderEmail, tenantAdminEmails } from "@/lib/notify";
+import { sendNewOrderEmail, sendOrderWhatsapp, tenantAdminEmails } from "@/lib/notify";
+import { appUrl } from "@/lib/urls";
 
 export const runtime = "nodejs";
 
@@ -234,6 +235,25 @@ export async function POST(req: NextRequest) {
         });
       } catch (err) {
         console.error("[email] order notify failed:", err instanceof Error ? err.message : err);
+      }
+    })();
+
+    // Guest WhatsApp confirmation — non-blocking, skips when unconfigured or no phone.
+    void (async () => {
+      try {
+        const result = await sendOrderWhatsapp({
+          customerPhone: order.customerPhone,
+          restaurantName: tenant.branding.name || tenant.code,
+          orderNumber: order.number,
+          total: order.total,
+          currency: tenant.shop.currency || "PKR",
+          trackUrl: `${appUrl()}/track/${order.trackToken}`,
+        });
+        if (result && "reason" in result) {
+          console.info("[whatsapp] skip order confirm:", (result as { reason: string }).reason);
+        }
+      } catch (err) {
+        console.error("[whatsapp] order confirm failed:", err instanceof Error ? err.message : err);
       }
     })();
 

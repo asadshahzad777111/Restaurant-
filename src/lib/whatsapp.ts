@@ -6,6 +6,16 @@ export function guestWhatsappLink(text: string, phone?: string) {
   return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 }
 
+/** Normalize a locally-entered phone to E.164 for WhatsApp Cloud API (PK default). */
+export function toE164Pakistan(phone?: string): string {
+  const d = (phone || "").replace(/\D/g, "");
+  if (!d) return "";
+  if (d.startsWith("92")) return `+${d}`;
+  if (d.startsWith("0")) return `+92${d.slice(1)}`;
+  if (d.startsWith("+")) return d;
+  return `+92${d}`;
+}
+
 export async function sendWhatsappCloudApi(toE164: string, body: string) {
   if (!whatsappApiConfigured()) {
     return { skipped: true as const, reason: "WhatsApp Cloud API env not set — use wa.me link" };

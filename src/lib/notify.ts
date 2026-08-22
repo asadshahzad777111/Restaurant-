@@ -6,8 +6,9 @@ import type { PlatformTenantMeta, ServiceType } from "./types";
 import type { TenantState } from "./tenant-types";
 
 export type { SendEmailResult };
-export { sendWhatsappCloudApi } from "./whatsapp";
 export { guestWhatsappLink };
+import { sendWhatsappCloudApi, toE164Pakistan } from "./whatsapp";
+export { sendWhatsappCloudApi };
 
 export function serviceTypeLabel(serviceType: ServiceType) {
   if (serviceType === "table") return "Dine-in";
@@ -109,4 +110,26 @@ export async function sendNewOrderEmail(input: {
     subject: `ORDO order #${input.orderNumber} — ${serviceTypeLabel(input.serviceType)} — ${input.restaurantName}`,
     text,
   });
+}
+
+/**
+ * Guest order confirmation via WhatsApp Cloud API. Non-blocking and safe:
+ * skips gracefully when WHATSAPP_* env is unset or no customer phone exists.
+ */
+export async function sendOrderWhatsapp(input: {
+  customerPhone?: string;
+  restaurantName: string;
+  orderNumber: number;
+  total: number;
+  currency: string;
+  trackUrl: string;
+}) {
+  const to = toE164Pakistan(input.customerPhone);
+  if (!to) return { skipped: true as const, reason: "no customer phone" };
+  const text = [
+    `${input.restaurantName} — Order #${input.orderNumber} confirmed ✅`,
+    `Total: ${input.currency} ${input.total.toFixed(0)}`,
+    `Track live: ${input.trackUrl}`,
+  ].join("\n");
+  return sendWhatsappCloudApi(to, text);
 }

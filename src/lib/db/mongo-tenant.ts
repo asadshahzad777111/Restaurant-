@@ -340,19 +340,43 @@ export async function addOrderMongo(
   tenantId: string,
   order: Omit<Order, "id" | "number" | "createdAt" | "updatedAt">,
 ) {
-  const t = await readTenantMongo(tenantId);
+  const col = await tenantsCol();
   const now = new Date().toISOString();
+
+  // Atomic number allocation: $inc returns the value BEFORE increment, so two
+  // concurrent guest orders can never share a number or overwrite each other.
+  const alloc = (await col.findOneAndUpdate(
+    { _id: tenantId } as never,
+    { $inc: { nextOrderNumber: 1 } } as never,
+    { returnDocument: "before", projection: { nextOrderNumber: 1 } },
+  )) as unknown as { nextOrderNumber: number } | null;
+  if (!alloc) throw new Error("Tenant not found");
+
   const full: Order = {
     ...order,
     id: `ord_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-    number: t.nextOrderNumber,
+    number: alloc.nextOrderNumber,
     createdAt: now,
     updatedAt: now,
   };
-  t.nextOrderNumber += 1;
-  t.orders.unshift(full);
-  if (full.serviceType === "table") syncTable(t, full);
-  await writeTenantMongo(t);
+
+  // Atomic prepend — $push is a single serialized write, so no lost update.
+  await col.updateOne(
+    { _id: tenantId } as never,
+    { $push: { orders: { $each: [full], $position: 0 } } } as never,
+  );
+
+  // Best-effort table sync (orders are already safely persisted above).
+  if (full.serviceType === "table") {
+    const doc = (await col.findOne(
+      { _id: tenantId } as never,
+      { projection: { tables: 1 } },
+    )) as unknown as { tables?: TenantState["tables"] } | null;
+    const t = { tables: doc?.tables ?? [] } as TenantState;
+    syncTable(t, full);
+    await col.updateOne({ _id: tenantId } as never, { $set: { tables: t.tables } } as never);
+  }
+
   return full;
 }
 

@@ -169,7 +169,11 @@ Staff side:
 
 ## 6. Known limits (accepted)
 
-- Mongo tenant writes are read-modify-replace on the whole tenant doc; two truly concurrent
-  orders on the *same* kitchen could race `nextOrderNumber`. File mode serializes via one file.
+- Order creation is atomic in both modes: Mongo uses `$inc` (number) + `$push`
+  (order) so concurrent guest orders never race; file mode serializes via one file.
+- Other Mongo tenant mutations (menu/stock/branding/staff) are read-modify-replace on
+  the whole doc — fine at admin concurrency; only the order path needed atomicity.
 - Poll-based kitchen alerts (3 s) rather than WebSocket/SSE — fine for a POS LAN.
 - WebAudio beep requires one "Enable order sound" tap per device (browser autoplay policy).
+- WhatsApp Cloud API: customer order confirmation is wired and skips gracefully when
+  `WHATSAPP_*` env is unset or the order has no customer phone.
