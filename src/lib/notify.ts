@@ -2,6 +2,7 @@ import { contactWhatsapp, resendConfigured, resendFromAddress } from "./env";
 import { appUrl } from "./urls";
 import { sendResendEmail, uniqueEmails, type SendEmailResult } from "./email";
 import { guestWhatsappLink } from "./whatsapp";
+import { adminWelcomeEmail, leadEmail, newOrderEmail } from "./email-templates";
 import type { PlatformTenantMeta, ServiceType } from "./types";
 import type { TenantState } from "./tenant-types";
 
@@ -49,6 +50,14 @@ export async function sendLeadEmail(input: {
     to: to ? [to] : [],
     subject: `ORDO lead: ${input.name}${input.planId ? ` (${input.planId})` : ""}`,
     text,
+    html: leadEmail({
+      name: input.name,
+      email: input.email,
+      restaurantName: input.restaurantName,
+      planId: input.planId,
+      message: input.message,
+      whatsapp: contactWhatsapp() || undefined,
+    }),
     replyTo: input.email && input.email.includes("@") ? input.email : undefined,
   });
 }
@@ -81,6 +90,12 @@ export async function sendAdminWelcomeEmail(input: {
     to: input.to,
     subject: `ORDO: ${input.restaurantName} is ready (${input.restaurantCode})`,
     text,
+    html: adminWelcomeEmail({
+      restaurantName: input.restaurantName,
+      restaurantCode: input.restaurantCode,
+      adminUsername: input.adminUsername,
+      loginUrl,
+    }),
   });
 }
 
@@ -94,6 +109,7 @@ export async function sendNewOrderEmail(input: {
   total: number;
   subtotal: number;
   currency: string;
+  trackUrl?: string;
 }): Promise<SendEmailResult> {
   const money = (n: number) => `${input.currency} ${n.toFixed(0)}`;
   const text = [
@@ -104,11 +120,23 @@ export async function sendNewOrderEmail(input: {
     `Type: ${serviceTypeLabel(input.serviceType)}`,
     `Subtotal: ${money(input.subtotal)}`,
     `Total: ${money(input.total)}`,
-  ].join("\n");
+    input.trackUrl ? `Track: ${input.trackUrl}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
   return sendResendEmail({
     to: input.to,
     subject: `ORDO order #${input.orderNumber} — ${serviceTypeLabel(input.serviceType)} — ${input.restaurantName}`,
     text,
+    html: newOrderEmail({
+      restaurantName: input.restaurantName,
+      orderNumber: input.orderNumber,
+      serviceType: serviceTypeLabel(input.serviceType),
+      subtotal: input.subtotal,
+      total: input.total,
+      currency: input.currency,
+      trackUrl: input.trackUrl || `${appUrl()}/orders`,
+    }),
   });
 }
 

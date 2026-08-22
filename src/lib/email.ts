@@ -5,6 +5,7 @@
  */
 import { createHmac, timingSafeEqual } from "crypto";
 import { resendConfigured, resendFromAddress, resendApiKey } from "./env";
+import { escapeHtml } from "./email-escape";
 
 export type SendEmailResult =
   | { skipped: true; reason: string }
@@ -33,19 +34,6 @@ export function uniqueEmails(values: Array<string | undefined | null>) {
     out.push(email);
   }
   return out;
-}
-
-function escapeHtml(s: string) {
-  return s.replace(/[&<>"']/g, (c) => {
-    const map: Record<string, string> = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    };
-    return map[c] || c;
-  });
 }
 
 export function textToHtml(text: string) {

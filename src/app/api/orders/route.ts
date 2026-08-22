@@ -232,6 +232,7 @@ export async function POST(req: NextRequest) {
           total: order.total,
           subtotal: order.subtotal,
           currency: tenant.shop.currency || "PKR",
+          trackUrl: `${appUrl()}/track/${order.trackToken}`,
         });
       } catch (err) {
         console.error("[email] order notify failed:", err instanceof Error ? err.message : err);
