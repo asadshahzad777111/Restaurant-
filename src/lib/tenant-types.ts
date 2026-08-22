@@ -149,6 +149,8 @@ export interface Order {
   fees: OrderFees;
   subtotal: number;
   total: number;
+  /** POS-only PKR off the bill. Optional. */
+  discount?: number;
   cancelReason?: string;
 }
 

@@ -707,6 +707,37 @@
   }
 }
 
+.posBillFields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  margin: 0.85rem 0 0.35rem;
+}
+
+.posBillFields label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--staff-muted);
+}
+
+.posBillFields input {
+  border: 1px solid #ddd6cc;
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--staff-text);
+}
+
+@media (max-width: 640px) {
+  .posBillFields {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media print {
   .side,
   .meta,

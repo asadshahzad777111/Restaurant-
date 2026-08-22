@@ -47,6 +47,11 @@ export default function PosPage() {
   const [modSel, setModSel] = useState<Record<string, string[]>>({});
   const [printKind, setPrintKind] = useState<"bill" | "kitchen" | null>(null);
   const [cat, setCat] = useState("All");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [note, setNote] = useState("");
+  const [discountStr, setDiscountStr] = useState("");
+  const [cashGiven, setCashGiven] = useState("");
 
   const lowStock = (tenant?.stock ?? []).filter((s) => s.quantity <= s.lowThreshold);
   const categories = useMemo(() => {
@@ -109,14 +114,31 @@ export default function PosPage() {
     });
   }
 
+  const discount = Math.max(
+    0,
+    Math.min(Math.round(Number(discountStr) || 0), fees?.total || 0),
+  );
+  const billTotal = Math.max(0, (fees?.total || 0) - discount);
+  const tendered = Math.round(Number(cashGiven) || 0);
+  const change = pay === "cash" && tendered > 0 ? tendered - billTotal : null;
+
   async function checkout() {
     if (!cart.length || !tenant || !fees) return;
+    const name = customerName.trim();
+    if (!name) {
+      setMsg("Write the customer name, then Charge & print.");
+      return;
+    }
     const res = await api("/api/orders", {
       method: "POST",
       body: JSON.stringify({
         channel: "pos",
         serviceType: "counter",
         paymentMethod: pay,
+        customerName: name,
+        customerPhone: customerPhone.trim() || undefined,
+        note: note.trim() || undefined,
+        discount: discount || undefined,
         lines: cart.map((c) => ({
           itemId: c.item.id,
           name: c.item.name,
@@ -135,6 +157,11 @@ export default function PosPage() {
     setMsg(`Order #${data.order.number} placed`);
     applyOrder(data.order as Order);
     setCart([]);
+    setCustomerName("");
+    setCustomerPhone("");
+    setNote("");
+    setDiscountStr("");
+    setCashGiven("");
     const printed = await printCustomerReceipt(tenant, data.order as Order);
     if (printed) setPrintKind("bill");
   }
@@ -219,8 +246,11 @@ export default function PosPage() {
               {fees.tax > 0 && (
                 <p className={styles.muted}>Tax {money(tenant.shop.currency, fees.tax)}</p>
               )}
+              {discount > 0 && (
+                <p className={styles.muted}>Discount {money(tenant.shop.currency, discount)}</p>
+              )}
               <p>
-                <strong>{money(tenant.shop.currency, fees.total)}</strong>
+                <strong>{money(tenant.shop.currency, billTotal)}</strong>
               </p>
             </div>
           )}
@@ -235,6 +265,63 @@ export default function PosPage() {
                 {p}
               </button>
             ))}
+          </div>
+          <div className={styles.posBillFields}>
+            <label>
+              Customer name
+              <input
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Walk-in guest"
+                autoComplete="name"
+              />
+            </label>
+            <label>
+              Phone (optional)
+              <input
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                placeholder="03xx…"
+                inputMode="tel"
+              />
+            </label>
+            <label>
+              Note (optional)
+              <input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Less spicy, packing…"
+              />
+            </label>
+            <label>
+              Discount PKR (optional)
+              <input
+                value={discountStr}
+                onChange={(e) => setDiscountStr(e.target.value.replace(/[^\d]/g, ""))}
+                placeholder="0"
+                inputMode="numeric"
+              />
+            </label>
+            {pay === "cash" ? (
+              <label>
+                Cash received (optional)
+                <input
+                  value={cashGiven}
+                  onChange={(e) => setCashGiven(e.target.value.replace(/[^\d]/g, ""))}
+                  placeholder="Amount given"
+                  inputMode="numeric"
+                />
+              </label>
+            ) : null}
+          </div>
+          {change !== null && tenant && (
+            <p className={styles.muted}>
+              {change >= 0
+                ? `Change ${money(tenant.shop.currency, change)}`
+                : `Still due ${money(tenant.shop.currency, -change)}`}
+            </p>
+          )}
+          <div className={styles.row}>
             <button type="button" className={styles.btn} onClick={() => void checkout()}>
               Charge & print
             </button>

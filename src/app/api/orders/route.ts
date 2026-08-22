@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
       paymentMethod,
       advanceRail,
       paymentProofUrl,
+      discount: rawDiscount,
     } = body as {
       tenantCode?: string;
       channel: "guest" | "pos";
@@ -92,6 +93,7 @@ export async function POST(req: NextRequest) {
       paymentMethod: PaymentMethod;
       advanceRail?: AdvanceRail;
       paymentProofUrl?: string;
+      discount?: number;
     };
 
     if (!rawLines?.length) {
@@ -180,17 +182,23 @@ export async function POST(req: NextRequest) {
     }));
 
     const fees = computeFees(tenant.shop, serviceType, lines);
+    let discount = 0;
+    if (channel === "pos") {
+      const n = Math.round(Number(rawDiscount) || 0);
+      discount = Math.max(0, Math.min(n, fees.total));
+    }
+    const total = Math.max(0, fees.total - discount);
     const now = new Date().toISOString();
     const order = await addOrder(tenantId, {
       channel,
       serviceType,
       tableNumber,
       tableId,
-      customerName,
-      customerPhone,
+      customerName: customerName?.trim() || undefined,
+      customerPhone: customerPhone?.trim() || undefined,
       deliveryAddress,
       lines,
-      note,
+      note: note?.trim() || undefined,
       paymentMethod,
       advanceRail:
         paymentMethod === "paid_in_advance" &&
@@ -210,7 +218,8 @@ export async function POST(req: NextRequest) {
         tax: fees.tax,
       },
       subtotal: fees.subtotal,
-      total: fees.total,
+      total,
+      discount: discount || undefined,
     });
 
     // Don't block the guest/POS response on Resend — free-tier latency killer.
