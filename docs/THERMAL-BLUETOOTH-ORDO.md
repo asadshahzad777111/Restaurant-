@@ -5,8 +5,8 @@ Source kit: https://github.com/asadshahzad777111/asfix-gear/tree/cursor/thermal-
 ## What shipped
 - Capacitor plugin: `mobile/ordo-pos/plugins/asfix-thermal-print` (Bluetooth SPP ESC/POS)
 - Web bridge: `src/lib/thermal/nativePosPrint.ts` — Print pehle native BT try, phir HTML dialog
-- Settings → **Bluetooth thermal printer** — scan paired printers + save
-- POS / Orders print buttons unchanged; path is smarter inside Staff APK
+- Settings / **Printer** menu — tap Printer → pick → Print (AsFix POS style)
+- POS Charge & print, Orders Print — native BT first, then HTML dialog
 
 ## Rebuild Staff APK (Windows — Android Studio)
 
@@ -25,8 +25,8 @@ Phir Super → Apps → us kitchen ka **Staff APK** upload.
 
 ## Use
 1. Phone Bluetooth → printer pair  
-2. Staff APK → Settings → Bluetooth thermal printer → Scan → Use this  
-3. POS Charge / Orders → Print → seedha printer (dialog skip jab saved ho)
+2. Staff APK → **Printer** (sidebar) or POS top card → tap **Printer** → **Use this**  
+3. Tap **Print** (test) or POS **Charge & print** / Orders **Print**
 
 ## Fallback
 Agar native fail / no saved printer → pehle wala 58mm HTML print dialog.

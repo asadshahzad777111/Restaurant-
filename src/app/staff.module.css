@@ -129,6 +129,7 @@
 }
 
 .item {
+  position: relative;
   background: #fff;
   border: 1px solid #e8e4de;
   border-radius: 10px;
@@ -704,6 +705,148 @@
   }
   to {
     transform: scaleX(1);
+  }
+}
+
+.posBillFields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  margin: 0.85rem 0 0.35rem;
+}
+
+.posBillFields label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--staff-muted);
+}
+
+.posBillFields input {
+  border: 1px solid #ddd6cc;
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--staff-text);
+}
+
+@media (max-width: 640px) {
+  .posBillFields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.posLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+  gap: 1rem;
+  align-items: start;
+}
+
+.posCart {
+  position: sticky;
+  top: 0.75rem;
+}
+
+.posCartHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.posCartHead strong {
+  margin: 0;
+}
+
+.posCartList {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+
+.posCartLine {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid #f0ebe4;
+}
+
+.posCartMeta {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.posCartName {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.posQty {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.posQty button {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #ddd6cc;
+  background: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--staff-text);
+  line-height: 1;
+}
+
+.posQty span {
+  min-width: 1.4rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.itemQtyBadge {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 1;
+  background: var(--staff-accent);
+  color: #fff;
+  border-radius: 999px;
+  min-width: 1.45rem;
+  height: 1.45rem;
+  padding: 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn:disabled,
+.btnGhost:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .posLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .posCart {
+    position: static;
   }
 }
 

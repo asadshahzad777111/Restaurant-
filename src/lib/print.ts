@@ -144,6 +144,7 @@ export function customerReceiptHtml(tenant: TenantState, order: Order) {
     f.deliveryFee ? `<span>Delivery</span><strong>${amount(f.deliveryFee)}</strong>` : "",
     f.serviceCharge ? `<span>Service</span><strong>${amount(f.serviceCharge)}</strong>` : "",
     f.tax ? `<span>GST/Tax</span><strong>${amount(f.tax)}</strong>` : "",
+    order.discount ? `<span>Discount</span><strong>-${amount(order.discount)}</strong>` : "",
   ]
     .filter(Boolean)
     .join("");
@@ -179,6 +180,7 @@ export function customerReceiptHtml(tenant: TenantState, order: Order) {
   </div>
   <div class="grand"><span>TOTAL</span><b>${escapeHtml(tenant.shop.currency)} ${amount(order.total)}</b></div>
   <p class="center">${escapeHtml(payLabel(order.paymentMethod))} · ${escapeHtml(order.paymentStatus)}${paid ? " · \u2713 PAID" : ""}</p>
+  ${order.note ? `<p class="k-item">NOTE: ${escapeHtml(order.note)}</p>` : ""}
   <hr class="rule"/>
   <p class="thanks">Thank you</p>
   <p class="visit">Visit again</p>
@@ -236,6 +238,7 @@ export function customerReceiptText(tenant: TenantState, order: Order) {
     f.deliveryFee ? line("Delivery", amount(f.deliveryFee)) : "",
     f.serviceCharge ? line("Service", amount(f.serviceCharge)) : "",
     f.tax ? line("GST/Tax", amount(f.tax)) : "",
+    order.discount ? line("Discount", `-${amount(order.discount)}`) : "",
   ].filter(Boolean);
   const paid = order.paymentStatus === "paid" || order.paymentStatus === "verified";
   return [
@@ -256,6 +259,7 @@ export function customerReceiptText(tenant: TenantState, order: Order) {
     ...extras,
     line("TOTAL", `${tenant.shop.currency} ${amount(order.total)}`),
     ...(paid ? ["\u2713 PAID"] : []),
+    ...(order.note ? [`NOTE: ${order.note}`] : []),
     rule,
     "Thank you",
     "Visit again",
@@ -401,12 +405,27 @@ async function tryOptInBridge(text: string): Promise<boolean> {
 }
 
 export async function printCustomerReceipt(tenant: TenantState, order: Order) {
+  try {
+    sessionStorage.setItem("ordo_last_bill_order_id", order.id);
+  } catch {
+    /* ignore */
+  }
   const text = customerReceiptText(tenant, order);
   const native = await tryNativeThermalPrint(text);
   if (native.ok) return true;
   const bridged = await tryOptInBridge(text);
   if (bridged) return true;
   return printHtml(customerReceiptHtml(tenant, order));
+}
+
+export async function printTestSlip(tenant: TenantState) {
+  const name = tenant.branding.name || "ORDO";
+  const when = new Date().toLocaleString("en-PK");
+  const text = `${name}\nTEST PRINT\n${when}\nPrinter OK\n\n\n`;
+  const native = await tryNativeThermalPrint(text);
+  if (native.ok) return true;
+  const html = `<!doctype html><html><body style="font-family:monospace;width:58mm;padding:8px"><strong>${escapeHtml(name)}</strong><p>TEST PRINT</p><p>${escapeHtml(when)}</p><p>Printer OK</p></body></html>`;
+  return printHtml(html);
 }
 
 export async function printKitchenTicket(tenant: TenantState, order: Order) {

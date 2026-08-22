@@ -12,6 +12,7 @@ import styles from "./Sidebar.module.css";
 const NAV: { href: string; key: DictKey; perm: Permission | "any" }[] = [
   { href: "/home", key: "home", perm: "home" },
   { href: "/pos", key: "pos", perm: "pos" },
+  { href: "/printer", key: "printer", perm: "pos" },
   { href: "/orders", key: "orders", perm: "orders" },
   { href: "/kitchen", key: "kitchen", perm: "kitchen" },
   { href: "/tables", key: "tables", perm: "pos" },

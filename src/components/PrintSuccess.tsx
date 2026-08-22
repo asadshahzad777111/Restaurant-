@@ -29,7 +29,9 @@ export function PrintSuccess({
           {kind === "bill" ? "Bill printed — thank you" : "Kitchen ticket printed"}
         </p>
         <p className={styles.sub}>
-          {kind === "bill" ? "Choose the 58mm / POS-58 printer if asked." : "Ticket sent to the browser print dialog."}
+          {kind === "bill"
+            ? "Sent to the thermal printer (or the phone print dialog if no printer is saved)."
+            : "Kitchen ticket sent to the printer."}
         </p>
       </div>
     </div>

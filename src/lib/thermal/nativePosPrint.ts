@@ -150,7 +150,7 @@ export async function nativePrintText(
   if (!plugin) return { ok: false, reason: "no_plugin", message: "Rebuild Staff APK with thermal plugin" };
   const saved = await getSavedPrinter();
   const address = opts?.address || saved?.address;
-  if (!address) return { ok: false, reason: "no_printer", message: "Select a Bluetooth printer in Settings" };
+  if (!address) return { ok: false, reason: "no_printer", message: "Tap Printer, then Use this" };
   try {
     await requestThermalPrintPermissions();
     await plugin.connect({ address });
