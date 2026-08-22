@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
+import { tenantApkHomeLabels } from "@/lib/apk-urls";
 import styles from "@/app/staff.module.css";
 
 type ApkInfo = {
@@ -69,14 +70,15 @@ export function AdminApkCard() {
   const name = tenant?.branding.name || tenant?.code || "Restaurant";
   const logo = tenant?.branding.logoUrl || "";
   const code = tenant?.code || "";
+  const labels = tenantApkHomeLabels(name);
 
   return (
-    <div className={styles.card}>
-      <h3 style={{ marginTop: 0 }}>Your apps — Android APK</h3>
+    <div className={styles.card} id="apps">
+      <h3 style={{ marginTop: 0 }}>Your apps — send to team &amp; guests</h3>
       <p className={styles.muted}>
-        <strong>Customer APK</strong> diners (Android) · <strong>Staff APK</strong> team / POS /
-        kitchen. In-app logo & name = Settings. Code <strong>{code || "—"}</strong> locked.{" "}
-        <strong>iPhone</strong> users: see <em>Install on iPhone</em> below (web / Add to Home Screen).
+        Phone home-screen names: <strong>{labels.staff}</strong> (Admin / POS / kitchen / print) and{" "}
+        <strong>{labels.customer}</strong> (diners). In-app logo &amp; name follow Settings. Code{" "}
+        <strong>{code || "—"}</strong> locked. iPhone: Install on iPhone below (Add to Home Screen).
       </p>
       <div className={styles.row} style={{ alignItems: "center", marginBottom: "0.75rem" }}>
         {logo ? (

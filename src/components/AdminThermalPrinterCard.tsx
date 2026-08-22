@@ -71,7 +71,7 @@ export function AdminThermalPrinterCard() {
   if (!tenant) return null;
 
   return (
-    <div className={styles.card}>
+    <div className={styles.card} id="thermal">
       <h3 style={{ marginTop: 0 }}>Bluetooth thermal printer (Staff APK)</h3>
       <p className={styles.muted}>
         AsFix kit: classic Bluetooth SPP ESC/POS. Phone Settings → Bluetooth → pair printer, then Scan

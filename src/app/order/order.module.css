@@ -25,6 +25,15 @@
   font-weight: 600;
 }
 
+.helloLine {
+  margin: 0 0 0.15rem !important;
+  font-size: 0.82rem !important;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--guest-text) !important;
+}
+
 .header p {
   margin: 0.2rem 0 0;
   color: var(--guest-muted);

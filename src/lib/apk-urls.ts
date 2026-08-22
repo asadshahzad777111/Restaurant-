@@ -12,6 +12,15 @@ export function apkAppHost() {
   return raw.replace(/\/$/, "");
 }
 
+/** Home-screen labels baked into a per-kitchen APK rebuild. In-app name still follows Settings live. */
+export function tenantApkHomeLabels(restaurantName: string) {
+  const name = restaurantName.trim() || "Restaurant";
+  return {
+    staff: `${name} Staff`,
+    customer: `${name} Order`,
+  };
+}
+
 /** Locked deep-link path for Staff or Customer shell. */
 export function tenantApkLoadsPath(code: string, id: ApkId) {
   const c = encodeURIComponent(safeCode(code));

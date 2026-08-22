@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
+import { StaffHomeHub } from "@/components/StaffHomeHub";
 import { useStore } from "@/lib/store";
 import { money } from "@/lib/fees";
 import styles from "../staff.module.css";
@@ -29,6 +30,7 @@ export default function HomePage() {
   return (
     <AppShell title="Home">
       <div className={styles.page}>
+        <StaffHomeHub />
         {user?.mustChangePassword && (
           <div className={styles.card} style={{ marginBottom: "1rem", borderColor: "#f5c542" }}>
             <strong>Password change recommended</strong>

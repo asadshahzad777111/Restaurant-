@@ -8,6 +8,7 @@ import { LAST_GUEST_TENANT_KEY, guestOrderPath, isTenantCode, parseGuestQr } fro
 import { isCustomerShell, readAppShell, readLockedCustomerTenant } from "@/lib/app-shell";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { IosHomeScreenGuide } from "@/components/IosHomeScreenGuide";
+import { CustomerApkWelcome } from "@/components/CustomerApkWelcome";
 import { isIosDevice, isStandaloneDisplay } from "@/lib/ios-guide";
 import styles from "./guest.module.css";
 
@@ -174,6 +175,7 @@ function GuestInner() {
         force={wantGuide}
         onFinished={() => setIosGuideReady(true)}
       />
+      {brand ? <CustomerApkWelcome restaurantName={brand.name} code={(preset || code).toUpperCase()} /> : null}
       <header className={styles.top}>
         {appShell === "customer" || isCustomerShell() ? (
           <span className={styles.brand} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
@@ -201,10 +203,10 @@ function GuestInner() {
         {(appShell === "customer" || isCustomerShell()) && brand ? (
           <>
             <p className={styles.kicker}>Your restaurant app</p>
-            <h1>{brand.name}</h1>
+            <h1>Welcome to {brand.name}</h1>
             <p className={styles.lead}>
-              Opening this kitchen’s menu only — code {preset || code}. Other restaurants cannot open inside this
-              Customer app / Home Screen shortcut.
+              Hello. This Customer app is only for <strong>{brand.name}</strong> (code {preset || code}
+              ). Order food here. Staff billing and printers are in a different app.
             </p>
             {brand.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element

@@ -34,6 +34,8 @@ node scripts/build-tenant-apks.cjs --code=LAHORE1 --name="Lahore Grill" --skip-g
 
 Then **Super → Apps → select restaurant → Upload** Staff + Customer.
 
+Phone home-screen names: `{Restaurant} Staff` · `{Restaurant} Order` (see `docs/APK-STAFF-CUSTOMER-PLAN.md`). In-app name/logo follow Admin Settings live.
+
 After upload, **Admin → Settings → Your apps** downloads **only that kitchen’s** Customer/Staff APK (own `tenantId` — no other restaurant).
 
 ### Live (Vercel) storage — Cloudflare R2

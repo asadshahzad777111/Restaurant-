@@ -414,6 +414,67 @@
   border-bottom: none;
 }
 
+.helloCard {
+  background: linear-gradient(165deg, #fff8ef 0%, #f7efe4 100%);
+  border: 1px solid #e8e4de;
+  border-radius: 16px;
+  padding: 1.1rem 1.15rem 1.15rem;
+  margin-bottom: 1rem;
+}
+
+.helloKicker {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a6a4a;
+  font-weight: 700;
+}
+
+.helloTitle {
+  margin: 0.25rem 0 0;
+  font-size: 1.45rem;
+  font-weight: 800;
+}
+
+.helloCard strong {
+  font-size: inherit;
+  margin: 0;
+  display: inline;
+}
+
+.hubGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.95rem;
+}
+
+.hubTile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: #fff;
+  border: 1px solid #e8e4de;
+  border-radius: 12px;
+  padding: 0.75rem 0.8rem;
+  text-decoration: none;
+  color: inherit;
+  min-height: 4.6rem;
+}
+
+.hubTile strong {
+  font-size: 0.95rem !important;
+  margin: 0 !important;
+  display: block !important;
+}
+
+.hubTile span {
+  font-size: 0.78rem;
+  color: var(--staff-muted);
+  line-height: 1.3;
+}
+
 @media print {
   .side,
   .meta,

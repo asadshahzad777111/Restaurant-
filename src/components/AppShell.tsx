@@ -3,8 +3,11 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { isStaffShell } from "@/lib/app-shell";
+import { tenantApkHomeLabels } from "@/lib/apk-urls";
 import { Sidebar } from "./Sidebar";
 import { StaffAlerts } from "./StaffAlerts";
+import { StaffApkWelcome } from "./StaffApkWelcome";
 import styles from "./AppShell.module.css";
 
 export function AppShell({
@@ -39,8 +42,13 @@ export function AppShell({
     return <div className={styles.loading}>Loading…</div>;
   }
 
+  const apkStaff = isStaffShell();
+  const homeLabel = tenantApkHomeLabels(tenant.branding.name || tenant.code).staff;
+  const greetName = user.username || user.roleLabel;
+
   return (
     <div className={styles.shell}>
+      <StaffApkWelcome />
       <Sidebar />
       <div className={styles.main}>
         {impersonating && (
@@ -88,7 +96,8 @@ export function AppShell({
               </div>
             )}
             <div>
-              <p className={styles.brand}>{tenant.branding.name}</p>
+              <p className={styles.hello}>Hello, {greetName}</p>
+              <p className={styles.brand}>{apkStaff ? homeLabel : tenant.branding.name}</p>
               <h1 className={styles.title}>{title}</h1>
             </div>
           </div>
@@ -97,11 +106,11 @@ export function AppShell({
               <span className={styles.badge}>Super helping this restaurant</span>
             ) : (
               <span className={styles.badgeMuted}>
-                {user.role === "admin" ? "Restaurant Admin" : "Staff"} · {tenant.code}
+                {user.role === "admin" ? "Restaurant Admin" : user.roleLabel} · {tenant.code}
               </span>
             )}
             <span className={styles.user}>
-              {user.roleLabel} · {user.username}
+              {tenant.branding.name}
               {user.email ? ` · ${user.email}` : ""}
             </span>
             <button
