@@ -634,6 +634,43 @@
 .error {
   color: var(--danger);
   font-weight: 600;
+  animation: errorShake 0.4s ease;
+}
+
+@keyframes errorShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+.cartBarMeta strong {
+  animation: totalPop 0.35s var(--ease-primary);
+  display: inline-block;
+}
+
+@keyframes totalPop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.14);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .textLink {
@@ -643,6 +680,14 @@
 
 .empty {
   padding: 1.5rem 0;
+  text-align: center;
+}
+
+.empty::before {
+  content: "🍽️";
+  display: block;
+  font-size: 2.2rem;
+  margin-bottom: 0.6rem;
 }
 
 .empty h2 {

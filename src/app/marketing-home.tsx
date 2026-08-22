@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useInView } from "framer-motion";
 import { controlUrl } from "@/lib/urls";
+import { useCountUp } from "@/lib/use-count-up";
 import {
   listContainer,
   listItem,
@@ -14,6 +15,19 @@ import {
   viewOnce,
 } from "@/lib/motion";
 import styles from "./marketing.module.css";
+
+/** Animated plan price — counts up when the card scrolls into view. */
+function PlanPrice({ amount, prefix = "₨" }: { amount: number; prefix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.5 });
+  const val = useCountUp(inView ? amount : 0, 900);
+  return (
+    <span ref={ref}>
+      {prefix}
+      {val.toLocaleString()}
+    </span>
+  );
+}
 
 /** Round theme toggle switch — knob swipes forward (dark) / backward (light). */
 function ThemeSwitch({
@@ -472,6 +486,15 @@ export function MarketingHome() {
             <li>Built for Pakistan</li>
             <li>Browser-first OS</li>
           </ul>
+
+          <div className={styles.heroRail} aria-hidden>
+            <span className={styles.railDot} />
+            {["T7 · Karahi + naan", "Ayesha · Pickup", "COD · Biryani box"].map((t, i) => (
+              <span key={t} className={styles.railTicket} style={{ animationDelay: `${i * 0.18}s` }}>
+                {t}
+              </span>
+            ))}
+          </div>
         </motion.div>
 
         <motion.div
@@ -850,7 +873,7 @@ export function MarketingHome() {
                 {"featured" in p && p.featured ? <p className={styles.planBadge}>Most kitchens</p> : null}
                 <h3>{p.name}</h3>
                 <p className={styles.price}>
-                  {p.price}
+                  <PlanPrice amount={parseInt(p.price.replace(/\D/g, ""), 10)} />
                   <span>/mo</span>
                 </p>
                 <p>{p.blurb}</p>

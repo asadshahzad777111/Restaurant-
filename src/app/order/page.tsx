@@ -315,7 +315,11 @@ function CheckoutForm({
         <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" />
       </label>
 
-      {error && <p className={styles.error}>{error}</p>}
+      {error && (
+        <p className={styles.error} key={error} role="alert">
+          {error}
+        </p>
+      )}
       <button type="button" className={styles.place} disabled={busy || !cart.length} onClick={onPlace}>
         {busy ? "Placing…" : `Place order · ${currency} ${total}`}
       </button>
@@ -959,7 +963,7 @@ function OrderInner() {
         >
           <span className={styles.cartBarMeta}>
             <em>{count} item{count === 1 ? "" : "s"}</em>
-            <strong>
+            <strong key={total}>
               {currency} {total}
             </strong>
           </span>

@@ -68,8 +68,8 @@ guest-dark + staff-light + marketing-cream themes, AsFix staff chrome, motion he
 | P0 | Isolation, alerts, 58mm, guards, audit script | ✅ shipped |
 | P1 | Scanner terminal upgrade + staff home dashboard + global polish + marketing ticker + theme switch | ✅ shipped |
 | P2 | POS/Kitchen/Orders micro-interactions + Sales bars + track stepper pulse | ✅ shipped |
-| P3 | Guest order checkout polish + Login glow | next |
-| P4 | Marketing hero ticket-rail + demo count-ups | partially in P1 (ticker) |
+| P3 | Guest checkout shake/pop + empty state + login brand entrance | ✅ shipped |
+| P4 | Marketing hero live ticket-rail + plan price count-ups + ticker | ✅ shipped |
 
 ## A-Z page inventory
 
