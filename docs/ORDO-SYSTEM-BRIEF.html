@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>ORDO OS — System Brief (A to Z)</title>
+  <style>
+    @page { size: A4; margin: 16mm 16mm 18mm; }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      color: #1c1916;
+      background: #fff;
+      font: 10.5pt/1.45 "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    }
+    h1, h2, h3 { page-break-after: avoid; }
+    h1 {
+      font-size: 22pt;
+      margin: 0 0 4pt;
+      letter-spacing: -0.02em;
+    }
+    h2 {
+      font-size: 13pt;
+      margin: 18pt 0 8pt;
+      padding-bottom: 4pt;
+      border-bottom: 2px solid #c45c26;
+      color: #1c1916;
+    }
+    h3 { font-size: 11pt; margin: 12pt 0 6pt; }
+    p, li { margin: 0 0 6pt; }
+    ul, ol { margin: 0 0 8pt; padding-left: 1.2rem; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0 0 10pt;
+      font-size: 9.5pt;
+      page-break-inside: auto;
+    }
+    tr { page-break-inside: avoid; }
+    th, td {
+      border: 1px solid #e8e4de;
+      padding: 5pt 7pt;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #1c1916; color: #fffaf4; font-weight: 600; }
+    td strong { font-weight: 700; }
+    .cover {
+      border: 1px solid #e8e4de;
+      background: linear-gradient(165deg, #fff8ef 0%, #f7efe4 100%);
+      padding: 18pt 18pt 14pt;
+      margin-bottom: 14pt;
+      border-radius: 6pt;
+    }
+    .kicker {
+      font-size: 8.5pt;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #c45c26;
+      font-weight: 700;
+      margin: 0 0 6pt;
+    }
+    .sub { color: #5c534c; margin: 0 0 8pt; }
+    .meta { font-size: 9.5pt; color: #3d3833; }
+    .meta a { color: #1c1916; }
+    .pitch {
+      background: #1c1916;
+      color: #fffaf4;
+      padding: 10pt 12pt;
+      margin: 10pt 0 0;
+      font-size: 10pt;
+      line-height: 1.4;
+    }
+    .note {
+      background: #fff4e8;
+      border-left: 3px solid #c45c26;
+      padding: 8pt 10pt;
+      margin: 8pt 0 10pt;
+      font-size: 9.5pt;
+    }
+    .footer-note {
+      margin-top: 16pt;
+      font-size: 8.5pt;
+      color: #8a6a4a;
+      border-top: 1px solid #e8e4de;
+      padding-top: 8pt;
+    }
+    code { font-family: ui-monospace, Consolas, monospace; font-size: 8.5pt; }
+  </style>
+</head>
+<body>
+  <header class="cover">
+    <p class="kicker">Confidential briefing · share with consultants</p>
+    <h1>ORDO OS — System Brief (A to Z)</h1>
+    <p class="sub">Everything that is on the live website and in the kitchen apps, in one document you can send to anyone.</p>
+    <p class="meta">
+      <strong>Brand:</strong> ORDO &nbsp;·&nbsp; <strong>Product:</strong> ORDO OS<br />
+      <strong>Restaurants:</strong> https://ordo.asfins.com<br />
+      <strong>Owner HQ (Super only):</strong> https://control.asfins.com<br />
+      <strong>WhatsApp:</strong> +92 303 9227000
+    </p>
+    <p class="pitch">ORDO is a multi-kitchen restaurant operating system: guest QR ordering, counter POS, kitchen tickets, menu, stock, billing, and Android apps. It is not only a POS. Every restaurant is isolated. Super creates kitchens. Each Admin runs only their kitchen. Guests never see Super HQ.</p>
+  </header>
+
+  <h2>1. Three websites (never mix)</h2>
+  <table>
+    <tr><th>Site</th><th>URL</th><th>Who</th><th>What</th></tr>
+    <tr><td><strong>Restaurant site</strong></td><td>ordo.asfins.com</td><td>Guests + kitchen staff</td><td>Marketing, guest order, staff login, POS</td></tr>
+    <tr><td><strong>Super HQ</strong></td><td>control.asfins.com</td><td>Platform owner only</td><td>Create restaurants, billing, upload APKs</td></tr>
+    <tr><td><strong>API</strong></td><td>api.ordo.asfins.com</td><td>System</td><td>Backend /api</td></tr>
+    <tr><td><strong>Media</strong></td><td>media.ordo.asfins.com</td><td>System</td><td>Logos, photos, APK files</td></tr>
+  </table>
+  <p class="note"><strong>Rule:</strong> Staff/Customer APKs never open Super HQ. Guests never open Admin. Kitchen A data never appears in Kitchen B.</p>
+
+  <h2>2. Three kinds of people</h2>
+  <ol>
+    <li><strong>Super (platform owner)</strong> — create/suspend restaurants, plans, leads, upload Staff + Customer APKs.</li>
+    <li><strong>Restaurant Admin / Staff</strong> — POS, kitchen, menu, settings for one kitchen code.</li>
+    <li><strong>Customer / Guest</strong> — menu, cart, order, track — that kitchen only.</li>
+  </ol>
+  <p>Each restaurant has a <strong>code</strong> (example: DEMO). Login and APKs lock to that code.</p>
+
+  <h2>3. What is written on the public website</h2>
+  <p><strong>Top navigation:</strong> Company · Products · Tour · Plans · ORDO OS · Shop · Insights · About<br />
+  <strong>Buttons:</strong> Try guest demo · Admin Login · Dark/Light theme</p>
+
+  <h3>Live Demo Kitchen</h3>
+  <ul>
+    <li>“Try the guest path. No account needed.”</li>
+    <li>Dining, pickup, delivery, table QR · code <strong>DEMO</strong></li>
+    <li>Open live demo: <code>/order?tenant=DEMO</code> · scanner: <code>/scan</code></li>
+  </ul>
+
+  <h3>Product tour (four stations — as written)</h3>
+  <ol>
+    <li><strong>Guest</strong> — Scan table QR or Customer APK: menu, modifiers, cart, track status.</li>
+    <li><strong>Counter POS</strong> — Staff APK / POS bills, prints 58mm, same catalog.</li>
+    <li><strong>Kitchen</strong> — Tickets placed → preparing → ready. Sound on new guest orders.</li>
+    <li><strong>Owner</strong> — Sales &amp; Profit, day close, Super HQ billing and named Staff/Customer APKs.</li>
+  </ol>
+
+  <h3>Company copy</h3>
+  <p>“We build the quiet layer between guests and the kitchen.” Hospitality tech with a floor-first story for real service pressure in Pakistan.</p>
+  <ul>
+    <li><strong>Practical before complicated</strong> — phones and laptops you already own.</li>
+    <li><strong>Isolated by default</strong> — menu, stock, orders, logo, reviews never cross.</li>
+    <li><strong>Built with local reality</strong> — PKR, mixed dining / takeaway / delivery, WhatsApp, internet required.</li>
+  </ul>
+
+  <h3>ORDO OS modules (as written)</h3>
+  <table>
+    <tr><th>Module</th><th>What the website says</th></tr>
+    <tr><td>Guest order</td><td>Public menu, cart, checkout for dining, takeaway, delivery. Track ticket, review after complete.</td></tr>
+    <tr><td>QR / scanner</td><td>Table QR opens the right kitchen and table. Camera or paste / restaurant code.</td></tr>
+    <tr><td>Staff POS</td><td>Counter sale on phone, tablet, or laptop. Same catalog as the public menu.</td></tr>
+    <tr><td>Kitchen display</td><td>One queue for guest and counter tickets. Status moves without a separate app install.</td></tr>
+    <tr><td>Menu sync</td><td>Staff add, hide, or price an item. Guests see that catalog. Cost stays off the public page.</td></tr>
+    <tr><td>Receipts</td><td>58mm browser bill. Thermal hardware is a quoted add-on — not a fake Windows driver.</td></tr>
+  </table>
+
+  <h3>Connected operations</h3>
+  <p>Order → Prepare → Handoff → Record → Understand</p>
+
+  <h3>Outcomes (as written)</h3>
+  <ul>
+    <li><strong>Control</strong> — See what is happening now.</li>
+    <li><strong>Clarity</strong> — Keep every team on the same truth.</li>
+    <li><strong>Continuity</strong> — Carry work into the business record.</li>
+  </ul>
+
+  <h3>Built for Pakistan (as written)</h3>
+  <ul>
+    <li>Use familiar devices — no proprietary POS hardware required.</li>
+    <li>Lightweight web operation on everyday networks and screens.</li>
+    <li>Local payment reality — cash, wallet, or card recorded after you take the money.</li>
+    <li>Isolation you can explain — many kitchens; each keeps its own menu, stock, and logo.</li>
+  </ul>
+
+  <h3>FAQs (as written on the site)</h3>
+  <ul>
+    <li><strong>What is ORDO?</strong> A restaurant OS: guest ordering, POS, kitchen tickets, menu, stock, Super Admin for many kitchens. POS is one part — not the whole product.</li>
+    <li><strong>Is this only a POS?</strong> No. Guests order from /guest or /scan. Staff run POS, kitchen, menu, settings.</li>
+    <li><strong>Do two restaurants share a menu?</strong> No.</li>
+    <li><strong>How do guests order?</strong> Table QR, restaurant code on /guest, or /order?tenant=CODE.</li>
+    <li><strong>Per-order fee?</strong> No. Monthly PKR. Printers quoted separately.</li>
+    <li><strong>Special POS machine?</strong> No. Browser-first. Internet required.</li>
+    <li><strong>Offline?</strong> No. Live system.</li>
+    <li><strong>JazzCash / card gateway?</strong> Marketing FAQ: paid-in-advance is a recorded status, not a fake checkout SDK. Live Admin Settings can also turn on Bank / JazzCash / EasyPaisa + screenshot proof.</li>
+  </ul>
+
+  <h3>About (as written)</h3>
+  <p>ORDO is the brand. ORDO OS is the live kitchen product. Staff login is on this site. Platform HQ is on control.asfins.com, not in this nav. Isolation: Tenant A never prints Tenant B’s name.</p>
+
+  <h3>Contact</h3>
+  <p>Form fields: name, email, phone, restaurant name, plan, message → Super HQ → Messages.<br />
+  WhatsApp: <strong>+92 303 9227000</strong></p>
+
+  <h2>4. Plans (prices written on the site)</h2>
+  <table>
+    <tr><th>Plan</th><th>Price / month</th><th>Staff</th><th>What the page lists</th></tr>
+    <tr><td>Starter</td><td>₨999</td><td>up to 5</td><td>Guest dining / takeaway / delivery, QR, POS + kitchen, menu sync, browser receipts</td></tr>
+    <tr><td>Pro</td><td>₨1,999</td><td>up to 15</td><td>Everything in Starter + roles, stock alerts, tracking + reviews, receipt branding</td></tr>
+    <tr><td>Enterprise</td><td>₨4,499</td><td>up to 40</td><td>Everything in Pro + Super create/suspend, help into a kitchen, thermal printer package on request, priority onboarding</td></tr>
+  </table>
+  <p>No per-order fee. Hardware printer quoted separately.</p>
+
+  <h2>5. Guest / Customer path</h2>
+  <table>
+    <tr><th>Page</th><th>Link</th><th>What it does</th></tr>
+    <tr><td>Guest entry</td><td>ordo.asfins.com/guest</td><td>Restaurant code, Open menu, Gmail, scan QR, paste link</td></tr>
+    <tr><td>Customer app</td><td>/guest?app=customer&amp;tenant=CODE</td><td>Welcome to {Restaurant} — that kitchen only</td></tr>
+    <tr><td>Order</td><td>/order?tenant=CODE</td><td>Menu, cart, dine-in / pickup / delivery</td></tr>
+    <tr><td>Table QR</td><td>/order?tenant=CODE&amp;table=3</td><td>Table number on the ticket</td></tr>
+    <tr><td>Scanner</td><td>/scan</td><td>Camera or paste QR</td></tr>
+    <tr><td>Track</td><td>/track/{token}</td><td>Status + review after complete</td></tr>
+  </table>
+  <p><strong>Guest payments in the live app:</strong> pay at counter, COD, Bank / JazzCash / EasyPaisa + screenshot (Admin on/off). Special offer popup. Place order.</p>
+  <p><strong>Customer APK phone name:</strong> {Restaurant} Order<br />
+  <strong>Customer never sees:</strong> POS, kitchen, thermal print, Super, another kitchen’s menu.</p>
+
+  <h2>6. Staff / Admin path (kitchen)</h2>
+  <p><strong>Login:</strong> https://ordo.asfins.com/login — restaurant code + username + password (Gmail optional).<br />
+  <strong>Staff APK:</strong> /login?app=staff&amp;tenant=CODE<br />
+  <strong>Phone name:</strong> {Restaurant} Staff<br />
+  <strong>Top of app:</strong> Hello, {username} + restaurant name.</p>
+  <table>
+    <tr><th>Screen</th><th>Path</th><th>Job</th></tr>
+    <tr><td>Home</td><td>/home</td><td>Hub: POS, Kitchen, Orders, Tables, Thermal, Customer app</td></tr>
+    <tr><td>POS</td><td>/pos</td><td>Counter billing, same menu</td></tr>
+    <tr><td>Orders</td><td>/orders</td><td>Tickets, print, complete</td></tr>
+    <tr><td>Kitchen</td><td>/kitchen</td><td>Tickets, status, order beep</td></tr>
+    <tr><td>Tables</td><td>/tables</td><td>Floor / dine-in</td></tr>
+    <tr><td>Menu</td><td>/menu</td><td>Items, prices, photos, hide</td></tr>
+    <tr><td>Staff</td><td>/staff</td><td>Users, roles, permissions</td></tr>
+    <tr><td>Day close</td><td>/day-close</td><td>Shift close</td></tr>
+    <tr><td>Sales &amp; Profit</td><td>/sales</td><td>Numbers</td></tr>
+    <tr><td>Settings</td><td>/settings</td><td>Name, logo, hours, fees, payments, offers, Your apps, Bluetooth thermal, iPhone install, password</td></tr>
+  </table>
+  <p><strong>Same Staff APK, different permissions:</strong> Admin (Owner) · Cashier · Kitchen.<br />
+  <strong>Staff APK extras:</strong> Bluetooth thermal print, new-order beep until Stop, stock-low alert, first-open Hello.</p>
+
+  <h2>7. Super HQ (control.asfins.com) — not in public nav</h2>
+  <table>
+    <tr><th>Tab</th><th>What it does</th></tr>
+    <tr><td>Home</td><td>How it works: add restaurant, they login on ordo.asfins.com, guests use /order?tenant=CODE, upload APKs</td></tr>
+    <tr><td>Your restaurants</td><td>Add restaurant + Admin (code, name, plan, username, password, email). Pause, renew, past due, Passwords &amp; Gmail, Open Admin (Help)</td></tr>
+    <tr><td>Apps</td><td>Upload Staff .apk and Customer .apk per kitchen (Play Store: .aab)</td></tr>
+    <tr><td>Pricing plans</td><td>Starter / Pro / Enterprise</td></tr>
+    <tr><td>Messages</td><td>Leads from the public contact form</td></tr>
+    <tr><td>Settings</td><td>Platform Super settings</td></tr>
+  </table>
+  <p>Help mode: Super opens a kitchen with a yellow “Help mode · Super” banner. That is not the kitchen’s Admin login.</p>
+
+  <h2>8. Two Android apps</h2>
+  <table>
+    <tr><th>App</th><th>Who</th><th>Opens</th><th>Thermal</th></tr>
+    <tr><td>Staff</td><td>Admin, cashier, kitchen</td><td>/login?app=staff&amp;tenant=CODE</td><td>Yes (Bluetooth)</td></tr>
+    <tr><td>Customer</td><td>Diners</td><td>/guest?app=customer&amp;tenant=CODE</td><td>No</td></tr>
+  </table>
+  <p>Admin downloads from Settings → Your apps (own kitchen only). Super uploads under Apps. iPhone: web / Add to Home Screen (not an IPA WhatsApp sideload).</p>
+  <p><strong>New restaurant:</strong> (1) Super adds restaurant + Admin (2) Super uploads Staff + Customer APKs (3) Admin sends Customer APK to guests, Staff APK to team. In-app name follows Settings immediately. Phone home-screen name needs a branded APK upload.</p>
+
+  <h2>9. Kitchens on the live site today</h2>
+  <table>
+    <tr><th>Code</th><th>Name</th><th>Role</th></tr>
+    <tr><td>DEMO</td><td>Demo Restaurant</td><td>Public demo kitchen</td></tr>
+    <tr><td>ISO2</td><td>Iso Kitchen Two</td><td>Second test kitchen (proves isolation — not a client brand)</td></tr>
+  </table>
+  <p>A real client kitchen is created in Super with its own code (example: LAHORE1).</p>
+  <p><strong>Demo staff login</strong> (also printed on the login page): code DEMO · admin / admin123. Change passwords in production.</p>
+
+  <h2>10. Order flow (A to Z)</h2>
+  <ol>
+    <li>Guest opens QR / code / Customer APK.</li>
+    <li>Cart → Place order (dine-in / pickup / delivery + payment).</li>
+    <li>Ticket appears on that kitchen’s Orders + Kitchen.</li>
+    <li>Staff hear alert until Stop.</li>
+    <li>Ready → guest track page.</li>
+    <li>Complete → review + stock.</li>
+    <li>Print from POS/Orders → Bluetooth thermal in Staff APK, otherwise browser 58mm.</li>
+  </ol>
+
+  <h2>11. Isolation (say this when you brief someone)</h2>
+  <ul>
+    <li>Each kitchen: own menu, stock, orders, logo, staff, reviews.</li>
+    <li>APKs bake tenant=CODE.</li>
+    <li>Admin API never serves another kitchen’s APK.</li>
+    <li>Tenant A’s receipt never prints Tenant B’s name.</li>
+  </ul>
+
+  <h2>12. Technology (for a developer)</h2>
+  <p>Next.js + TypeScript · Vercel · MongoDB Atlas · Cloudflare R2 · Resend · WhatsApp leads.</p>
+
+  <h2>13. One-sentence pitch (copy this)</h2>
+  <p class="pitch">ORDO is a multi-kitchen restaurant OS: public guest ordering plus staff POS, kitchen, and print. Super HQ creates isolated kitchens and branded APKs. Staff APK = billing, kitchen, thermal. Customer APK = that kitchen’s orders only. Data never mixes.</p>
+
+  <p class="footer-note">ORDO · ordo.asfins.com · control.asfins.com · +92 303 9227000 · Copy-paste version: docs/ORDO-SYSTEM-BRIEF.md in the project.</p>
+</body>
+</html>
