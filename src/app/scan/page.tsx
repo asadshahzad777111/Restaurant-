@@ -1,9 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { LAST_GUEST_TENANT_KEY, guestOrderPath, parseGuestQr } from "@/lib/guest";
+import {
+  listContainer,
+  listItem,
+  pageEnter,
+  useIsCoarsePointer,
+  usePrefersReducedMotion,
+} from "@/lib/motion";
 import styles from "./scan.module.css";
 
 type DetectorCtor = new (options?: { formats: string[] }) => {
@@ -14,15 +22,70 @@ function getDetector(): DetectorCtor | undefined {
   return (window as unknown as { BarcodeDetector?: DetectorCtor }).BarcodeDetector;
 }
 
+const RECENT_KEY = "ordo_recent_kitchens";
+
+type RecentKitchen = { code: string; at: number };
+
+function readRecent(): RecentKitchen[] {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    if (!raw) return [];
+    const list = JSON.parse(raw) as RecentKitchen[];
+    return Array.isArray(list) ? list.filter((k) => k && /^[A-Z0-9_-]{2,24}$/.test(k.code)).slice(0, 6) : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberKitchen(code: string) {
+  try {
+    const next = [{ code, at: Date.now() }, ...readRecent().filter((k) => k.code !== code)].slice(0, 6);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore */
+  }
+}
+
+type CamState = "starting" | "live" | "unsupported" | "denied";
+
 export default function ScanPage() {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("Point the camera at a table QR");
+  const [cam, setCam] = useState<CamState>("starting");
+  const [facing, setFacing] = useState<"environment" | "user">("environment");
   const [manual, setManual] = useState("");
-  const [supported, setSupported] = useState(true);
+  const [recent, setRecent] = useState<RecentKitchen[]>([]);
+  const [opening, setOpening] = useState<string | null>(null);
   const lock = useRef(false);
+  const openingRef = useRef<string | null>(null);
+  const reduced = usePrefersReducedMotion();
+  const coarse = useIsCoarsePointer();
+  const enter = pageEnter(reduced, coarse);
+  const item = listItem(reduced, coarse);
 
+  useEffect(() => {
+    setRecent(readRecent());
+  }, []);
+
+  const openKitchen = useCallback(
+    (code: string, extra?: { table?: string; mode?: "pickup" | "delivery" | "table" }) => {
+      const tenant = code.trim().toUpperCase();
+      if (openingRef.current) return;
+      openingRef.current = tenant;
+      setOpening(tenant);
+      setStatus(`Opening ${tenant}…`);
+      localStorage.setItem(LAST_GUEST_TENANT_KEY, tenant);
+      rememberKitchen(tenant);
+      window.setTimeout(() => {
+        router.push(guestOrderPath({ tenant, table: extra?.table, mode: extra?.mode }));
+      }, reduced ? 0 : 420);
+    },
+    [reduced, router],
+  );
+
+  // Camera + BarcodeDetector loop. Restarts when `facing` toggles.
   useEffect(() => {
     let stream: MediaStream | undefined;
     let raf = 0;
@@ -31,20 +94,21 @@ export default function ScanPage() {
     async function start() {
       const Detector = getDetector();
       if (!Detector) {
-        setSupported(false);
+        setCam("unsupported");
         setStatus("This browser cannot decode QR from camera. Paste the link below.");
         return;
       }
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } },
+          video: { facingMode: { ideal: facing } },
           audio: false,
         });
       } catch {
-        setSupported(false);
-        setError("Camera permission was denied. Paste the QR link or enter a code instead.");
+        setCam("denied");
+        setStatus("Camera permission denied. Paste the QR link or enter a code instead.");
         return;
       }
+      setCam("live");
       const video = videoRef.current;
       if (!video || dead) {
         stream.getTracks().forEach((t) => t.stop());
@@ -64,11 +128,10 @@ export default function ScanPage() {
               const parsed = parseGuestQr(raw);
               if (!parsed) {
                 setError("That QR is not an ORDO restaurant link.");
+                setStatus("QR read — not an ORDO link. Try another table.");
               } else {
                 lock.current = true;
-                setStatus(`Opening ${parsed.tenant}…`);
-                localStorage.setItem(LAST_GUEST_TENANT_KEY, parsed.tenant);
-                router.push(guestOrderPath(parsed));
+                openKitchen(parsed.tenant, { table: parsed.table, mode: parsed.mode });
                 return;
               }
             }
@@ -87,7 +150,13 @@ export default function ScanPage() {
       cancelAnimationFrame(raf);
       stream?.getTracks().forEach((t) => t.stop());
     };
-  }, [router]);
+  }, [facing, openKitchen]);
+
+  function toggleCamera() {
+    setError("");
+    setStatus("Switching camera…");
+    setFacing((f) => (f === "environment" ? "user" : "environment"));
+  }
 
   async function onManual(e: React.FormEvent) {
     e.preventDefault();
@@ -97,50 +166,151 @@ export default function ScanPage() {
       return;
     }
     localStorage.setItem(LAST_GUEST_TENANT_KEY, parsed.tenant);
+    rememberKitchen(parsed.tenant);
     router.push(guestOrderPath(parsed));
   }
 
+  const statusTone =
+    cam === "live"
+      ? styles.statusLive
+      : opening
+        ? styles.statusOpen
+        : cam === "denied" || error
+          ? styles.statusError
+          : styles.statusIdle;
+
   return (
-    <div className={styles.page}>
+    <motion.div className={styles.page} variants={enter} initial="hidden" animate="show">
       <header className={styles.top}>
         <Link href="/guest" className={styles.back}>
-          Back
+          ← Back
         </Link>
         <span className={styles.brand}>ORDO</span>
       </header>
 
       <main className={styles.main}>
-        <h1>Scan QR</h1>
-        <p className={styles.lead}>
-          Table QRs open dining for that restaurant only. Pickup and delivery links work the same way.
-        </p>
-
-        <div className={styles.view}>
-          <video ref={videoRef} className={styles.video} playsInline muted />
-          <div className={styles.frame} aria-hidden />
-          <p className={styles.status}>{status}</p>
-        </div>
-
-        {!supported && (
-          <p className={styles.hint}>
-            Camera decoding needs a Chromium browser on HTTPS (or localhost). The paste field always works.
+        <motion.div variants={item} initial="hidden" animate="show">
+          <h1>Scan QR</h1>
+          <p className={styles.lead}>
+            Table QRs open dining for that restaurant only. Pickup and delivery links work the same way.
           </p>
+        </motion.div>
+
+        <motion.div
+          className={styles.view}
+          variants={item}
+          initial="hidden"
+          animate="show"
+          transition={{ delay: reduced ? 0 : 0.05 }}
+        >
+          <video ref={videoRef} className={styles.video} playsInline muted />
+
+          {/* Viewfinder: corners + laser + shimmer */}
+          <div className={styles.corners} aria-hidden>
+            <i className={styles.cornerTL} />
+            <i className={styles.cornerTR} />
+            <i className={styles.cornerBL} />
+            <i className={styles.cornerBR} />
+          </div>
+          {cam === "live" && <div className={styles.laser} aria-hidden />}
+
+          <p className={`${styles.status} ${statusTone}`} role="status">
+            {opening ? (
+              <>
+                <span className={styles.spinner} aria-hidden />
+                Opening {opening}…
+              </>
+            ) : (
+              status
+            )}
+          </p>
+        </motion.div>
+
+        <motion.div
+          className={styles.actions}
+          variants={listContainer(0.05)}
+          initial="hidden"
+          animate="show"
+        >
+          {cam === "live" && (
+            <button type="button" className={styles.flip} onClick={toggleCamera}>
+              {facing === "environment" ? "📷 Front camera" : "📷 Back camera"}
+            </button>
+          )}
+          <button type="button" className={styles.demo} onClick={() => openKitchen("DEMO")}>
+            ✨ Open DEMO kitchen
+          </button>
+        </motion.div>
+
+        {recent.length > 0 && (
+          <motion.section
+            className={styles.recent}
+            variants={listContainer(0.04)}
+            initial="hidden"
+            animate="show"
+          >
+            <div className={styles.recentHead}>
+              <span>Recent kitchens</span>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem(RECENT_KEY);
+                  setRecent([]);
+                }}
+              >
+                Clear
+              </button>
+            </div>
+            <div className={styles.chips}>
+              {recent.map((k) => (
+                <motion.button
+                  key={k.code}
+                  type="button"
+                  variants={item}
+                  className={styles.chip}
+                  onClick={() => openKitchen(k.code)}
+                >
+                  {k.code}
+                </motion.button>
+              ))}
+            </div>
+          </motion.section>
         )}
 
-        <form className={styles.form} onSubmit={(e) => void onManual(e)}>
+        <motion.form className={styles.form} variants={item} initial="hidden" animate="show" onSubmit={(e) => void onManual(e)}>
           <label className={styles.field}>
             Paste QR text or restaurant code
             <input
               value={manual}
               onChange={(e) => setManual(e.target.value)}
               placeholder="DEMO or /order?tenant=DEMO&table=7"
+              autoCapitalize="characters"
             />
           </label>
-          <button type="submit">Open</button>
-        </form>
+          <button type="submit" className={styles.openBtn}>
+            Open
+          </button>
+        </motion.form>
 
-        {error && <p className={styles.error}>{error}</p>}
+        {cam === "unsupported" && (
+          <motion.p className={styles.hint} variants={item} initial="hidden" animate="show">
+            Camera decoding needs a Chromium browser on HTTPS (or localhost). The paste field and
+            recent kitchens always work.
+          </motion.p>
+        )}
+
+        {error && (
+          <motion.p
+            className={styles.error}
+            variants={item}
+            initial="hidden"
+            animate="show"
+            key={error}
+          >
+            {error}
+          </motion.p>
+        )}
       </main>
-    </div>
+    </motion.div>
   );
 }

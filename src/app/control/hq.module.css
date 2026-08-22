@@ -179,11 +179,13 @@
   padding: 1rem 1.1rem;
   display: grid;
   gap: 0.2rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .stats strong {
   font-size: 1.75rem;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .stats span {
@@ -245,6 +247,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .table th,

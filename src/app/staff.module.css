@@ -66,6 +66,7 @@
   background: #fff;
   border-radius: 12px;
   overflow: hidden;
+  font-variant-numeric: tabular-nums;
 }
 
 .mobileCards {
@@ -81,6 +82,7 @@
   display: grid;
   gap: 0.65rem;
   min-width: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .mobileCard strong,
@@ -390,8 +392,8 @@
   gap: 0.25rem;
 }
 
-.statCard span {
-  font-size: 0.75rem;
+.statCard > span {
+  font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--staff-muted);
@@ -400,8 +402,9 @@
 .statCard strong {
   font-size: 1.45rem;
   font-weight: 700;
-  font-family: var(--display);
+  font-family: var(--font);
   font-style: normal;
+  font-variant-numeric: tabular-nums;
 }
 
 .statCard em {
@@ -436,6 +439,134 @@
 
 .reportList li:last-child {
   border-bottom: none;
+}
+
+/* ---- Staff Home dashboard ---- */
+.homeHero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 16px;
+  background:
+    radial-gradient(900px 260px at 12% -40%, rgba(196, 92, 38, 0.16), transparent 60%),
+    var(--asfix-surface, #fff);
+  border: 1px solid var(--asfix-line, #e8e4de);
+  box-shadow: var(--asfix-card-shadow, none);
+}
+
+.homeGreeting {
+  margin: 0 0 0.2rem;
+  font-family: var(--display);
+  font-size: 1.45rem;
+  font-weight: 600;
+}
+
+.homeClock {
+  display: grid;
+  justify-items: end;
+  gap: 0.1rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 12px;
+  background: rgba(28, 25, 22, 0.05);
+  border: 1px solid var(--asfix-line, #e8e4de);
+}
+
+.homeClock strong {
+  font-size: 1.3rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.homeClock span {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--staff-muted);
+}
+
+.statValue {
+  font-size: 1.45rem !important;
+  font-weight: 700;
+  font-family: var(--font) !important;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.statHint {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-size: 0.8rem !important;
+  color: var(--staff-muted);
+}
+
+.statAccent {
+  border-color: rgba(196, 92, 38, 0.4);
+  background:
+    linear-gradient(160deg, rgba(196, 92, 38, 0.09), transparent 55%),
+    var(--asfix-surface, #fff);
+}
+
+.stockCritical {
+  animation: ordoPulse 1.4s ease-in-out infinite;
+}
+
+.quickWrap {
+  margin-top: 1.25rem;
+}
+
+.quickTitle {
+  margin: 0 0 0.6rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--staff-muted);
+}
+
+.quickGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.6rem;
+}
+
+.quickTile {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.9rem 0.95rem;
+  border-radius: 14px;
+  background: var(--asfix-surface, #fff);
+  border: 1px solid var(--asfix-line, #e8e4de);
+  box-shadow: var(--asfix-card-shadow, none);
+  transition:
+    transform 0.18s var(--ease-primary),
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+  height: 100%;
+}
+
+.quickTile:hover {
+  transform: translateY(-3px);
+  border-color: rgba(196, 92, 38, 0.45);
+  box-shadow: 0 14px 34px rgba(28, 25, 22, 0.1);
+}
+
+.quickEmoji {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.quickTile strong {
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.quickTile em {
+  font-style: normal;
+  font-size: 0.78rem;
+  color: var(--staff-muted);
 }
 
 @media print {

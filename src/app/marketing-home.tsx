@@ -484,6 +484,26 @@ export function MarketingHome() {
         </motion.div>
       </section>
 
+      {/* Live kitchen ticker — a slice of the floor, always moving */}
+      <div className={styles.ticker} aria-hidden>
+        <div className={styles.tickerTrack}>
+          {[
+            "Table 7 · Karahi + naan",
+            "Counter bill · 58mm print",
+            "Takeaway · Ayesha",
+            "Delivery · COD · Biryani box",
+            "Kitchen ticket · placed → ready",
+            "Stock alert · soft drinks low",
+            "Guest review · 5 stars",
+            "Day close · PKR 45,200",
+          ].map((t) => (
+            <span key={t}>
+              {t} <i>✦</i>
+            </span>
+          ))}
+        </div>
+      </div>
+
       <section className={styles.gallery} aria-label="Kitchen stills">
         <div className={styles.wrap}>
           <motion.div variants={section} initial="hidden" whileInView="show" viewport={viewOnce}>

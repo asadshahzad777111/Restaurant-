@@ -1656,3 +1656,51 @@
     animation: none;
   }
 }
+
+/* ---- Live kitchen ticker ---- */
+.ticker {
+  overflow: hidden;
+  border-block: 1px solid var(--line, #e6ddd2);
+  background: rgba(196, 92, 38, 0.05);
+  padding: 0.55rem 0;
+  white-space: nowrap;
+}
+
+.tickerTrack {
+  display: inline-flex;
+  gap: 2.5rem;
+  padding-right: 2.5rem;
+  animation: ordo-marquee 36s linear infinite;
+  will-change: transform;
+}
+
+.tickerTrack span {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink, #1c1916);
+  display: inline-flex;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+.tickerTrack i {
+  font-style: normal;
+  color: var(--ember, #c45c26);
+}
+
+@keyframes ordo-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tickerTrack {
+    animation: none;
+  }
+}

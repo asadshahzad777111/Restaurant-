@@ -1,6 +1,8 @@
 .page {
   min-height: 100vh;
-  background: #0e0c0a;
+  background:
+    radial-gradient(1200px 500px at 50% -10%, rgba(196, 92, 38, 0.14), transparent 60%),
+    #0e0c0a;
   color: var(--guest-text);
 }
 
@@ -14,6 +16,11 @@
 .back {
   color: var(--guest-muted);
   font-size: 0.9rem;
+  transition: color 0.18s ease;
+}
+
+.back:hover {
+  color: var(--guest-text);
 }
 
 .brand {
@@ -43,11 +50,13 @@
 
 .view {
   position: relative;
-  margin: 1.25rem 0;
+  margin: 1.25rem 0 0.75rem;
   border-radius: 18px;
   overflow: hidden;
   background: #1a1612;
   aspect-ratio: 3 / 4;
+  border: 1px solid var(--guest-line);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
 }
 
 .video {
@@ -56,27 +65,229 @@
   object-fit: cover;
 }
 
-.frame {
+/* ---- Viewfinder chrome ---- */
+.corners {
   pointer-events: none;
   position: absolute;
-  inset: 18% 14%;
-  border: 1px solid rgba(243, 237, 228, 0.35);
-  border-radius: 12px;
-  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.35);
+  inset: 16% 12%;
 }
 
+.corners i {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-color: var(--ember-bright);
+  filter: drop-shadow(0 0 6px rgba(217, 106, 48, 0.7));
+}
+
+.cornerTL {
+  top: 0;
+  left: 0;
+  border-top: 3px solid;
+  border-left: 3px solid;
+  border-top-left-radius: 10px;
+}
+
+.cornerTR {
+  top: 0;
+  right: 0;
+  border-top: 3px solid;
+  border-right: 3px solid;
+  border-top-right-radius: 10px;
+}
+
+.cornerBL {
+  bottom: 0;
+  left: 0;
+  border-bottom: 3px solid;
+  border-left: 3px solid;
+  border-bottom-left-radius: 10px;
+}
+
+.cornerBR {
+  bottom: 0;
+  right: 0;
+  border-bottom: 3px solid;
+  border-right: 3px solid;
+  border-bottom-right-radius: 10px;
+}
+
+/* Sweeping laser line while the camera is live */
+@keyframes ordo-scanline {
+  0% {
+    top: 12%;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    top: 84%;
+    opacity: 0;
+  }
+}
+
+.laser {
+  pointer-events: none;
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--ember-bright), transparent);
+  box-shadow: 0 0 12px 2px rgba(217, 106, 48, 0.55);
+  animation: ordo-scanline 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+/* Status pill */
 .status {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 0.9rem;
+  right: 0.9rem;
+  bottom: 0.9rem;
   margin: 0;
-  padding: 0.85rem 1rem;
-  background: linear-gradient(transparent, rgba(14, 12, 10, 0.92));
-  font-size: 0.88rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(14, 12, 10, 0.78);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--guest-line);
+  font-size: 0.86rem;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  transition: color 0.2s ease;
 }
 
+.statusIdle {
+  color: var(--guest-text);
+}
+
+.statusLive {
+  color: #7fd4a5;
+}
+
+.statusOpen {
+  color: var(--ember-bright);
+}
+
+.statusError {
+  color: #ff9d8f;
+}
+
+.spinner {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid rgba(217, 106, 48, 0.25);
+  border-top-color: var(--ember-bright);
+  animation: ordo-spin 0.8s linear infinite;
+  flex: none;
+}
+
+@keyframes ordo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- Action row ---- */
+.actions {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0 0 1.1rem;
+}
+
+.flip,
+.demo {
+  flex: 1;
+  border-radius: 999px;
+  padding: 0.68rem 0.9rem;
+  font-weight: 700;
+  font-size: 0.88rem;
+  border: 1px solid var(--guest-line);
+  background: var(--guest-elevated);
+  color: var(--guest-text);
+  transition:
+    transform 0.18s var(--ease-primary),
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.flip:hover,
+.demo:hover {
+  border-color: rgba(217, 106, 48, 0.6);
+  transform: translateY(-1px);
+}
+
+.demo {
+  background: linear-gradient(135deg, var(--ember), var(--ember-bright));
+  border-color: transparent;
+  color: var(--ember-ink);
+}
+
+/* ---- Recent kitchens ---- */
+.recent {
+  margin: 0 0 1.1rem;
+}
+
+.recentHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--guest-muted);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.recentHead button {
+  background: none;
+  border: none;
+  color: var(--guest-muted);
+  font-size: 0.78rem;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.recentHead button:hover {
+  color: var(--guest-text);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.chip {
+  border: 1px solid var(--guest-line);
+  background: var(--guest-elevated);
+  color: var(--guest-text);
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition:
+    transform 0.18s var(--ease-primary),
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.chip:hover {
+  border-color: var(--ember);
+  background: var(--guest-soft);
+  transform: translateY(-1px);
+}
+
+/* ---- Paste form ---- */
 .form {
   display: grid;
   gap: 0.65rem;
@@ -96,18 +307,41 @@
   color: var(--guest-text);
   border-radius: var(--radius);
   padding: 0.75rem 0.85rem;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
-.form button {
+.field input:focus {
+  outline: none;
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px rgba(196, 92, 38, 0.22);
+}
+
+.openBtn {
   border: none;
   border-radius: 999px;
   background: var(--ember);
   color: var(--ember-ink);
   font-weight: 700;
   padding: 0.75rem;
+  transition:
+    transform 0.18s var(--ease-primary),
+    background 0.18s ease;
+}
+
+.openBtn:hover {
+  background: var(--ember-bright);
+  transform: translateY(-1px);
 }
 
 .error {
   color: var(--danger);
   font-weight: 600;
+  margin: 0.9rem 0 0;
+  background: rgba(201, 74, 60, 0.1);
+  border: 1px solid rgba(201, 74, 60, 0.35);
+  border-radius: var(--radius);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.88rem;
 }

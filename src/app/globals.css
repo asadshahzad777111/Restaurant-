@@ -78,6 +78,48 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+html {
+  scroll-behavior: smooth;
+  /* iOS Safari: prevent auto text inflation on landscape / pinch */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Mobile taps: no grey flash behind buttons/links */
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Anchor targets keep breathing room under the sticky nav */
+section[id],
+div[id] {
+  scroll-margin-top: 4.5rem;
+}
+
+/* Thin ember scrollbar — guest dark + staff/marketing light both readable */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(196, 92, 38, 0.55) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(196, 92, 38, 0.45);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(196, 92, 38, 0.7);
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 body:has([data-marketing-page]) {
   background: #f6eee2;
   color: #1a1612;
