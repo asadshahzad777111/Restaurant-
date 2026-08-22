@@ -100,6 +100,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
 
+    if (channel === "pos" && !customerName?.trim()) {
+      return NextResponse.json({ error: "Customer name required" }, { status: 400 });
+    }
+
     const ruleError = assertOrderRules({
       channel,
       serviceType,

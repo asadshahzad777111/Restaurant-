@@ -52,6 +52,7 @@ export default function PosPage() {
   const [note, setNote] = useState("");
   const [discountStr, setDiscountStr] = useState("");
   const [cashGiven, setCashGiven] = useState("");
+  const [charging, setCharging] = useState(false);
 
   const lowStock = (tenant?.stock ?? []).filter((s) => s.quantity <= s.lowThreshold);
   const categories = useMemo(() => {
@@ -114,6 +115,20 @@ export default function PosPage() {
     });
   }
 
+  function bumpQty(key: string, delta: number) {
+    setCart((prev) =>
+      prev.flatMap((p) => {
+        if (p.key !== key) return [p];
+        const qty = p.qty + delta;
+        return qty <= 0 ? [] : [{ ...p, qty }];
+      }),
+    );
+  }
+
+  function qtyOf(itemId: string) {
+    return cart.filter((c) => c.item.id === itemId).reduce((s, c) => s + c.qty, 0);
+  }
+
   const discount = Math.max(
     0,
     Math.min(Math.round(Number(discountStr) || 0), fees?.total || 0),
@@ -123,47 +138,56 @@ export default function PosPage() {
   const change = pay === "cash" && tendered > 0 ? tendered - billTotal : null;
 
   async function checkout() {
-    if (!cart.length || !tenant || !fees) return;
+    if (!cart.length || !tenant || !fees || charging) return;
     const name = customerName.trim();
     if (!name) {
       setMsg("Write the customer name, then Charge & print.");
       return;
     }
-    const res = await api("/api/orders", {
-      method: "POST",
-      body: JSON.stringify({
-        channel: "pos",
-        serviceType: "counter",
-        paymentMethod: pay,
-        customerName: name,
-        customerPhone: customerPhone.trim() || undefined,
-        note: note.trim() || undefined,
-        discount: discount || undefined,
-        lines: cart.map((c) => ({
-          itemId: c.item.id,
-          name: c.item.name,
-          qty: c.qty,
-          basePrice: c.item.price,
-          modifiers: c.modifiers,
-          unitPrice: c.unitPrice,
-        })),
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setMsg(data.error || "Failed");
-      return;
+    setCharging(true);
+    setMsg("");
+    try {
+      const res = await api("/api/orders", {
+        method: "POST",
+        body: JSON.stringify({
+          channel: "pos",
+          serviceType: "counter",
+          paymentMethod: pay,
+          customerName: name,
+          customerPhone: customerPhone.trim() || undefined,
+          note: note.trim() || undefined,
+          discount: discount || undefined,
+          lines: cart.map((c) => ({
+            itemId: c.item.id,
+            name: c.item.name,
+            qty: c.qty,
+            basePrice: c.item.price,
+            modifiers: c.modifiers,
+            unitPrice: c.unitPrice,
+          })),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMsg((data as { error?: string }).error || "Failed");
+        return;
+      }
+      const order = (data as { order: Order }).order;
+      setMsg(`Order #${order.number} placed`);
+      applyOrder(order);
+      setCart([]);
+      setCustomerName("");
+      setCustomerPhone("");
+      setNote("");
+      setDiscountStr("");
+      setCashGiven("");
+      const printed = await printCustomerReceipt(tenant, order);
+      if (printed) setPrintKind("bill");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setCharging(false);
     }
-    setMsg(`Order #${data.order.number} placed`);
-    applyOrder(data.order as Order);
-    setCart([]);
-    setCustomerName("");
-    setCustomerPhone("");
-    setNote("");
-    setDiscountStr("");
-    setCashGiven("");
-    const printed = await printCustomerReceipt(tenant, data.order as Order);
-    if (printed) setPrintKind("bill");
   }
 
   const dismissPrint = useCallback(() => setPrintKind(null), []);
@@ -184,208 +208,253 @@ export default function PosPage() {
             </p>
           </div>
         )}
-        <div className={styles.catRow}>
-          {categories.map((c) => (
-            <button
-              key={c}
-              type="button"
-              className={cat === c ? styles.btn : styles.btnGhost}
-              onClick={() => setCat(c)}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
-        <div className={styles.menuGrid}>
-          {visibleMenu.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              className={styles.item}
-              onClick={() => startAdd(m)}
-              style={{ opacity: m.available ? 1 : 0.45 }}
-            >
-              {m.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={m.imageUrl} alt="" loading="lazy" className={styles.itemImg} />
-              ) : null}
-              <strong>
-                {m.name}
-                {!m.available ? " · 86" : ""}
-              </strong>
-              <span className={styles.muted}>
-                {tenant?.shop.currency} {m.price}
-              </span>
-            </button>
-          ))}
-        </div>
-        <div className={styles.card} style={{ marginTop: "1rem" }}>
-          <strong>Cart</strong>
-          {cart.length === 0 && <p className={styles.muted}>Tap items to add</p>}
-          <ul>
-            {cart.map((c) => (
-              <li key={c.key}>
-                {c.qty}× {c.item.name}
-                {(c.modifiers || []).map((m) => (
-                  <span key={m.optionId} className={styles.muted}>
-                    {" "}
-                    +{m.optionName}
-                  </span>
-                ))}
-              </li>
-            ))}
-          </ul>
-          {fees && tenant && (
-            <div>
-              <p className={styles.muted}>Subtotal {money(tenant.shop.currency, fees.subtotal)}</p>
-              {fees.serviceCharge > 0 && (
-                <p className={styles.muted}>
-                  Service {money(tenant.shop.currency, fees.serviceCharge)}
-                </p>
-              )}
-              {fees.tax > 0 && (
-                <p className={styles.muted}>Tax {money(tenant.shop.currency, fees.tax)}</p>
-              )}
-              {discount > 0 && (
-                <p className={styles.muted}>Discount {money(tenant.shop.currency, discount)}</p>
-              )}
-              <p>
-                <strong>{money(tenant.shop.currency, billTotal)}</strong>
-              </p>
+        <div className={styles.posLayout}>
+          <div>
+            <div className={styles.catRow}>
+              {categories.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={cat === c ? styles.btn : styles.btnGhost}
+                  onClick={() => setCat(c)}
+                >
+                  {c}
+                </button>
+              ))}
             </div>
-          )}
-          <div className={styles.row}>
-            {(["cash", "card", "wallet"] as PaymentMethod[]).map((p) => (
-              <button
-                key={p}
-                type="button"
-                className={pay === p ? styles.btn : styles.btnGhost}
-                onClick={() => setPay(p)}
-              >
-                {p}
-              </button>
-            ))}
+            <div className={styles.menuGrid}>
+              {visibleMenu.map((m) => {
+                const inCart = qtyOf(m.id);
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className={styles.item}
+                    onClick={() => startAdd(m)}
+                    style={{ opacity: m.available ? 1 : 0.45 }}
+                  >
+                    {inCart > 0 ? <span className={styles.itemQtyBadge}>{inCart}</span> : null}
+                    {m.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={m.imageUrl} alt="" loading="lazy" className={styles.itemImg} />
+                    ) : null}
+                    <strong>
+                      {m.name}
+                      {!m.available ? " · 86" : ""}
+                    </strong>
+                    <span className={styles.muted}>
+                      {tenant?.shop.currency} {m.price}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {modItem && (
+              <div className={styles.card} style={{ marginTop: "1rem" }}>
+                <strong>Modifiers · {modItem.name}</strong>
+                {(modItem.modifiers || []).map((g) => (
+                  <div key={g.id} style={{ marginTop: 8 }}>
+                    <div className={styles.muted}>
+                      {g.name}
+                      {g.required ? " *" : ""}
+                    </div>
+                    <div className={styles.row}>
+                      {g.options.map((o) => (
+                        <button
+                          key={o.id}
+                          type="button"
+                          className={(modSel[g.id] || []).includes(o.id) ? styles.btn : styles.btnGhost}
+                          onClick={() => {
+                            setModSel((prev) => {
+                              const cur = prev[g.id] || [];
+                              if (g.multi) {
+                                return {
+                                  ...prev,
+                                  [g.id]: cur.includes(o.id)
+                                    ? cur.filter((x) => x !== o.id)
+                                    : [...cur, o.id],
+                                };
+                              }
+                              return { ...prev, [g.id]: [o.id] };
+                            });
+                          }}
+                        >
+                          {o.name}
+                          {o.priceDelta ? ` +${o.priceDelta}` : ""}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <div className={styles.row}>
+                  <button
+                    type="button"
+                    className={styles.btn}
+                    onClick={() => {
+                      pushLine(modItem, toMods(modItem.modifiers || [], modSel));
+                      setModItem(null);
+                    }}
+                  >
+                    Add to cart
+                  </button>
+                  <button type="button" className={styles.btnGhost} onClick={() => setModItem(null)}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-          <div className={styles.posBillFields}>
-            <label>
-              Customer name
-              <input
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Walk-in guest"
-                autoComplete="name"
-              />
-            </label>
-            <label>
-              Phone (optional)
-              <input
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="03xx…"
-                inputMode="tel"
-              />
-            </label>
-            <label>
-              Note (optional)
-              <input
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Less spicy, packing…"
-              />
-            </label>
-            <label>
-              Discount PKR (optional)
-              <input
-                value={discountStr}
-                onChange={(e) => setDiscountStr(e.target.value.replace(/[^\d]/g, ""))}
-                placeholder="0"
-                inputMode="numeric"
-              />
-            </label>
-            {pay === "cash" ? (
+
+          <div className={`${styles.card} ${styles.posCart}`}>
+            <div className={styles.posCartHead}>
+              <strong>Bill</strong>
+              {cart.length > 0 ? (
+                <button type="button" className={styles.btnGhost} onClick={() => setCart([])}>
+                  Clear
+                </button>
+              ) : null}
+            </div>
+            {cart.length === 0 && <p className={styles.muted}>Tap items to add. Use − / + to change qty.</p>}
+            <ul className={styles.posCartList}>
+              {cart.map((c) => (
+                <li key={c.key} className={styles.posCartLine}>
+                  <div className={styles.posCartMeta}>
+                    <span className={styles.posCartName}>{c.item.name}</span>
+                    {(c.modifiers || []).map((m) => (
+                      <span key={m.optionId} className={styles.muted}>
+                        {" "}
+                        +{m.optionName}
+                      </span>
+                    ))}
+                    {tenant ? (
+                      <span className={styles.muted}>
+                        {money(tenant.shop.currency, c.unitPrice * c.qty)}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className={styles.posQty}>
+                    <button
+                      type="button"
+                      aria-label={`Remove one ${c.item.name}`}
+                      onClick={() => bumpQty(c.key, -1)}
+                    >
+                      −
+                    </button>
+                    <span>{c.qty}</span>
+                    <button
+                      type="button"
+                      aria-label={`Add one ${c.item.name}`}
+                      onClick={() => bumpQty(c.key, 1)}
+                    >
+                      +
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {fees && tenant && (
+              <div>
+                <p className={styles.muted}>Subtotal {money(tenant.shop.currency, fees.subtotal)}</p>
+                {fees.serviceCharge > 0 && (
+                  <p className={styles.muted}>
+                    Service {money(tenant.shop.currency, fees.serviceCharge)}
+                  </p>
+                )}
+                {fees.tax > 0 && (
+                  <p className={styles.muted}>Tax {money(tenant.shop.currency, fees.tax)}</p>
+                )}
+                {discount > 0 && (
+                  <p className={styles.muted}>Discount {money(tenant.shop.currency, discount)}</p>
+                )}
+                <p>
+                  <strong>{money(tenant.shop.currency, billTotal)}</strong>
+                </p>
+              </div>
+            )}
+            <div className={styles.row}>
+              {(["cash", "card", "wallet"] as PaymentMethod[]).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className={pay === p ? styles.btn : styles.btnGhost}
+                  onClick={() => setPay(p)}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            <div className={styles.posBillFields}>
               <label>
-                Cash received (optional)
+                Customer name
                 <input
-                  value={cashGiven}
-                  onChange={(e) => setCashGiven(e.target.value.replace(/[^\d]/g, ""))}
-                  placeholder="Amount given"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Walk-in guest"
+                  autoComplete="name"
+                />
+              </label>
+              <label>
+                Phone (optional)
+                <input
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="03xx…"
+                  inputMode="tel"
+                />
+              </label>
+              <label>
+                Note (optional)
+                <input
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Less spicy, packing…"
+                />
+              </label>
+              <label>
+                Discount PKR (optional)
+                <input
+                  value={discountStr}
+                  onChange={(e) => setDiscountStr(e.target.value.replace(/[^\d]/g, ""))}
+                  placeholder="0"
                   inputMode="numeric"
                 />
               </label>
-            ) : null}
-          </div>
-          {change !== null && tenant && (
-            <p className={styles.muted}>
-              {change >= 0
-                ? `Change ${money(tenant.shop.currency, change)}`
-                : `Still due ${money(tenant.shop.currency, -change)}`}
-            </p>
-          )}
-          <div className={styles.row}>
-            <button type="button" className={styles.btn} onClick={() => void checkout()}>
-              Charge & print
-            </button>
-          </div>
-          <p className={styles.muted}>
-            First tap <strong>Printer</strong> above and Use this. Then Charge & print sends the bill to that thermal printer.
-          </p>
-          {msg && <p className={styles.muted}>{msg}</p>}
-        </div>
-
-        {modItem && (
-          <div className={styles.card} style={{ marginTop: "1rem" }}>
-            <strong>Modifiers · {modItem.name}</strong>
-            {(modItem.modifiers || []).map((g) => (
-              <div key={g.id} style={{ marginTop: 8 }}>
-                <div className={styles.muted}>
-                  {g.name}
-                  {g.required ? " *" : ""}
-                </div>
-                <div className={styles.row}>
-                  {g.options.map((o) => (
-                    <button
-                      key={o.id}
-                      type="button"
-                      className={(modSel[g.id] || []).includes(o.id) ? styles.btn : styles.btnGhost}
-                      onClick={() => {
-                        setModSel((prev) => {
-                          const cur = prev[g.id] || [];
-                          if (g.multi) {
-                            return {
-                              ...prev,
-                              [g.id]: cur.includes(o.id)
-                                ? cur.filter((x) => x !== o.id)
-                                : [...cur, o.id],
-                            };
-                          }
-                          return { ...prev, [g.id]: [o.id] };
-                        });
-                      }}
-                    >
-                      {o.name}
-                      {o.priceDelta ? ` +${o.priceDelta}` : ""}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
+              {pay === "cash" ? (
+                <label>
+                  Cash received (optional)
+                  <input
+                    value={cashGiven}
+                    onChange={(e) => setCashGiven(e.target.value.replace(/[^\d]/g, ""))}
+                    placeholder="Amount given"
+                    inputMode="numeric"
+                  />
+                </label>
+              ) : null}
+            </div>
+            {change !== null && tenant && (
+              <p className={styles.muted}>
+                {change >= 0
+                  ? `Change ${money(tenant.shop.currency, change)}`
+                  : `Still due ${money(tenant.shop.currency, -change)}`}
+              </p>
+            )}
             <div className={styles.row}>
               <button
                 type="button"
                 className={styles.btn}
-                onClick={() => {
-                  pushLine(modItem, toMods(modItem.modifiers || [], modSel));
-                  setModItem(null);
-                }}
+                disabled={charging || !cart.length || !customerName.trim()}
+                onClick={() => void checkout()}
               >
-                Add to cart
-              </button>
-              <button type="button" className={styles.btnGhost} onClick={() => setModItem(null)}>
-                Cancel
+                {charging ? "Charging…" : "Charge & print"}
               </button>
             </div>
+            <p className={styles.muted}>
+              First tap Printer above and Use this. Then Charge & print sends the bill to that thermal
+              printer.
+            </p>
+            {msg && <p className={styles.muted}>{msg}</p>}
           </div>
-        )}
+        </div>
       </div>
     </AppShell>
   );
