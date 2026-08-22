@@ -6,6 +6,7 @@ import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
 import { computeFees, lineUnitPrice, money } from "@/lib/fees";
 import { printCustomerReceipt } from "@/lib/print";
+import { PosPrinterPanel } from "@/components/PosPrinterPanel";
 import type { LineModifier, MenuItem, ModifierGroup, Order } from "@/lib/tenant-types";
 import type { PaymentMethod } from "@/lib/types";
 import styles from "../staff.module.css";
@@ -144,6 +145,7 @@ export default function PosPage() {
     <AppShell title="POS">
       <PrintSuccess kind={printKind} onDone={dismissPrint} />
       <div className={styles.page}>
+        <PosPrinterPanel compact />
         {lowStock.length > 0 && (
           <div className={styles.card} style={{ marginBottom: "0.75rem", borderColor: "#ffb020" }}>
             <strong>Low stock warning</strong>
@@ -234,10 +236,12 @@ export default function PosPage() {
               </button>
             ))}
             <button type="button" className={styles.btn} onClick={() => void checkout()}>
-              Charge
+              Charge & print
             </button>
           </div>
-          <p className={styles.muted}>Charge prints a 58mm bill. Choose POS-58 / 58mm if the dialog asks.</p>
+          <p className={styles.muted}>
+            First tap <strong>Printer</strong> above and Use this. Then Charge & print sends the bill to that thermal printer.
+          </p>
           {msg && <p className={styles.muted}>{msg}</p>}
         </div>
 

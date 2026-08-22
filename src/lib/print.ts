@@ -401,12 +401,27 @@ async function tryOptInBridge(text: string): Promise<boolean> {
 }
 
 export async function printCustomerReceipt(tenant: TenantState, order: Order) {
+  try {
+    sessionStorage.setItem("ordo_last_bill_order_id", order.id);
+  } catch {
+    /* ignore */
+  }
   const text = customerReceiptText(tenant, order);
   const native = await tryNativeThermalPrint(text);
   if (native.ok) return true;
   const bridged = await tryOptInBridge(text);
   if (bridged) return true;
   return printHtml(customerReceiptHtml(tenant, order));
+}
+
+export async function printTestSlip(tenant: TenantState) {
+  const name = tenant.branding.name || "ORDO";
+  const when = new Date().toLocaleString("en-PK");
+  const text = `${name}\nTEST PRINT\n${when}\nPrinter OK\n\n\n`;
+  const native = await tryNativeThermalPrint(text);
+  if (native.ok) return true;
+  const html = `<!doctype html><html><body style="font-family:monospace;width:58mm;padding:8px"><strong>${escapeHtml(name)}</strong><p>TEST PRINT</p><p>${escapeHtml(when)}</p><p>Printer OK</p></body></html>`;
+  return printHtml(html);
 }
 
 export async function printKitchenTicket(tenant: TenantState, order: Order) {
