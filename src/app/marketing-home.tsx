@@ -15,6 +15,36 @@ import {
 } from "@/lib/motion";
 import styles from "./marketing.module.css";
 
+/** Round theme toggle switch — knob swipes forward (dark) / backward (light). */
+function ThemeSwitch({
+  theme,
+  onToggle,
+}: {
+  theme: "light" | "dark";
+  onToggle: () => void;
+}) {
+  const isDark = theme === "dark";
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={isDark}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Light mode" : "Dark mode"}
+      className={`${styles.themeSwitch}${isDark ? ` ${styles.themeSwitchDark}` : ""}`}
+      onClick={onToggle}
+    >
+      <span className={styles.themeIconLeft} aria-hidden>
+        ☀
+      </span>
+      <span className={styles.themeIconRight} aria-hidden>
+        ☾
+      </span>
+      <span className={styles.themeKnob} aria-hidden />
+    </button>
+  );
+}
+
 const NAV = [
   { href: "#company", label: "Company" },
   { href: "#products", label: "Products" },
@@ -359,15 +389,7 @@ export function MarketingHome() {
           </nav>
 
           <div className={styles.navActions}>
-            <button
-              type="button"
-              className={styles.themeBtn}
-              onClick={toggleTheme}
-              aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}
-              title={theme === "light" ? "Dark" : "Light"}
-            >
-              {theme === "light" ? "☽" : "☀"}
-            </button>
+            <ThemeSwitch theme={theme} onToggle={toggleTheme} />
             <Link href="/login" className={styles.navOutline}>
               Admin Login
             </Link>
@@ -377,14 +399,7 @@ export function MarketingHome() {
           </div>
 
           <div className={styles.navMobileBtns}>
-            <button
-              type="button"
-              className={styles.themeBtn}
-              onClick={toggleTheme}
-              aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}
-            >
-              {theme === "light" ? "☽" : "☀"}
-            </button>
+            <ThemeSwitch theme={theme} onToggle={toggleTheme} />
             <button
               type="button"
               className={menuOpen ? `${styles.navBurger} ${styles.navBurgerOpen}` : styles.navBurger}
