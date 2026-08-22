@@ -10,6 +10,7 @@ import {
   unlockStaffAlertAudio,
   startContinuousAlert,
   stopStaffAlert,
+  resumeStaffAlertAudioIfNeeded,
   ensureStaffAlertVisibilityResume,
 } from "@/lib/staff-alert-sound";
 import styles from "./StaffAlerts.module.css";
@@ -53,6 +54,8 @@ export function StaffAlerts() {
   } | null>(null);
   const seenOrders = useRef<Set<string>>(new Set());
   const primedOrders = useRef(false);
+  /** Orders that are currently alerting (placed). Cleared by ack or by kitchen action. */
+  const alertingOrders = useRef<Set<string>>(new Set());
   const seenLow = useRef<Set<string>>(new Set());
   const primedStock = useRef(false);
   const [soundOk, setSoundOk] = useState(false);
@@ -89,23 +92,36 @@ export function StaffAlerts() {
     const fresh = tenant.orders.filter(
       (o) => !seenOrders.current.has(o.id) && o.status === "placed",
     );
-    if (!fresh.length) return;
-    fresh.forEach((o) => seenOrders.current.add(o.id));
-    const primary = fresh[0];
-    const copy = orderAlertCopy(primary);
-    const extra =
-      fresh.length > 1 ? ` (+${fresh.length - 1} more)` : "";
-    setPanel({
-      kind: "order",
-      title: copy.title + extra,
-      body: copy.body,
-    });
-    showApkNotify(
-      tenant.branding.name || "ORDO · New order",
-      `${copy.title}${extra}`,
-      `order-${primary.id}`,
-    );
-    if (soundOk) startContinuousAlert("order");
+    if (fresh.length) {
+      fresh.forEach((o) => {
+        seenOrders.current.add(o.id);
+        alertingOrders.current.add(o.id);
+      });
+      const primary = fresh[0];
+      const copy = orderAlertCopy(primary);
+      const extra =
+        fresh.length > 1 ? ` (+${fresh.length - 1} more)` : "";
+      setPanel({
+        kind: "order",
+        title: copy.title + extra,
+        body: copy.body,
+      });
+      showApkNotify(
+        tenant.branding.name || "ORDO · New order",
+        `${copy.title}${extra}`,
+        `order-${primary.id}`,
+      );
+      if (soundOk) startContinuousAlert("order");
+    }
+    // Staff acknowledgment by action: once every alerted order leaves "placed"
+    // (accepted on /kitchen or /orders), stop the beep. Panel stays until Stop alert.
+    if (alertingOrders.current.size) {
+      for (const id of [...alertingOrders.current]) {
+        const o = tenant.orders.find((x) => x.id === id);
+        if (!o || o.status !== "placed") alertingOrders.current.delete(id);
+      }
+      if (!alertingOrders.current.size) stopStaffAlert();
+    }
   }, [tenant, canHearOrders, soundOk]);
 
   // Stock-low / 86 qty — alert when items newly cross threshold.
@@ -158,14 +174,25 @@ export function StaffAlerts() {
       }
     }
 
-    const id = window.setInterval(() => void tick(), 8000);
-    const onVis = () => {
-      if (document.visibilityState === "visible") void tick();
+    // New orders reach /kitchen + /orders fast: poll every 3s, and the instant the
+    // staff tab regains focus (browser throttles timers in background tabs).
+    const id = window.setInterval(() => void tick(), 3000);
+    const onFocus = () => {
+      void tick();
+      resumeStaffAlertAudioIfNeeded();
     };
+    const onVis = () => {
+      if (document.visibilityState === "visible") {
+        void tick();
+        resumeStaffAlertAudioIfNeeded();
+      }
+    };
+    window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVis);
     return () => {
       cancelled = true;
       window.clearInterval(id);
+      window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVis);
     };
   }, [api, mergeOrders, canHearOrders]);

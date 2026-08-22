@@ -209,6 +209,11 @@ export default function PosPage() {
           {fees && tenant && (
             <div>
               <p className={styles.muted}>Subtotal {money(tenant.shop.currency, fees.subtotal)}</p>
+              {fees.serviceCharge > 0 && (
+                <p className={styles.muted}>
+                  Service {money(tenant.shop.currency, fees.serviceCharge)}
+                </p>
+              )}
               {fees.tax > 0 && (
                 <p className={styles.muted}>Tax {money(tenant.shop.currency, fees.tax)}</p>
               )}

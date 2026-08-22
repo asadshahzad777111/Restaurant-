@@ -132,7 +132,15 @@ export default function KitchenPage() {
             <section key={lane.status} className={styles.lane}>
               <header className={styles.laneHead}>
                 <h2>{lane.title}</h2>
-                <span>{byLane.map[lane.status]?.length || 0}</span>
+                <span
+                  className={
+                    lane.status === "placed" && (byLane.map.placed?.length || 0) > 0
+                      ? styles.laneCountNew
+                      : undefined
+                  }
+                >
+                  {byLane.map[lane.status]?.length || 0}
+                </span>
               </header>
               <div className={styles.laneStack}>{(byLane.map[lane.status] || []).map(ticketCard)}</div>
             </section>

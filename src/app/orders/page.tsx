@@ -105,7 +105,10 @@ export default function OrdersPage() {
         {msg && <p className={styles.muted}>{msg}</p>}
         <ul className={styles.mobileCards}>
           {(tenant?.orders ?? []).map((o) => (
-            <li key={o.id} className={styles.mobileCard}>
+            <li
+              key={o.id}
+              className={`${styles.mobileCard}${o.status === "placed" ? ` ${styles.rowNew}` : ""}`}
+            >
               <div>
                 <strong>
                   #{o.number} · {o.status}
@@ -189,7 +192,7 @@ export default function OrdersPage() {
           </thead>
           <tbody>
             {(tenant?.orders ?? []).map((o) => (
-              <tr key={o.id}>
+              <tr key={o.id} className={o.status === "placed" ? styles.rowNew : undefined}>
                 <td>{o.number}</td>
                 <td>
                   {o.channel}/{o.serviceType}

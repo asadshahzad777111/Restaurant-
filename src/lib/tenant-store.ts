@@ -19,7 +19,20 @@ const DATA_ROOT = path.join(process.cwd(), ".data");
 /** One JSON file per tenantId — never read another kitchen's folder. */
 const tenantCache = new Map<string, { mtime: number; data: TenantState }>();
 
+/**
+ * Tenant ids are platform-generated (tenant_…), but every file path derives from this
+ * value — reject anything that could escape .data/tenants/ (path traversal defense).
+ */
+const SAFE_TENANT_ID = /^[A-Za-z0-9_-]{1,80}$/;
+
+function assertSafeTenantId(tenantId: string) {
+  if (!SAFE_TENANT_ID.test(tenantId)) {
+    throw new Error("Invalid tenant");
+  }
+}
+
 function tenantDir(tenantId: string) {
+  assertSafeTenantId(tenantId);
   return path.join(DATA_ROOT, "tenants", tenantId);
 }
 

@@ -57,7 +57,6 @@ export async function POST(req: NextRequest) {
     await ensureStore();
     const body = await req.json();
     const {
-      tenantCode,
       channel,
       serviceType,
       tableNumber,
@@ -119,7 +118,9 @@ export async function POST(req: NextRequest) {
       tenantId = session.tenantId!;
     } else {
       // Guests must send this kitchen's code/QR — never inherit another restaurant.
-      if (!tenantCode) {
+      // Normalize + validate BEFORE any lookup; the registry is the only mapping to tenantId.
+      const tenantCode = String(body.tenantCode || "").trim().toUpperCase();
+      if (!/^[A-Z0-9][A-Z0-9_-]{1,23}$/.test(tenantCode)) {
         return NextResponse.json({ error: "tenantCode required" }, { status: 400 });
       }
       const meta = await findTenantMetaByCode(tenantCode);

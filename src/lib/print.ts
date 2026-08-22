@@ -138,6 +138,7 @@ export function customerReceiptHtml(tenant: TenantState, order: Order) {
       : "";
   const stamp = when(order.createdAt);
   const f = order.fees;
+  const paid = order.paymentStatus === "paid" || order.paymentStatus === "verified";
   const extras = [
     f.packingFee ? `<span>Packing</span><strong>${amount(f.packingFee)}</strong>` : "",
     f.deliveryFee ? `<span>Delivery</span><strong>${amount(f.deliveryFee)}</strong>` : "",
@@ -164,8 +165,9 @@ export function customerReceiptHtml(tenant: TenantState, order: Order) {
     <span>Date: ${escapeHtml(stamp.date)}</span>
     <span>Time: ${escapeHtml(stamp.time)}</span>
     <span>Type: ${escapeHtml(serviceLine(order))}</span>
-    <span>Pay: ${escapeHtml(payLabel(order.paymentMethod))}</span>
+    <span>Pay: ${escapeHtml(payLabel(order.paymentMethod))}${paid ? " \u2713 PAID" : ""}</span>
     ${order.customerName ? `<span>Guest: ${escapeHtml(order.customerName)}</span>` : ""}
+    ${order.customerPhone ? `<span>Phone: ${escapeHtml(order.customerPhone)}</span>` : ""}
   </div>
   <hr class="rule"/>
   <div class="cols"><span>Item</span><span>Amount</span></div>
@@ -176,7 +178,7 @@ export function customerReceiptHtml(tenant: TenantState, order: Order) {
     ${extras}
   </div>
   <div class="grand"><span>TOTAL</span><b>${escapeHtml(tenant.shop.currency)} ${amount(order.total)}</b></div>
-  <p class="center">${escapeHtml(payLabel(order.paymentMethod))} · ${escapeHtml(order.paymentStatus)}</p>
+  <p class="center">${escapeHtml(payLabel(order.paymentMethod))} · ${escapeHtml(order.paymentStatus)}${paid ? " · \u2713 PAID" : ""}</p>
   <hr class="rule"/>
   <p class="thanks">Thank you</p>
   <p class="visit">Visit again</p>
@@ -201,6 +203,8 @@ export function kitchenTicketHtml(tenant: TenantState, order: Order) {
     <span>Ticket: #${order.number}</span>
     <span>Time: ${escapeHtml(stamp.time)}</span>
     <span>Type: ${escapeHtml(serviceLine(order))}</span>
+    ${order.customerName ? `<span>Guest: ${escapeHtml(order.customerName)}</span>` : ""}
+    ${order.customerPhone ? `<span>Phone: ${escapeHtml(order.customerPhone)}</span>` : ""}
   </div>
   <hr class="rule"/>
   ${itemRows(order, false)}
@@ -233,6 +237,7 @@ export function customerReceiptText(tenant: TenantState, order: Order) {
     f.serviceCharge ? line("Service", amount(f.serviceCharge)) : "",
     f.tax ? line("GST/Tax", amount(f.tax)) : "",
   ].filter(Boolean);
+  const paid = order.paymentStatus === "paid" || order.paymentStatus === "verified";
   return [
     tenant.branding.name.toUpperCase(),
     tenant.shop.address,
@@ -242,12 +247,15 @@ export function customerReceiptText(tenant: TenantState, order: Order) {
     line(stamp.date, stamp.time),
     serviceLine(order),
     payLabel(order.paymentMethod),
+    ...(order.customerName ? [`Guest: ${order.customerName}`] : []),
+    ...(order.customerPhone ? [`Phone: ${order.customerPhone}`] : []),
     rule,
     ...items,
     rule,
     line("Subtotal", amount(f.subtotal)),
     ...extras,
     line("TOTAL", `${tenant.shop.currency} ${amount(order.total)}`),
+    ...(paid ? ["\u2713 PAID"] : []),
     rule,
     "Thank you",
     "Visit again",

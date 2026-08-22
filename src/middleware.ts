@@ -102,8 +102,13 @@ export function middleware(req: NextRequest) {
   }
 
   // Restaurant host: Admin/staff/guest only. Never serve HQ — APKs must not open /super.
+  // /lab is the localhost demo index — not for production guests or staff.
   if (isAppHost(host) && !isLocalHost(host)) {
-    if (pathname.startsWith("/control") || pathname.startsWith("/super")) {
+    if (
+      pathname.startsWith("/control") ||
+      pathname.startsWith("/super") ||
+      pathname.startsWith("/lab")
+    ) {
       return withSecurity(
         NextResponse.json(
           { error: "Not available on restaurant host" },

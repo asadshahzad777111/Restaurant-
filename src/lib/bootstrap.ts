@@ -245,6 +245,10 @@ export function createEmptyTenant(input: {
   adminKnownPassword?: string;
 }): TenantState {
   // Isolated kitchen: empty catalog, not DEMO menu/logo/stock. Admin belongs to this id only.
+  // Ids are platform-generated (tenant_…), but the folder name is derived from it — never traverse.
+  if (!/^[A-Za-z0-9_-]{1,80}$/.test(input.id)) {
+    throw new Error("Invalid tenant id");
+  }
   const state: TenantState = {
     id: input.id,
     code: input.code.toUpperCase(),
