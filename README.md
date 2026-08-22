@@ -54,5 +54,8 @@ Health: `GET /api/health` reports `mongo` and `r2` booleans. Either `R2_PUBLIC_U
 
 If R2 env vars are set, files go to R2; otherwise they are stored under `.data/media/` and served at `/api/media/...`. Live Vercel has no persistent disk — paste R2 keys in the Vercel dashboard for photos to stick.
 
+## Share with consultants
+A-to-Z system brief (send as PDF or copy-paste Markdown): `docs/ORDO-SYSTEM-BRIEF.pdf` · `docs/ORDO-SYSTEM-BRIEF.md`
+
 ## Architecture
 See `docs/MULTI-TENANT-SAAS.md`.
