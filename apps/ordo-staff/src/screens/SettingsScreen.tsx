@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Activi
 import { useFocusEffect } from "@react-navigation/native";
 import { getTenant, pauseOrdering, clearToken } from "../api";
 import { getPrinter, savePrinter, clearPrinter } from "../printerStorage";
+import { enableNotifications } from "../notify";
 import type { Tenant } from "../types";
 import { theme, radius } from "../theme";
 
@@ -114,6 +115,17 @@ export function SettingsScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
         <Text style={s.footInline}>Printing needs a development build with the native printer bridge.</Text>
+      </View>
+
+      <Text style={s.title}>🔔 Alerts</Text>
+      <View style={s.card}>
+        <Text style={s.muted}>New-order push alerts. Tap to allow once — then every new order notifies you.</Text>
+        <TouchableOpacity style={s.smallBtn} onPress={async () => {
+          const ok = await enableNotifications();
+          setMsg(ok ? "Push alerts enabled" : "Alerts not granted");
+        }}>
+          <Text style={s.smallBtnText}>Enable push alerts</Text>
+        </TouchableOpacity>
       </View>
 
       <Text style={s.title}>👤 Account</Text>

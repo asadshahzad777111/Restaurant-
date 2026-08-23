@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { readToken } from "./src/api";
-import { setupNotifications } from "./src/notify";
+import { configureNotifications } from "./src/notify";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
 
@@ -15,7 +15,7 @@ export default function App() {
   const [hasToken, setHasToken] = useState(false);
 
   useEffect(() => {
-    void setupNotifications();
+    configureNotifications();
   }, []);
 
   useEffect(() => {

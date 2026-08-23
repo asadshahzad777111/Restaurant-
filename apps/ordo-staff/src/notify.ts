@@ -1,22 +1,10 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
-/** Local push for new orders (works in a development build; Expo Go limits push). */
-export async function setupNotifications() {
+/** Sets the foreground handler + Android channel. Does NOT prompt for permission. */
+export function configureNotifications() {
   if (Platform.OS === "web") return;
   try {
-    const { status } = await Notifications.getPermissionsAsync();
-    if (status !== "granted") {
-      const req = await Notifications.requestPermissionsAsync();
-      if (req.status !== "granted") return;
-    }
-    if (Platform.OS === "android") {
-      await Notifications.setNotificationChannelAsync("orders", {
-        name: "New orders",
-        importance: Notifications.AndroidImportance.HIGH,
-        vibrationPattern: [0, 250, 250, 250],
-      });
-    }
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
         shouldShowAlert: true,
@@ -26,8 +14,26 @@ export async function setupNotifications() {
         shouldSetBadge: false,
       }),
     });
+    if (Platform.OS === "android") {
+      Notifications.setNotificationChannelAsync("orders", {
+        name: "New orders",
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+      });
+    }
   } catch {
     /* ignore */
+  }
+}
+
+/** Request notification permission — only called from a user toggle in Settings. */
+export async function enableNotifications(): Promise<boolean> {
+  if (Platform.OS === "web") return false;
+  try {
+    const req = await Notifications.requestPermissionsAsync();
+    return req.status === "granted";
+  } catch {
+    return false;
   }
 }
 
