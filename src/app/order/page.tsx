@@ -368,7 +368,8 @@ function OrderInner() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [tableDraft, setTableDraft] = useState("");
-  const [tables, setTables] = useState<Array<{ id: string; label: string }>>([]);
+  const [tables, setTables] = useState<Array<{ id: string; label: string; status?: string; reservedBy?: string; reservedUntil?: string }>>([]);
+  const [booked, setBooked] = useState<string | null>(null); // reservation token for my booked table
   const [cartReady, setCartReady] = useState(false);
   const [modItem, setModItem] = useState<MenuItem | null>(null);
   const [modSel, setModSel] = useState<Record<string, string[]>>({});
@@ -411,7 +412,13 @@ function OrderInner() {
         setBranding(d.public.branding);
         setShop(d.public.shop);
         setMenu(d.public.menu);
-        setTables((d.public.tables || []).map((t: { id: string; label: string }) => ({ id: t.id, label: t.label })));
+        setTables((d.public.tables || []).map((t: any) => ({
+          id: t.id,
+          label: t.label,
+          status: t.status || "empty",
+          reservedBy: t.reservedBy,
+          reservedUntil: t.reservedUntil,
+        })));
         setPayments(normalizeTenantPayments(d.public.payments));
         setSpecialOffer(d.public.specialOffer || null);
         setOrderingClosed(Boolean(d.orderingClosed));
@@ -615,6 +622,104 @@ function OrderInner() {
     router.push(guestOrderPath({ tenant: tenantCode, mode: next }));
   }
 
+  async function refreshTables() {
+    try {
+      const r = await fetch(`/api/state?tenant=${encodeURIComponent(tenantCode)}`);
+      const d = await r.json();
+      if (r.ok) {
+        setTables((d.public.tables || []).map((t: any) => ({
+          id: t.id,
+          label: t.label,
+          status: t.status || "empty",
+          reservedBy: t.reservedBy,
+          reservedUntil: t.reservedUntil,
+        })));
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function reserveTable(tableId: string, name: string, minutes: number) {
+    const r = await fetch("/api/tables/reserve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tenantCode, tableId, name, minutes }),
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      setError(d.error || "Could not book this table");
+      return;
+    }
+    try {
+      localStorage.setItem("ordo_reservation_v1", JSON.stringify({ tenant: tenantCode, tableId, token: d.token }));
+    } catch {
+      /* ignore */
+    }
+    setBooked(d.token);
+    await refreshTables();
+  }
+
+  async function claimReserved(tableId: string) {
+    let token = booked;
+    if (!token) {
+      try {
+        const saved = JSON.parse(localStorage.getItem("ordo_reservation_v1") || "null");
+        if (saved?.tenant === tenantCode && saved?.tableId === tableId) token = saved.token;
+      } catch {
+        /* ignore */
+      }
+    }
+    if (!token) {
+      setError("Reservation not found on this device");
+      return;
+    }
+    const r = await fetch("/api/tables/claim", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tenantCode, tableId, token }),
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      setError(d.error || "Could not claim table");
+      return;
+    }
+    try {
+      localStorage.removeItem("ordo_reservation_v1");
+    } catch {
+      /* ignore */
+    }
+    setBooked(null);
+    goMode("table", tableId);
+    await refreshTables();
+  }
+
+  async function cancelBooking(tableId: string) {
+    let token = booked;
+    if (!token) {
+      try {
+        const saved = JSON.parse(localStorage.getItem("ordo_reservation_v1") || "null");
+        if (saved?.tenant === tenantCode && saved?.tableId === tableId) token = saved.token;
+      } catch {
+        /* ignore */
+      }
+    }
+    const r = await fetch("/api/tables/release", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tenantCode, tableId, token }),
+    });
+    if (r.ok) {
+      try {
+        localStorage.removeItem("ordo_reservation_v1");
+      } catch {
+        /* ignore */
+      }
+      setBooked(null);
+      await refreshTables();
+    }
+  }
+
   async function placeOrder() {
     if (!mode) return;
     if (orderingClosed) {
@@ -779,18 +884,72 @@ function OrderInner() {
                 <div className={styles.tableForm}>
                   {tables.length > 0 ? (
                     <>
-                      <p className={styles.muted}>Choose your table</p>
+                      <p className={styles.muted}>Choose your table — you can book it from here</p>
                       <div className={styles.tableGrid}>
-                        {tables.map((tb) => (
-                          <button
-                            key={tb.id}
-                            type="button"
-                            className={styles.tableChip}
-                            onClick={() => goMode("table", tb.label)}
-                          >
-                            T{tb.label}
-                          </button>
-                        ))}
+                        {tables.map((tb) => {
+                          const status = tb.status || "empty";
+                          const reserved = status === "reserved";
+                          const isMine =
+                            reserved &&
+                            (() => {
+                              try {
+                                const s = JSON.parse(localStorage.getItem("ordo_reservation_v1") || "null");
+                                return s?.tenant === tenantCode && s?.tableId === tb.id;
+                              } catch {
+                                return false;
+                              }
+                            })();
+                          return (
+                            <div key={tb.id} className={`${styles.tableCard} ${(styles as Record<string, string>)["table_" + status] || ""}`}>
+                              <strong className={styles.tableLabel}>T{tb.label}</strong>
+                              <span className={styles.tableStatus}>
+                                {status === "empty"
+                                  ? "Empty"
+                                  : status === "reserved"
+                                    ? isMine
+                                      ? "Yours"
+                                      : "Reserved"
+                                    : status === "occupied"
+                                      ? "In use"
+                                      : "Bill"}
+                              </span>
+                              {status === "empty" ? (
+                                <button
+                                  type="button"
+                                  className={styles.tableBook}
+                                  onClick={() => {
+                                    const mins = Number(prompt("Book for how many minutes? (10/15/20/30)", "20")) || 20;
+                                    const nm = prompt("Your name (optional)", "") || "";
+                                    void reserveTable(tb.id, nm, mins);
+                                  }}
+                                >
+                                  Book
+                                </button>
+                              ) : null}
+                              {status === "empty" ? (
+                                <button type="button" className={styles.tableOrder} onClick={() => goMode("table", tb.label)}>
+                                  Order here
+                                </button>
+                              ) : null}
+                              {reserved && isMine ? (
+                                <>
+                                  <button type="button" className={styles.tableClaim} onClick={() => void claimReserved(tb.id)}>
+                                    Claim (I'm here)
+                                  </button>
+                                  <button type="button" className={styles.tableCancel} onClick={() => void cancelBooking(tb.id)}>
+                                    Cancel
+                                  </button>
+                                </>
+                              ) : null}
+                              {reserved && !isMine ? (
+                                <span className={styles.tableHint}>Waiting for arrival</span>
+                              ) : null}
+                              {status === "occupied" ? (
+                                <span className={styles.tableHint}>Try another table</span>
+                              ) : null}
+                            </div>
+                          );
+                        })}
                       </div>
                     </>
                   ) : (
