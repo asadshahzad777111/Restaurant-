@@ -30,6 +30,14 @@ const SECURITY_HEADERS: Record<string, string> = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(self), microphone=(), geolocation=()",
   "X-DNS-Prefetch-Control": "off",
+  // HSTS — always serve over HTTPS, subdomains included, long-lived.
+  "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+  // Isolation — stop other origins from embedding our resources or opening us.
+  "Cross-Origin-Opener-Policy": "same-origin",
+  "Cross-Origin-Resource-Policy": "same-origin",
+  // Legacy XSS filter (harmless) — modern CSP is handled app-side where inline
+  // styles/print iframes require it.
+  "X-XSS-Protection": "1; mode=block",
 };
 
 function withSecurity(res: NextResponse) {

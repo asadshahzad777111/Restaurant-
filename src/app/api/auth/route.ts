@@ -10,11 +10,20 @@ import {
 } from "@/lib/session";
 import { HELP_MODE_COOKIE } from "@/lib/help-mode";
 import { ensureStore, findSession, readTenantStaffView } from "@/lib/db";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
+    // Brute-force throttle: 10 login attempts / min per IP.
+    const rl = rateLimit(`login:${clientIp(req)}`, 10, 60_000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Too many attempts — wait a minute and try again." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
+      );
+    }
     await ensureStore();
     const body = await req.json();
     const { mode, username, password, code } = body as {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ensureStore, addLead, getContactWhatsapp, listLeads } from "@/lib/db";
 import { AuthError, requireSuper } from "@/lib/session";
 import { sendLeadEmail } from "@/lib/notify";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 import type { PlanId } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -24,6 +25,14 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Spam throttle: 5 lead submissions / min per IP.
+    const rl = rateLimit(`lead:${clientIp(req)}`, 5, 60_000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Too many submissions — try again shortly." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
+      );
+    }
     await ensureStore();
     const body = await req.json();
     const lead = await addLead({
