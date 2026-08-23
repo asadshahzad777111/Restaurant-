@@ -70,3 +70,7 @@ mobile/**/android/captures/
 # Expo app deps
 apps/**/node_modules/
 
+
+# Expo local cache
+apps/ordo-staff/.expo/
+
