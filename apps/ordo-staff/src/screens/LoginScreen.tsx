@@ -14,7 +14,9 @@ import { login } from "../api";
 import { theme, radius } from "../theme";
 
 export function LoginScreen({ navigation }: any) {
-  const [code, setCode] = useState("");
+  // Baked per-kitchen code (isolated — locks login to this kitchen).
+  const baked = (process.env.EXPO_PUBLIC_TENANT_CODE as string | undefined)?.trim().toUpperCase() || "";
+  const [code, setCode] = useState(baked || "");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);

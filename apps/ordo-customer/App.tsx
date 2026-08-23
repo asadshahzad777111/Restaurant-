@@ -14,15 +14,25 @@ import { theme } from "./src/theme";
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-  const [code, setCode] = useState<string | null>(null);
+  // Baked per-kitchen code (isolated): if set, the app opens straight to that
+  // kitchen — no code prompt, no mixing.
+  const baked = (process.env.EXPO_PUBLIC_TENANT_CODE as string | undefined)?.trim().toUpperCase() || "";
+  const [code, setCode] = useState<string | null>(baked || null);
   const [draft, setDraft] = useState("DEMO");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    if (baked) {
+      setCode(baked);
+      void saveCode(baked);
+      setReady(true);
+      return;
+    }
     readCode().then((c) => {
       setCode(c || null);
       setReady(true);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const open = async () => {
