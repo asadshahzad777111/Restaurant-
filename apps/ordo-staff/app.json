@@ -19,8 +19,8 @@
       "adaptiveIcon": {
         "backgroundColor": "#ff8500"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": false
     },
-    "plugins": ["expo-notifications"]
+    "plugins": ["expo-notifications", "expo-system-ui"]
   }
 }
