@@ -639,11 +639,9 @@ export function MarketingHome() {
       <section className={styles.gallery} aria-label="How ORDO works">
         <div className={styles.wrap}>
           <motion.div variants={section} initial="hidden" whileInView="show" viewport={viewOnce}>
-            <p className={styles.kicker}>One kitchen, one truth</p>
-            <h2>Guest phone se printed ticket tak — ek hi system.</h2>
-            <p className={styles.leadWide}>
-              Guest order, kitchen display, aur 58mm receipt — teeno ek hi catalog, ek hi truth.
-            </p>
+            <p className={styles.kicker}>{t("galleryKicker")}</p>
+            <h2>{t("galleryTitle")}</h2>
+            <p className={styles.leadWide}>{t("galleryLead")}</p>
           </motion.div>
           <motion.div
             className={styles.stills}
@@ -742,33 +740,30 @@ export function MarketingHome() {
             viewport={viewOnce}
           >
             <div>
-              <p className={styles.kicker}>Live Demo Kitchen</p>
-              <h2>Try the guest path. No account needed.</h2>
-              <p>
-                Open Demo Kitchen as a guest: dining, pickup, delivery, and table QR scan. Staff tools stay
-                behind Admin Login. This is a real isolated tenant — not a video.
-              </p>
+              <p className={styles.kicker}>{t("liveDemoKicker")}</p>
+              <h2>{t("liveDemoTitle")}</h2>
+              <p>{t("liveDemoBody")}</p>
               <div className={styles.heroCtas}>
                 <Link href="/order?tenant=DEMO" className={styles.primary}>
-                  Open live demo
+                  {t("openDemo")}
                 </Link>
                 <Link href="/scan" className={styles.secondary}>
-                  Try table scanner
+                  {t("tryScanner")}
                 </Link>
               </div>
             </div>
             <ul className={styles.demoStats}>
               <li>
                 <strong>DEMO</strong>
-                <span>Restaurant code</span>
+                <span>{t("demoCode")}</span>
               </li>
               <li>
                 <strong>/scan</strong>
-                <span>QR or paste</span>
+                <span>{t("demoScan")}</span>
               </li>
               <li>
                 <strong>PKR</strong>
-                <span>On the page</span>
+                <span>{t("demoPkr")}</span>
               </li>
             </ul>
           </motion.div>
@@ -808,8 +803,8 @@ export function MarketingHome() {
       <section className={styles.section} id="tour">
         <div className={styles.wrap}>
           <motion.div variants={section} initial="hidden" whileInView="show" viewport={viewOnce}>
-            <p className={styles.kicker}>Product tour</p>
-            <h2>From table phone to kitchen ticket to owner glance.</h2>
+            <p className={styles.kicker}>{t("tourKicker")}</p>
+            <h2>{t("tourTitle")}</h2>
             <p className={styles.leadWide}>
               Four stations. One kitchen catalog. Staff and Customer APKs lock to that restaurant code so
               orders never mix.
@@ -852,8 +847,8 @@ export function MarketingHome() {
 
       <section className={styles.section} id="company">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>The company</p>
-          <h2>We build the quiet layer between guests and the kitchen.</h2>
+          <p className={styles.kicker}>{t("companyKicker")}</p>
+          <h2>{t("companyTitle")}</h2>
           <p className={styles.leadWide}>
             Phone, printer, aur aaj ke numbers — ek system, ek kitchen at a time.
           </p>
@@ -871,8 +866,8 @@ export function MarketingHome() {
 
       <section className={styles.sectionSoft} id="products">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>Product portfolio</p>
-          <h2>One company. Products with a clear purpose.</h2>
+          <p className={styles.kicker}>{t("productsKicker")}</p>
+          <h2>{t("productsTitle")}</h2>
           <p className={styles.lead}>
             ORDO OS is our live flagship. The company can grow without turning ORDO itself into the name of a
             single button on a till.
@@ -914,8 +909,8 @@ export function MarketingHome() {
 
       <section className={styles.section} id="os">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>ORDO OS</p>
-          <h2>Same data. Different work.</h2>
+          <p className={styles.kicker}>{t("osKicker")}</p>
+          <h2>{t("osTitle")}</h2>
           <p className={styles.lead}>
             Owner, kitchen, inventory, and counter see one queue. Guests never see cost price or another
             restaurant’s logo.
@@ -1014,8 +1009,8 @@ export function MarketingHome() {
 
       <section className={styles.sectionSoft} id="plans">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>Monthly plans</p>
-          <h2>Pick a kitchen plan. Add paper when you need it.</h2>
+          <p className={styles.kicker}>{t("plansKicker")}</p>
+          <h2>{t("plansTitle")}</h2>
           <p className={styles.lead}>
             Same three prices on every quote. Hardware is extra and confirmed in the WhatsApp thread — not a
             surprise checkout on this site.
@@ -1135,7 +1130,7 @@ export function MarketingHome() {
 
       <section className={styles.section}>
         <div className={styles.wrap}>
-          <p className={styles.kicker}>Connected operations</p>
+          <p className={styles.kicker}>{t("flowKicker")}</p>
           <h2>One order becomes one continuous kitchen record.</h2>
           <p className={styles.lead}>
             ORDO OS is not only a POS interface. Each operational stage updates the next part of the workflow.
@@ -1200,8 +1195,8 @@ export function MarketingHome() {
 
       <section className={styles.section} id="pakistan">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>Built for Pakistan</p>
-          <h2>Technology shaped by the way local kitchens actually work.</h2>
+          <p className={styles.kicker}>{t("pakKicker")}</p>
+          <h2>{t("pakTitle")}</h2>
           <p className={styles.leadWide}>
             Practical devices, internet, PKR — local workflows ke liye.
           </p>
@@ -1228,8 +1223,8 @@ export function MarketingHome() {
 
       <section className={styles.sectionSoft} id="insights">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>Insights</p>
-          <h2>Understand the product, the thinking, and the company.</h2>
+          <p className={styles.kicker}>{t("insightsKicker")}</p>
+          <h2>{t("insightsTitle")}</h2>
           <p className={styles.lead}>
             Clear first-party answers help kitchens — and search — understand exactly what ORDO builds.
           </p>
@@ -1264,8 +1259,8 @@ export function MarketingHome() {
 
       <section className={styles.section} id="about">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>About</p>
-          <h2>ORDO is the brand. ORDO OS is the live kitchen product.</h2>
+          <p className={styles.kicker}>{t("aboutKicker")}</p>
+          <h2>{t("aboutTitle")}</h2>
           <p className={styles.leadWide}>
             Restaurants ke liye jo dining, takeaway, delivery chalaate hain. Public site guest path ka demo hai.
           </p>
