@@ -84,3 +84,7 @@ apps/**/android/
 
 apps/ordo-customer/android/
 
+
+# Gradle build logs
+apps/**/gradle-*.log
+
