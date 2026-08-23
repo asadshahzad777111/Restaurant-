@@ -2126,8 +2126,8 @@
 /* ---- Live kitchen ticker ---- */
 .ticker {
   overflow: hidden;
-  border-block: 1px solid var(--line, #e6ddd2);
-  background: rgba(255, 133, 0, 0.05);
+  border-block: 1px solid var(--m-line, #e8dfd5);
+  background: color-mix(in srgb, var(--m-orange, #ff8500) 6%, var(--m-bg, #f7f4ef));
   padding: 0.55rem 0;
   white-space: nowrap;
 }
@@ -2145,7 +2145,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink, #1c1916);
+  color: var(--m-ink, #211a15);
   display: inline-flex;
   align-items: center;
   gap: 2.5rem;
@@ -2153,7 +2153,7 @@
 
 .tickerTrack i {
   font-style: normal;
-  color: var(--ember, #ff8500);
+  color: var(--m-orange, #ff8500);
 }
 
 @keyframes ordo-marquee {
