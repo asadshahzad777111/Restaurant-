@@ -16,7 +16,7 @@ const NEXT: Record<string, string> = {
 
 export function KitchenScreen() {
   const { width } = useWindowDimensions();
-  const { orders, newOrders, dismiss } = useNewOrders(4000);
+  const { orders, setOrders, newOrders, dismiss } = useNewOrders(4000);
   const [err, setErr] = useState("");
   const colW = Math.max(240, width / 2);
 

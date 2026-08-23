@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { getMenu } from "../api";
 import type { PublicMenu, MenuItem } from "../types";
 import { theme } from "../theme";
 
 type CartLine = { item: MenuItem; qty: number };
 
-export function MenuScreen({ code, navigation }: any) {
+export function MenuScreen({ code }: any) {
+  const navigation = useNavigation<any>();
   const [menu, setMenu] = useState<PublicMenu | null>(null);
   const [err, setErr] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
