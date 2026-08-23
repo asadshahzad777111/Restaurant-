@@ -130,6 +130,18 @@ export const dict = {
   insightsTitle: { en: "Understand the product, the thinking, and the company.", ur: "Product aur thinking samjhein." },
   aboutKicker: { en: "About", ur: "About" },
   aboutTitle: { en: "ORDO is the brand. ORDO OS is the live kitchen product.", ur: "ORDO brand hai, ORDO OS live product." },
+  productsLead: { en: "ORDO OS is our live flagship — not just a button on a till.", ur: "ORDO OS hamara live flagship hai — sirf ek button nahi." },
+  flowOrder: { en: "Guest menu, table QR, ya counter POS — ek kitchen queue.", ur: "Guest menu, table QR, ya counter POS — ek kitchen queue." },
+  flowPrepare: { en: "Kitchen work routed through preparation.", ur: "Kitchen kaam preparation mein rukta hai." },
+  flowHandoff: { en: "Ready for the pass, pickup shelf, ya delivery run.", ur: "Ready — pass, pickup shelf, ya delivery run." },
+  flowRecord: { en: "Pay method ticket par. Stock alerts isi tenant par.", ur: "Pay method ticket par. Stock alerts isi tenant par." },
+  flowUnderstand: { en: "Guest tracking live. Completed ticket = review.", ur: "Guest tracking live. Completed ticket = review." },
+  tourGuest: { en: "Scan table QR ya Customer APK — menu, cart, track.", ur: "Table QR scan ya Customer APK — menu, cart, track." },
+  tourPos: { en: "Staff APK / POS — 58mm print, same catalog. 86 blocks.", ur: "Staff APK / POS — 58mm print, same catalog. 86 block." },
+  tourKitchen: { en: "Tickets placed → preparing → ready. Sound + notify.", ur: "Tickets placed → preparing → ready. Sound + notify." },
+  tourOwner: { en: "Sales & Profit, day close, Super HQ billing, APKs.", ur: "Sales & Profit, day close, Super HQ billing, APKs." },
+  footerTag: { en: "Guest QR, counter POS, aur pass — ek system mein.", ur: "Guest QR, counter POS, aur pass — ek system mein." },
+  footerIsolated: { en: "Isolated per kitchen · priced in PKR", ur: "Isolated per kitchen · PKR mein pricing" },
 } as const;
 
 export type DictKey = keyof typeof dict;

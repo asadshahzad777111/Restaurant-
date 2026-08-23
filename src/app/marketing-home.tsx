@@ -178,11 +178,11 @@ const MODULES = [
 ] as const;
 
 const FLOW = [
-  { step: "01", title: "Order", body: "Guest menu, table QR, or counter POS enters one kitchen queue." },
-  { step: "02", title: "Prepare", body: "Kitchen work is routed and tracked through preparation." },
-  { step: "03", title: "Handoff", body: "Ready for the pass, pickup shelf, or delivery run." },
-  { step: "04", title: "Record", body: "Pay method stays on the ticket. Stock alerts stay on that tenant." },
-  { step: "05", title: "Understand", body: "Guest tracking stays live. Completed tickets can take a review." },
+  { step: "01", title: "Order", body: "Guest menu / table QR / counter — ek queue." },
+  { step: "02", title: "Prepare", body: "Kitchen kaam preparation mein." },
+  { step: "03", title: "Handoff", body: "Ready — pass, pickup shelf, delivery." },
+  { step: "04", title: "Record", body: "Payment ticket par · stock alerts isi kitchen." },
+  { step: "05", title: "Understand", body: "Guest tracking live · completed = review." },
 ] as const;
 
 const PLANS = [
@@ -546,7 +546,15 @@ export function MarketingHome() {
         >
           <p className={styles.eyebrow}>Modern tech for premium hospitality</p>
           <h1 className={styles.heroTitle}>
-            {t("heroTitle")}
+            {(() => {
+              const parts = t("heroTitle").split("—");
+              return (
+                <>
+                  {parts[0]}
+                  {parts.length > 1 && <em>—{parts.slice(1).join("—")}</em>}
+                </>
+              );
+            })()}
           </h1>
           <p className={styles.heroSub}>
             {t("heroSub")}
@@ -821,19 +829,19 @@ export function MarketingHome() {
             {[
               {
                 t: "1 · Guest",
-                d: "Scan table QR or open the Customer APK — menu, modifiers, cart, track status.",
+                d: t("tourGuest"),
               },
               {
                 t: "2 · Counter POS",
-                d: "Staff APK / POS bills, prints 58mm, same catalog. 86 blocks sales instantly.",
+                d: t("tourPos"),
               },
               {
                 t: "3 · Kitchen",
-                d: "Tickets move placed → preparing → ready. Sound + notify on new guest orders.",
+                d: t("tourKitchen"),
               },
               {
                 t: "4 · Owner",
-                d: "Sales & Profit, day close, Super HQ billing and named Staff/Customer APKs.",
+                d: t("tourOwner"),
               },
             ].map((step) => (
               <motion.article key={step.t} className={styles.planCard} variants={listItem(reduced, coarse)}>
@@ -1456,7 +1464,7 @@ export function MarketingHome() {
                 height={40}
                 width={175}
               />
-              <p>Modern tech for premium hospitality — guest QR, counter POS, and the pass in one system.</p>
+              <p>t("footerTag")</p>
               <div className={styles.footerSocial}>
                 <a href={`https://wa.me/${waDigits}`} target="_blank" rel="noreferrer" aria-label="WhatsApp">
                   <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
@@ -1504,7 +1512,7 @@ export function MarketingHome() {
 
           <div className={styles.footerBottom}>
             <span>© {new Date().getFullYear()} ORDO · asfins.com</span>
-            <span>Isolated per kitchen · priced in PKR</span>
+            <span>{t("footerIsolated")}</span>
           </div>
         </div>
       </footer>
