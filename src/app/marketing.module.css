@@ -792,14 +792,6 @@
   margin-top: 1.6rem;
 }
 
-.stillKitchen {
-  background:
-    radial-gradient(circle at 18% 22%, rgba(255, 176, 92, 0.55), transparent 28%),
-    radial-gradient(circle at 78% 18%, rgba(255, 133, 0, 0.35), transparent 32%),
-    radial-gradient(circle at 60% 80%, rgba(80, 40, 18, 0.5), transparent 40%),
-    linear-gradient(160deg, #3a2a1c 0%, #1a1410 55%, #2c1c12 100%);
-}
-
 .stillPass {
   background:
     linear-gradient(180deg, #f7efe3 0%, #eadcc6 100%);
@@ -808,7 +800,7 @@
 .page[data-theme="dark"] .stillPass {
   background:
     linear-gradient(180deg, #2a241c 0%, #1a1612 100%);
-  border-color: rgba(244, 238, 229, 0.14);
+  border-color: rgba(247, 244, 239, 0.14);
 }
 
 .stillTicket {
@@ -843,19 +835,102 @@
   color: #f6eee2;
 }
 
-.bokeh,
-.bokeh i {
-  position: absolute;
-  border-radius: 99px;
-  background: rgba(255, 170, 80, 0.35);
-  filter: blur(2px);
+/* Guest phone mockup */
+.stillPhone {
+  background:
+    radial-gradient(120% 120% at 20% 0%, rgba(255, 133, 0, 0.16), transparent 50%),
+    linear-gradient(180deg, #211c18 0%, #171411 100%);
 }
 
-.bokeh i:nth-child(1) { width: 4.2rem; height: 4.2rem; left: 12%; top: 18%; }
-.bokeh i:nth-child(2) { width: 2.2rem; height: 2.2rem; right: 18%; top: 28%; background: rgba(255, 220, 160, 0.4); }
-.bokeh i:nth-child(3) { width: 3.1rem; height: 3.1rem; left: 48%; bottom: 22%; background: rgba(255, 133, 0, 0.28); }
-.bokeh i:nth-child(4) { width: 1.4rem; height: 1.4rem; right: 12%; bottom: 30%; }
+.phoneFrame {
+  position: absolute;
+  inset: 1.4rem 1.2rem 2.4rem;
+  display: flex;
+  flex-direction: column;
+  background: #241f1a;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
 
+.phoneHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.9rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.phoneLive {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7fe0ac;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.phoneTitle {
+  font-size: 0.9rem;
+  color: #fff;
+}
+
+.phoneMenu {
+  flex: 1;
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.8rem 0.9rem;
+}
+
+.phoneItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 0.7rem;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.phoneItem strong {
+  display: block;
+  color: #fff;
+  font-size: 0.82rem;
+}
+
+.phoneItem em {
+  font-style: normal;
+  color: #ff9d2e;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.phoneAdd {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  border: none;
+  background: var(--m-orange);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  flex: none;
+}
+
+.phoneCart {
+  padding: 0.7rem;
+  text-align: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.78rem;
+  background: var(--m-orange);
+}
+
+/* KDS rail */
 .rail {
   display: grid;
   gap: 0.55rem;
@@ -868,12 +943,16 @@
   border-radius: 0.75rem;
   padding: 0.75rem 0.85rem;
   box-shadow: 0 10px 24px rgba(36, 30, 25, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
 }
 
 .page[data-theme="dark"] .rail article {
   background: #241e19;
   color: #f4eee5;
-  border: 1px solid rgba(244, 238, 229, 0.1);
+  border: 1px solid rgba(247, 244, 239, 0.1);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
 }
 
@@ -890,34 +969,85 @@
   font-weight: 700;
 }
 
+.railLive {
+  font-style: normal;
+  font-size: 1rem;
+  animation: railBell 1.6s ease-in-out infinite;
+}
+
+@keyframes railBell {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  20% {
+    transform: rotate(14deg);
+  }
+  40% {
+    transform: rotate(-12deg);
+  }
+  60% {
+    transform: rotate(8deg);
+  }
+}
+
+/* 58mm receipt mockup (clean) */
 .ticketCard {
   margin: 1.4rem auto 0;
   width: min(82%, 14rem);
-  background: #f7f0e2;
-  color: #1a1612;
-  border-radius: 0.2rem;
-  padding: 1.1rem 1rem 1.3rem;
+  background: #fdf8ee;
+  color: #2a2018;
+  border-radius: 0.25rem;
+  padding: 1.15rem 1rem 1.25rem;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
   font-size: 0.78rem;
-  line-height: 1.55;
+  line-height: 1.5;
+  font-family: "Courier New", Courier, monospace;
 }
 
-.ticketCard b {
-  display: block;
-  font-family: var(--display);
-  font-size: 1.35rem;
-  font-weight: 400;
-  letter-spacing: 0.12em;
+.ticketShop {
   text-align: center;
-  margin-bottom: 0.35rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  font-size: 0.82rem;
 }
 
-.ticketCard em {
-  display: block;
+.ticketMeta {
   text-align: center;
-  font-style: italic;
+  color: #7a6a58;
+  font-size: 0.68rem;
+  margin: 0.25rem 0 0.6rem;
+}
+
+.ticketLine {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.ticketRule {
+  border-top: 1px dashed #b9a990;
+  margin: 0.55rem 0;
+}
+
+.ticketTotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.ticketTotal strong {
   color: var(--m-orange-deep);
-  margin-bottom: 0.7rem;
+}
+
+.ticketFooter {
+  text-align: center;
+  margin-top: 0.7rem;
+  color: #7a6a58;
+  font-size: 0.68rem;
 }
 
 .band {
@@ -2287,10 +2417,11 @@
 }
 
 .priceNote {
-  font-style: normal;
-  font-size: 0.7rem;
+  margin: 0.2rem 0 0;
+  font-size: 0.74rem;
   color: var(--m-success);
   font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 /* Comparison table */

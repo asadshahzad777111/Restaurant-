@@ -685,11 +685,14 @@ export function MarketingHome() {
         </div>
       </div>
 
-      <section className={styles.gallery} aria-label="Kitchen stills">
+      <section className={styles.gallery} aria-label="How ORDO works">
         <div className={styles.wrap}>
           <motion.div variants={section} initial="hidden" whileInView="show" viewport={viewOnce}>
-            <p className={styles.kicker}>On the pass</p>
-            <h2>Service that feels as considered as the dining room.</h2>
+            <p className={styles.kicker}>One kitchen, one truth</p>
+            <h2>Guest phone se printed ticket tak — ek hi system.</h2>
+            <p className={styles.leadWide}>
+              Guest order, kitchen display, aur 58mm receipt — teeno ek hi catalog, ek hi truth.
+            </p>
           </motion.div>
           <motion.div
             className={styles.stills}
@@ -698,20 +701,47 @@ export function MarketingHome() {
             whileInView="show"
             viewport={viewOnce}
           >
-            <motion.div className={`${styles.still} ${styles.stillKitchen}`} variants={item}>
-              <div className={styles.bokeh} aria-hidden>
-                <i />
-                <i />
-                <i />
-                <i />
+            {/* Guest phone */}
+            <motion.div className={`${styles.still} ${styles.stillPhone}`} variants={item}>
+              <div className={styles.phoneFrame}>
+                <div className={styles.phoneHeader}>
+                  <span className={styles.phoneLive}>● LIVE</span>
+                  <strong className={styles.phoneTitle}>Karahi House</strong>
+                </div>
+                <div className={styles.phoneMenu}>
+                  <div className={styles.phoneItem}>
+                    <div>
+                      <strong>Karahi</strong>
+                      <em>₨890</em>
+                    </div>
+                    <button className={styles.phoneAdd} aria-hidden>
+                      +
+                    </button>
+                  </div>
+                  <div className={styles.phoneItem}>
+                    <div>
+                      <strong>Naan ×2</strong>
+                      <em>₨160</em>
+                    </div>
+                    <button className={styles.phoneAdd} aria-hidden>
+                      +
+                    </button>
+                  </div>
+                </div>
+                <div className={styles.phoneCart}>2 items · ₨1,130</div>
               </div>
-              <p className={styles.stillLabel}>Service light</p>
+              <p className={styles.stillLabel}>Guest order</p>
             </motion.div>
+
+            {/* Kitchen display */}
             <motion.div className={`${styles.still} ${styles.stillPass}`} variants={item}>
               <div className={styles.rail}>
                 <article>
                   <span>T7 · Dining</span>
                   <strong>Karahi, naan</strong>
+                  <em className={styles.railLive} aria-hidden>
+                    🔔
+                  </em>
                 </article>
                 <article>
                   <span>Ayesha · Pickup</span>
@@ -722,19 +752,30 @@ export function MarketingHome() {
                   <strong>Biryani box</strong>
                 </article>
               </div>
-              <p className={styles.stillLabel}>Ticket rail</p>
+              <p className={styles.stillLabel}>Kitchen display</p>
             </motion.div>
+
+            {/* 58mm receipt */}
             <motion.div className={`${styles.still} ${styles.stillTicket}`} variants={item}>
               <div className={styles.ticketCard}>
-                <b>ORDO</b>
-                <em>Demo Kitchen</em>
-                Karahi · ₨890
-                <br />
-                Naan ×2 · ₨160
-                <br />
-                <strong>Total ₨1,130</strong>
+                <div className={styles.ticketShop}>KARAHI HOUSE</div>
+                <div className={styles.ticketMeta}>Bill #1042 · 12:30</div>
+                <div className={styles.ticketLine}>
+                  <span>Karahi</span>
+                  <span>₨890</span>
+                </div>
+                <div className={styles.ticketLine}>
+                  <span>Naan ×2</span>
+                  <span>₨160</span>
+                </div>
+                <div className={styles.ticketRule} />
+                <div className={styles.ticketTotal}>
+                  <span>TOTAL</span>
+                  <strong>₨1,130</strong>
+                </div>
+                <div className={styles.ticketFooter}>Thank you · Visit again</div>
               </div>
-              <p className={styles.stillLabel}>58mm paper</p>
+              <p className={styles.stillLabel}>58mm receipt</p>
             </motion.div>
           </motion.div>
         </div>
@@ -1037,8 +1078,8 @@ export function MarketingHome() {
                   <p className={styles.price}>
                     <PlanPrice amount={shown} />
                     <span>/mo</span>
-                    {billing === "yearly" && <em className={styles.priceNote}>billed yearly</em>}
                   </p>
+                  {billing === "yearly" && <p className={styles.priceNote}>Billed yearly · 2 months free</p>}
                   <p>{p.blurb}</p>
                   <ul>
                     {p.features.map((f) => (
