@@ -98,7 +98,7 @@ const TABS = [
     label: "Owner",
     kicker: "Owner command workspace",
     title: "See the floor without living in the kitchen",
-    body: "Orders, staff permissions, and today’s picture sit in one restaurant login. Super Admin can open a kitchen to help — with a badge — without mixing Tenant A into Tenant B.",
+    body: "Orders, staff aur aaj ka picture — ek restaurant login mein. Super bina mix kiye help kar sakta hai.",
     rows: [
       ["Orders", "Live view"],
       ["Tables", "Active"],
@@ -116,7 +116,7 @@ const TABS = [
     label: "Kitchen",
     kicker: "Department view",
     title: "Tickets that move with the pass",
-    body: "Kitchen display updates as staff advance status. Dining, takeaway, and delivery stay labelled so the pass is not shouting across stations.",
+    body: "Tickets placed se ready — dining, takeaway, delivery sab labelled.",
     rows: [
       ["Dining", "Table on the ticket"],
       ["Takeaway", "Name on the rail"],
@@ -134,7 +134,7 @@ const TABS = [
     label: "Inventory",
     kicker: "Live stock ledger",
     title: "Stock that belongs to one restaurant only",
-    body: "Ingredients, thresholds, and alerts live on that kitchen’s Settings. Another restaurant on ORDO never sees this ledger.",
+    body: "Ingredients + alerts isi kitchen ke Settings mein — dusra kitchen nahi dekhta.",
     rows: [
       ["Low stock", "Owner alert"],
       ["Menu", "Same catalog as POS"],
@@ -152,7 +152,7 @@ const TABS = [
     label: "Counter",
     kicker: "Pay rules",
     title: "Payment choices guests already understand",
-    body: "Dining is pay at counter. Takeaway is counter or paid in advance (recorded — no fake card SDK). Delivery is COD or paid in advance. POS records cash, card, and wallet.",
+    body: "Dining = counter pay · Takeaway = counter ya advance · Delivery = COD ya advance.",
     rows: [
       ["Dining", "Pay at counter"],
       ["Takeaway", "Counter or recorded advance"],
@@ -168,30 +168,12 @@ const TABS = [
 ] as const;
 
 const MODULES = [
-  {
-    title: "Guest order",
-    body: "Public menu, cart, and checkout for dining, takeaway, and delivery. Guests track the ticket, then leave a review after staff mark it complete.",
-  },
-  {
-    title: "QR / scanner",
-    body: "Table QR opens the right kitchen and table. Camera scan on Chromium + HTTPS; paste or restaurant code always works.",
-  },
-  {
-    title: "Staff POS",
-    body: "Counter sale on phone, tablet, or laptop. Same catalog as the public menu — no second list that drifts.",
-  },
-  {
-    title: "Kitchen display",
-    body: "One queue for guest and counter tickets. Status moves from placed to ready without a separate app install.",
-  },
-  {
-    title: "Menu sync",
-    body: "Staff add, hide, or price an item in Menu. Guests see that catalog. Cost fields stay off the public page.",
-  },
-  {
-    title: "Receipts",
-    body: "58mm browser bill: shop name, items, qty, rates, totals, and footer. Thermal hardware is a quoted add-on — not a fake Windows driver.",
-  },
+  { title: "Guest order", body: "QR menu + cart + checkout — dining, takeaway, delivery." },
+  { title: "QR / scanner", body: "Table QR ya code — camera ya paste." },
+  { title: "Staff POS", body: "Counter sale — wahi catalog jo guest dekhta hai." },
+  { title: "Kitchen display", body: "Ek queue, placed se ready." },
+  { title: "Menu sync", body: "Staff update, guest turant dekhta hai." },
+  { title: "Receipts", body: "58mm bill — shop, items, total. Hardware alag quote." },
 ] as const;
 
 const FLOW = [
@@ -289,74 +271,26 @@ const FACTS = [
 ];
 
 const FAQS = [
-  {
-    q: "What is ORDO?",
-    a: "ORDO is a restaurant operating system: guest ordering, counter POS, kitchen tickets, menu, stock, and Super Admin for many kitchens. Counter checkout is one part — not the whole product.",
-  },
-  {
-    q: "Is this only a POS?",
-    a: "No. Guests order from /guest or /scan. Staff run POS, kitchen, menu, and settings. Super Admin creates isolated restaurants. POS is the counter, not the company.",
-  },
-  {
-    q: "Do two restaurants share a menu?",
-    a: "No. Each kitchen is a tenant. Menu, stock, orders, logo, and reviews never cross. Tenant A’s receipt never prints Tenant B’s name.",
-  },
-  {
-    q: "How do guests order?",
-    a: "Scan a table QR, enter a restaurant code on /guest, or open /order?tenant=CODE. Dining needs a table and pays at the counter. Takeaway and delivery use the pay rules that kitchen already runs.",
-  },
-  {
-    q: "Do you charge per order?",
-    a: "No per-order fee on these plans. Monthly PKR, no annual lock-in. Hardware printers are quoted separately if you want thermal paper.",
-  },
-  {
-    q: "Do I need a special POS machine?",
-    a: "No proprietary terminal. Browser-first on phones, tablets, and laptops you already have. Live ordering needs internet.",
-  },
-  {
-    q: "Does it work offline?",
-    a: "No. ORDO is a live system. An active connection is required for orders and sync — same honesty as other cloud restaurant OS tools.",
-  },
-  {
-    q: "Is JazzCash or a card gateway included?",
-    a: "Not in this release. Paid in advance is a recorded status, not a fake checkout SDK. Counter POS can mark cash, card, or wallet after you take the money in the real world.",
-  },
+  { q: "What is ORDO?", a: "QR ordering + counter POS + kitchen tickets — ek system." },
+  { q: "Is this only a POS?", a: "Nahi — guest ordering, kitchen, menu, stock, aur Super Admin bhi." },
+  { q: "Do two restaurants share a menu?", a: "Nahi — har kitchen alag tenant, data kabhi mix nahi." },
+  { q: "How do guests order?", a: "Scan QR, /guest se code, ya /order?tenant=CODE." },
+  { q: "Do you charge per order?", a: "Nahi — monthly PKR, no per-order fee." },
+  { q: "Do I need a special POS machine?", a: "Nahi — browser-first, jo device aapke paas hai." },
+  { q: "Does it work offline?", a: "Nahi — live internet chahiye, jaise dusre cloud tools." },
+  { q: "Is JazzCash or a card gateway included?", a: "Nahi — advance recorded status hai, counter par cash/card/wallet." },
 ] as const;
 
 const PRINCIPLES = [
-  {
-    n: "01",
-    title: "Practical before complicated",
-    body: "Technology should reduce operational weight, not add another layer of confusion. Phones and laptops you already own are enough.",
-  },
-  {
-    n: "02",
-    title: "Isolated by default",
-    body: "Every kitchen is its own tenant. Menu, stock, orders, logo, and reviews never cross. Help from Super still shows a badge.",
-  },
-  {
-    n: "03",
-    title: "Built with local reality",
-    body: "PKR on the page, mixed dining / takeaway / delivery, WhatsApp for quotes, and an honest internet requirement — no offline magic.",
-  },
+  { n: "01", title: "Practical before complicated", body: "Tech bojh kam kare, zyada nahi." },
+  { n: "02", title: "Isolated by default", body: "Har kitchen alag tenant — data kabhi mix nahi." },
+  { n: "03", title: "Built with local reality", body: "PKR, dining/takeaway/delivery, WhatsApp." },
 ] as const;
 
 const OUTCOMES = [
-  {
-    kicker: "Control",
-    title: "See what is happening now.",
-    body: "Owners follow active orders, preparation, stock attention, and the daily picture from the same operating workspace.",
-  },
-  {
-    kicker: "Clarity",
-    title: "Keep every team on the same truth.",
-    body: "Owner, chef, and counter views use the same order data while showing each role only the work it needs.",
-  },
-  {
-    kicker: "Continuity",
-    title: "Carry work into the business record.",
-    body: "A completed ticket can update tracking, reviews, and stock alerts without a second list that drifts from the floor.",
-  },
+  { kicker: "Control", title: "See what is happening now.", body: "Active orders, prep, stock — ek jagah." },
+  { kicker: "Clarity", title: "Keep every team on the same truth.", body: "Owner, chef, counter — ek data." },
+  { kicker: "Continuity", title: "Carry work into the business record.", body: "Completed ticket se tracking, reviews, alerts." },
 ] as const;
 
 export function MarketingHome() {
@@ -597,8 +531,7 @@ export function MarketingHome() {
             The floor, the pass, and the guest — <em>one ORDO.</em>
           </h1>
           <p className={styles.heroSub}>
-            From the first QR order to the ticket in hand, ORDO keeps every kitchen connected, calm, and
-            isolated — so service looks as polished as the room it serves.
+            QR order se ticket tak — ek system. Simple, fast, isolated.
           </p>
           <div className={styles.heroCtas}>
             <Link href="/order?tenant=DEMO" className={styles.primary}>
@@ -908,9 +841,7 @@ export function MarketingHome() {
           <p className={styles.kicker}>The company</p>
           <h2>We build the quiet layer between guests and the kitchen.</h2>
           <p className={styles.leadWide}>
-            ORDO is hospitality tech with a floor-first story: the phone on the table, the ticket in the
-            printer, the owner glance at today’s numbers — one system, one kitchen at a time. We design for
-            real service pressure in Pakistan, not for a generic SaaS brochure.
+            Phone, printer, aur aaj ke numbers — ek system, ek kitchen at a time.
           </p>
           <div className={styles.principles}>
             {PRINCIPLES.map((item) => (
@@ -1258,8 +1189,7 @@ export function MarketingHome() {
           <p className={styles.kicker}>Built for Pakistan</p>
           <h2>Technology shaped by the way local kitchens actually work.</h2>
           <p className={styles.leadWide}>
-            ORDO OS is designed around practical devices, live internet, PKR, and mixed counter, cash, wallet,
-            kitchen, and delivery workflows common in local food businesses.
+            Practical devices, internet, PKR — local workflows ke liye.
           </p>
           <ul className={styles.localList}>
             <li>
@@ -1323,9 +1253,7 @@ export function MarketingHome() {
           <p className={styles.kicker}>About</p>
           <h2>ORDO is the brand. ORDO OS is the live kitchen product.</h2>
           <p className={styles.leadWide}>
-            We are a product company for restaurants that already run mixed dining, takeaway, and delivery. The
-            public site is a demo of the guest path. Staff login is for kitchens you already operate. Super Admin
-            is unlisted — it creates isolated restaurants; it is not a third public app.
+            Restaurants ke liye jo dining, takeaway, delivery chalaate hain. Public site guest path ka demo hai.
           </p>
           <div className={styles.aboutGrid}>
             <article>
