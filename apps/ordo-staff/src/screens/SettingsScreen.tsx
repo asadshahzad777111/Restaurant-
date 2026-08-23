@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { getTenant, pauseOrdering, clearToken } from "../api";
 import { getPrinter, savePrinter, clearPrinter } from "../printerStorage";
@@ -15,6 +15,7 @@ export function SettingsScreen({ navigation }: any) {
   const [err, setErr] = useState("");
   const [printerName, setPrinterName] = useState("");
   const [printerMac, setPrinterMac] = useState("");
+  const loaded = tenant !== null;
 
   const load = useCallback(async () => {
     try {
@@ -49,15 +50,29 @@ export function SettingsScreen({ navigation }: any) {
     }
   }
 
-  const allowed = tenant?.users?.map((u) => u.permissions?.length) ?? [];
   const staffCount = tenant?.users?.length || 0;
+
+  function confirmLogout() {
+    Alert.alert("Log out", "Sign out of ORDO Staff?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Log out",
+        style: "destructive",
+        onPress: async () => {
+          await clearToken();
+          navigation.replace("Login");
+        },
+      },
+    ]);
+  }
 
   return (
     <ScrollView style={s.root} contentContainerStyle={s.content}>
       {err ? <Text style={s.err}>{err}</Text> : null}
       {msg ? <Text style={s.ok}>{msg}</Text> : null}
+      {!loaded && !err ? <ActivityIndicator color={theme.accent} style={{ margin: 20 }} /> : null}
 
-      <Text style={s.title}>Kitchen</Text>
+      <Text style={s.title}>🏠 Restaurant</Text>
       <View style={s.card}>
         <Text style={s.brand}>{tenant?.branding.name}</Text>
         <Text style={s.muted}>
@@ -65,7 +80,7 @@ export function SettingsScreen({ navigation }: any) {
         </Text>
       </View>
 
-      <Text style={s.title}>Ordering</Text>
+      <Text style={s.title}>⏸ Ordering</Text>
       <TouchableOpacity
         style={[s.card, tenant?.orderingPaused && s.pauseCard]}
         onPress={() => void togglePause()}
@@ -79,29 +94,24 @@ export function SettingsScreen({ navigation }: any) {
         </Text>
       </TouchableOpacity>
 
-      <Text style={s.title}>Printer (58mm)</Text>
+      <Text style={s.title}>🖨️ Printer (58mm)</Text>
       <View style={s.card}>
         <Text style={s.muted}>Pair your Bluetooth thermal printer, then Save. The receipt Prints to it.</Text>
-        <TextInput style={s.input} value={printerName} onChangeText={setPrinterName} placeholder="Printer name" placeholderTextColor={theme.muted} />
-        <TextInput style={s.input} value={printerMac} onChangeText={setPrinterMac} placeholder="MAC / address (e.g. A0:BC:11:22:33)" placeholderTextColor={theme.muted} autoCapitalize="characters" />
+        <TextInput style={s.input} value={printerName} onChangeText={setPrinterName} placeholder="Printer name" placeholderTextColor={theme.muted} autoCorrect={false} />
+        <TextInput style={s.input} value={printerMac} onChangeText={setPrinterMac} placeholder="MAC / address (e.g. A0:BC:11:22:33)" placeholderTextColor={theme.muted} autoCapitalize="characters" autoCorrect={false} />
         <View style={s.rowBtns}>
-          <TouchableOpacity style={s.smallBtn} onPress={async () => { await savePrinter({ name: printerName, mac: printerMac }); setMsg("Printer saved"); }}>
+          <TouchableOpacity style={s.smallBtn} onPress={async () => { if (!printerName.trim()) { setErr("Printer name is required"); return; } await savePrinter({ name: printerName, mac: printerMac }); setMsg("Printer saved"); setErr(""); }}>
             <Text style={s.smallBtnText}>Save printer</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.smallGhost} onPress={async () => { setPrinterName(""); setPrinterMac(""); await clearPrinter(); setMsg("Printer cleared"); }}>
             <Text style={s.smallGhostText}>Clear</Text>
           </TouchableOpacity>
         </View>
+        <Text style={s.footInline}>Printing needs a development build with the native printer bridge.</Text>
       </View>
 
-      <Text style={s.title}>Account</Text>
-      <TouchableOpacity
-        style={s.logout}
-        onPress={async () => {
-          await clearToken();
-          navigation.replace("Login");
-        }}
-      >
+      <Text style={s.title}>👤 Account</Text>
+      <TouchableOpacity style={s.logout} onPress={confirmLogout}>
         <Text style={s.logoutText}>Log out</Text>
       </TouchableOpacity>
       <Text style={s.foot}>ORDO Staff v1.0</Text>
@@ -120,6 +130,7 @@ const s = StyleSheet.create({
   brand: { color: theme.ink, fontSize: 18, fontWeight: "800" },
   cardTitle: { color: theme.ink, fontSize: 16, fontWeight: "800" },
   muted: { color: theme.muted, fontSize: 13, lineHeight: 18 },
+  footInline: { color: theme.muted, fontSize: 12, marginTop: 6 },
   logout: { backgroundColor: theme.danger, borderRadius: radius.md, padding: 15, alignItems: "center" },
   logoutText: { color: "#fff", fontWeight: "800" },
   foot: { color: theme.muted, textAlign: "center", fontSize: 12, marginTop: 4 },
