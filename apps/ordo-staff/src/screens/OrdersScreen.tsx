@@ -1,0 +1,107 @@
+import { useCallback, useEffect, useState } from "react";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { getOrders, patchOrder } from "../api";
+import type { Order } from "../types";
+import { theme, radius } from "../theme";
+
+const NEXT: Record<string, string> = {
+  placed: "accepted",
+  accepted: "preparing",
+  preparing: "ready",
+  ready: "completed",
+  out_for_delivery: "completed",
+};
+
+export function OrdersScreen() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [err, setErr] = useState("");
+
+  const load = useCallback(async () => {
+    try {
+      setOrders(await getOrders());
+      setErr("");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Load error");
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+      const id = setInterval(() => void load(), 5000);
+      return () => clearInterval(id);
+    }, [load]),
+  );
+
+  async function advance(o: Order) {
+    const next = NEXT[o.status];
+    if (!next) return;
+    try {
+      const updated = await patchOrder(o.id, { status: next as Order["status"] });
+      setOrders((prev) => prev.map((x) => (x.id === o.id ? updated : x)));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Update failed");
+    }
+  }
+
+  return (
+    <View style={s.container}>
+      {err ? <Text style={s.err}>{err}</Text> : null}
+      <FlatList
+        data={orders}
+        keyExtractor={(o) => o.id}
+        contentContainerStyle={{ padding: 16, gap: 10 }}
+        ListEmptyComponent={<Text style={s.empty}>No orders yet</Text>}
+        renderItem={({ item }) => (
+          <View style={s.card}>
+            <View style={s.row}>
+              <Text style={s.num}>#{item.number}</Text>
+              <Text style={s.status}>{item.status}</Text>
+              <Text style={s.total}>{item.total}</Text>
+            </View>
+            <Text style={s.meta}>
+              {item.channel}/{item.serviceType}
+              {item.tableNumber ? ` · T${item.tableNumber}` : ""}
+            </Text>
+            <View style={s.lines}>
+              {item.lines.map((l, i) => (
+                <Text key={i} style={s.line}>
+                  {l.qty}× {l.name}
+                </Text>
+              ))}
+            </View>
+            {NEXT[item.status] ? (
+              <TouchableOpacity style={s.btn} onPress={() => void advance(item)}>
+                <Text style={s.btnText}>→ {NEXT[item.status]}</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        )}
+      />
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.bg },
+  err: { color: theme.danger, padding: 12, fontWeight: "600" },
+  empty: { color: theme.muted, textAlign: "center", padding: 24 },
+  card: {
+    backgroundColor: theme.surface,
+    borderRadius: radius.md,
+    padding: 14,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: theme.line,
+  },
+  row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  num: { fontSize: 17, fontWeight: "800", color: theme.ink },
+  status: { color: theme.accentDeep, fontWeight: "700", textTransform: "uppercase" },
+  total: { fontSize: 15, fontWeight: "800", color: theme.ink },
+  meta: { color: theme.muted, fontSize: 13 },
+  lines: { gap: 2 },
+  line: { color: theme.ink, fontSize: 14 },
+  btn: { backgroundColor: theme.accent, borderRadius: 999, paddingVertical: 10, alignItems: "center", marginTop: 4 },
+  btnText: { color: "#fff", fontWeight: "800" },
+});

@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "ORDO Staff",
+    "slug": "ordo-staff",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "ordo-staff",
+    "splash": {
+      "backgroundColor": "#ff8500",
+      "resizeMode": "cover"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.ordo.staff"
+    },
+    "android": {
+      "package": "com.ordo.staff",
+      "adaptiveIcon": {
+        "backgroundColor": "#ff8500"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": ["expo-secure-store"]
+  }
+}
