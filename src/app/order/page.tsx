@@ -368,6 +368,7 @@ function OrderInner() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [tableDraft, setTableDraft] = useState("");
+  const [tables, setTables] = useState<Array<{ id: string; label: string }>>([]);
   const [cartReady, setCartReady] = useState(false);
   const [modItem, setModItem] = useState<MenuItem | null>(null);
   const [modSel, setModSel] = useState<Record<string, string[]>>({});
@@ -410,6 +411,7 @@ function OrderInner() {
         setBranding(d.public.branding);
         setShop(d.public.shop);
         setMenu(d.public.menu);
+        setTables((d.public.tables || []).map((t: { id: string; label: string }) => ({ id: t.id, label: t.label })));
         setPayments(normalizeTenantPayments(d.public.payments));
         setSpecialOffer(d.public.specialOffer || null);
         setOrderingClosed(Boolean(d.orderingClosed));
@@ -774,26 +776,45 @@ function OrderInner() {
               </p>
 
               {needsTable ? (
-                <form
-                  className={styles.tableForm}
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    goMode("table", tableDraft);
-                  }}
-                >
-                  <label>
-                    Table number
-                    <input
-                      value={tableDraft}
-                      onChange={(e) => setTableDraft(e.target.value)}
-                      placeholder="e.g. 7"
-                      required
-                    />
-                  </label>
-                  <button type="submit" className={styles.place}>
-                    Open dining menu
-                  </button>
-                </form>
+                <div className={styles.tableForm}>
+                  {tables.length > 0 ? (
+                    <>
+                      <p className={styles.muted}>Choose your table</p>
+                      <div className={styles.tableGrid}>
+                        {tables.map((tb) => (
+                          <button
+                            key={tb.id}
+                            type="button"
+                            className={styles.tableChip}
+                            onClick={() => goMode("table", tb.label)}
+                          >
+                            T{tb.label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        goMode("table", tableDraft);
+                      }}
+                    >
+                      <label>
+                        Table number
+                        <input
+                          value={tableDraft}
+                          onChange={(e) => setTableDraft(e.target.value)}
+                          placeholder="e.g. 7"
+                          required
+                        />
+                      </label>
+                      <button type="submit" className={styles.place}>
+                        Open dining menu
+                      </button>
+                    </form>
+                  )}
+                </div>
               ) : (
                 <motion.div
                   className={styles.modeCards}

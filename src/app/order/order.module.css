@@ -146,6 +146,34 @@
   margin-top: 1.25rem;
 }
 
+/* Table selection chips (dining gate) */
+.tableGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.tableChip {
+  border: 1px solid var(--guest-line);
+  background: var(--guest-elevated);
+  color: var(--guest-text);
+  border-radius: 12px;
+  padding: 0.85rem 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  transition:
+    transform 0.18s var(--ease-primary),
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.tableChip:hover {
+  transform: translateY(-2px);
+  border-color: var(--ember);
+  background: var(--guest-soft);
+}
+
 .gateLinks {
   display: flex;
   gap: 1.25rem;

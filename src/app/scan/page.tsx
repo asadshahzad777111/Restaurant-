@@ -242,6 +242,42 @@ export default function ScanPage() {
           </button>
         </motion.div>
 
+        {/* Pick a table in the demo — select a table number and go */}
+        <motion.section
+          className={styles.demoTables}
+          variants={listContainer(0.04)}
+          initial="hidden"
+          animate="show"
+        >
+          <div className={styles.demoTablesHead}>
+            <span>DEMO · choose a table</span>
+          </div>
+          <div className={styles.chips}>
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+              <motion.button
+                key={n}
+                type="button"
+                variants={item}
+                className={styles.chip}
+                onClick={() => openKitchen("DEMO", { table: String(n) })}
+              >
+                T{n}
+              </motion.button>
+            ))}
+          </div>
+        </motion.section>
+
+        <motion.a
+          className={styles.install}
+          href="/apk/ordo-staff.apk"
+          download
+          variants={item}
+          initial="hidden"
+          animate="show"
+        >
+          📲 Install the ORDO app
+        </motion.a>
+
         {recent.length > 0 && (
           <motion.section
             className={styles.recent}
