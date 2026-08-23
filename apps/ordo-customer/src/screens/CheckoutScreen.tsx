@@ -70,6 +70,21 @@ export function CheckoutScreen({ route }: any) {
         <Text style={s.title}>Checkout</Text>
         <Text style={s.muted}>{menu.branding.name}</Text>
 
+        {/* Order summary */}
+        <View style={s.summary}>
+          {cart.map((l, i) => (
+            <View key={i} style={s.sumRow}>
+              <Text style={s.sumName}>{l.qty}× {l.item.name}</Text>
+              <Text style={s.sumPrice}>{menu.shop.currency} {l.item.price * l.qty}</Text>
+            </View>
+          ))}
+          <View style={s.sumRule} />
+          <View style={s.sumRow}>
+            <Text style={s.sumTotal}>Total</Text>
+            <Text style={s.sumTotalVal}>{menu.shop.currency} {total}</Text>
+          </View>
+        </View>
+
         <Text style={s.label}>Service type</Text>
         <View style={s.modes}>
           {(["table", "pickup", "delivery"] as const).map((m) => (
@@ -135,6 +150,13 @@ const s = StyleSheet.create({
   title: { color: "#fff", fontSize: 26, fontWeight: "800" },
   muted: { color: theme.muted, fontSize: 14 },
   label: { color: theme.muted, fontWeight: "700", marginTop: 6 },
+  summary: { backgroundColor: theme.darkSurface, borderRadius: 14, borderWidth: 1, borderColor: theme.line, padding: 14, gap: 8, marginTop: 4 },
+  sumRow: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
+  sumName: { color: theme.text, fontSize: 14, flex: 1 },
+  sumPrice: { color: theme.text, fontWeight: "700", fontSize: 14 },
+  sumRule: { borderBottomWidth: 1, borderColor: theme.line, marginVertical: 4 },
+  sumTotal: { color: theme.text, fontWeight: "800" },
+  sumTotalVal: { color: theme.accentHot, fontWeight: "800" },
   modes: { flexDirection: "row", gap: 8 },
   mode: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: theme.line, backgroundColor: theme.darkSurface },
   modeOn: { backgroundColor: theme.accent, borderColor: theme.accent },

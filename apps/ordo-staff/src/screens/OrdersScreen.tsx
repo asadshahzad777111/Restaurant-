@@ -4,6 +4,7 @@ import { patchOrder } from "../api";
 import { useNewOrders } from "../hooks/useNewOrders";
 import { ReceiptView } from "../components/ReceiptView";
 import { OrderAlert } from "../components/OrderAlert";
+import { EmptyState } from "../components/EmptyState";
 import type { Order } from "../types";
 import { theme, radius } from "../theme";
 
@@ -38,7 +39,7 @@ export function OrdersScreen() {
         data={orders}
         keyExtractor={(o) => o.id}
         contentContainerStyle={{ padding: 16, gap: 10 }}
-        ListEmptyComponent={<Text style={s.empty}>No orders yet</Text>}
+        ListEmptyComponent={<EmptyState emoji="🧾" title="No orders yet" hint="New guest and counter orders appear here — place one from the POS tab or ask a guest to order." />}
         renderItem={({ item }) => (
           <View style={s.card}>
             <TouchableOpacity onPress={() => setSelected(item)}>

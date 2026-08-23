@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { getTenant, saveTables } from "../api";
+import { EmptyState } from "../components/EmptyState";
 import type { Tenant, DiningTable } from "../types";
 import { theme, radius } from "../theme";
 
@@ -62,7 +63,7 @@ export function TablesScreen() {
           </TouchableOpacity>
         ))}
       </View>
-      {!(tenant?.tables || []).length ? <Text style={s.empty}>No tables yet</Text> : null}
+      {!(tenant?.tables || []).length ? <EmptyState emoji="🪑" title="No tables yet" hint="Add tables from the web Settings → Tables to map your floor." /> : null}
     </View>
   );
 }

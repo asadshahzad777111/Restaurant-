@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { getTenant, toggle86 } from "../api";
+import { EmptyState } from "../components/EmptyState";
 import type { Tenant, MenuItem } from "../types";
 import { theme, radius } from "../theme";
 
@@ -69,7 +70,7 @@ export function MenuScreen({ route }: any) {
           ))}
         </View>
       ))}
-      {!cats.length ? <Text style={s.empty}>No menu items yet</Text> : null}
+      {!cats.length ? <EmptyState emoji="📋" title="No menu items yet" hint="Add items from the web Settings → Menu." /> : null}
     </ScrollView>
   );
 }
