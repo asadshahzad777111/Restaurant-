@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getOrders } from "../api";
+import { notifyNewOrder } from "../notify";
 import type { Order } from "../types";
 
 /** Polls /api/orders and reports orders that newly reach "placed". */
@@ -26,7 +27,11 @@ export function useNewOrders(intervalMs = 4000) {
         seen.current.add(o.id);
         dismissed.current.add(o.id);
       });
-      if (fresh.length) setNewOrders((prev) => [...prev, ...fresh].slice(-6));
+      if (fresh.length) {
+        setNewOrders((prev) => [...prev, ...fresh].slice(-6));
+        const first = fresh[0];
+        void notifyNewOrder(first.number, `${first.serviceType} · ${first.lines.length} items`);
+      }
     } catch {
       /* ignore */
     }

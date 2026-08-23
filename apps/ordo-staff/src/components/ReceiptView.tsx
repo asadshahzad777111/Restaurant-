@@ -1,4 +1,6 @@
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView } from "react-native";
+import { useState } from "react";
+import { printOrder } from "../print";
 import type { Order } from "../types";
 import { theme } from "../theme";
 
@@ -14,6 +16,8 @@ export function ReceiptView({
   currency: string;
   onClose: () => void;
 }) {
+  const [status, setStatus] = useState<"" | "ok" | "no">("");
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={s.overlay}>
@@ -46,9 +50,17 @@ export function ReceiptView({
               </View>
             )}
           </ScrollView>
-          <TouchableOpacity style={s.printBtn} onPress={onClose}>
-            <Text style={s.printText}>Done</Text>
+          <TouchableOpacity
+            style={s.printBtn}
+            onPress={async () => {
+              const ok = await printOrder(order!, currency);
+              setStatus(ok ? "ok" : "no");
+            }}
+          >
+            <Text style={s.printText}>🗨 Print</Text>
           </TouchableOpacity>
+          {status === "ok" ? <Text style={s.okNote}>Sent to printer</Text> : null}
+          {status === "no" ? <Text style={s.noNote}>Needs a development build</Text> : null}
         </View>
       </View>
     </Modal>
@@ -73,4 +85,6 @@ const s = StyleSheet.create({
   foot: { color: "#555", textAlign: "center", fontSize: 11, marginTop: 8 },
   printBtn: { backgroundColor: theme.accent, borderRadius: 999, paddingVertical: 13, alignItems: "center" },
   printText: { color: "#fff", fontWeight: "800" },
+  okNote: { color: theme.success, fontWeight: "700", textAlign: "center" },
+  noNote: { color: theme.muted, fontWeight: "600", textAlign: "center" },
 });
