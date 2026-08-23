@@ -126,6 +126,12 @@ export function middleware(req: NextRequest) {
     }
   }
 
+  // App / localhost / control hosts: apply CORS to any /api request so
+  // developer origins (Expo web, localhost) can call the API cross-origin.
+  if (pathname.startsWith("/api/")) {
+    return applyCors(req, withSecurity(NextResponse.next()));
+  }
+
   return withSecurity(NextResponse.next());
 }
 
