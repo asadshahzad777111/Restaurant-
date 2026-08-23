@@ -26,6 +26,7 @@ import type {
   StockItem,
 } from "../types";
 import { ReceiptView } from "../components/ReceiptView";
+import { PressScale } from "../components/PressScale";
 import { theme, radius } from "../theme";
 
 type Line = {
@@ -326,10 +327,10 @@ export function POSScreen() {
             const avail = stockOf(item.name);
             const out = avail !== null && avail <= 0;
             return (
-              <TouchableOpacity
+              <PressScale
                 style={[s.item, (!item.available || out) && s.itemDim]}
                 onPress={() => startAdd(item)}
-                activeOpacity={0.7}
+                disabled={!item.available || out}
               >
                 {item.imageUrl ? (
                   <Image source={{ uri: item.imageUrl }} style={s.itemImg} resizeMode="cover" />
@@ -362,7 +363,7 @@ export function POSScreen() {
                     </TouchableOpacity>
                   </View>
                 )}
-              </TouchableOpacity>
+              </PressScale>
             );
           }}
         />

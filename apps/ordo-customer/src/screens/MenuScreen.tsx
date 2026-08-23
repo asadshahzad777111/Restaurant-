@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { getMenu } from "../api";
+import { PressScale } from "../components/PressScale";
 import type { PublicMenu, MenuItem } from "../types";
 import { theme } from "../theme";
 
@@ -86,7 +87,7 @@ export function MenuScreen({ code }: any) {
         {items.map((m) => {
           const qty = cart.find((p) => p.item.id === m.id)?.qty || 0;
           return (
-            <View key={m.id} style={s.card}>
+            <PressScale key={m.id} style={s.card} onPress={() => add(m)} disabled={!m.available}>
               <Text style={s.name}>{m.name}</Text>
               {m.description ? <Text style={s.desc}>{m.description}</Text> : null}
               <View style={s.row}>
@@ -105,7 +106,7 @@ export function MenuScreen({ code }: any) {
                   </TouchableOpacity>
                 </View>
               </View>
-            </View>
+            </PressScale>
           );
         })}
       </ScrollView>
