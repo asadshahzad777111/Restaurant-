@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { AppShell } from "@/components/AppShell";
 import { useStore } from "@/lib/store";
+import { useLang } from "@/lib/lang-context";
 import { money } from "@/lib/fees";
 import { useCountUp } from "@/lib/use-count-up";
 import { listContainer, listItem, usePrefersReducedMotion } from "@/lib/motion";
@@ -53,6 +54,7 @@ const ACTIONS: {
 
 export default function HomePage() {
   const { tenant, user } = useStore();
+  const { t } = useLang();
   const reduced = usePrefersReducedMotion();
   const perms = new Set(user?.permissions ?? []);
   const isAdmin = user?.role === "admin";
@@ -94,7 +96,7 @@ export default function HomePage() {
   const firstName = (user?.username || "there").replace(/^./, (c) => c.toUpperCase());
 
   return (
-    <AppShell title="Home">
+    <AppShell title={t("home")}>
       <div className={styles.page}>
         {user?.mustChangePassword && (
           <motion.div
@@ -137,12 +139,12 @@ export default function HomePage() {
           initial="hidden"
           animate="show"
         >
-          <StatCard label="Today revenue" value={money(cur, revenueShown)} accent hint="PKR · live" />
-          <StatCard label="Open tickets" value={String(openShown)} hint="placed → ready" />
+          <StatCard label={t("todayRevenue")} value={money(cur, revenueShown)} accent hint="PKR · live" />
+          <StatCard label={t("openTickets")} value={String(openShown)} hint={t("onThePass")} />
           <StatCard
-            label="Completed / void"
+            label={t("completedVoid")}
             value={`${doneShown} / ${cancelled}`}
-            hint="today"
+            hint={t("todayShiftLabel")}
           />
         </motion.div>
 
@@ -173,7 +175,7 @@ export default function HomePage() {
           initial="hidden"
           animate="show"
         >
-          <h3 className={styles.quickTitle}>Quick actions</h3>
+          <h3 className={styles.quickTitle}>{t("quickActions")}</h3>
           <div className={styles.quickGrid}>
             {ACTIONS.filter((a) => can(a.perm)).map((a) => (
               <motion.div key={a.href} variants={listItem(reduced, false)}>

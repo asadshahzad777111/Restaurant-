@@ -3,9 +3,24 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { useLang } from "@/lib/lang-context";
+import type { DictKey } from "@/lib/i18n";
 import { Sidebar } from "./Sidebar";
 import { StaffAlerts } from "./StaffAlerts";
 import styles from "./AppShell.module.css";
+
+const TITLE_KEYS: Record<string, DictKey> = {
+  Home: "home",
+  POS: "pos",
+  Orders: "orders",
+  Kitchen: "kitchen",
+  Tables: "tables",
+  Menu: "menu",
+  Staff: "staff",
+  "Day close": "dayClose",
+  "Sales & Profit": "sales",
+  Settings: "settings",
+};
 
 export function AppShell({
   children,
@@ -16,6 +31,7 @@ export function AppShell({
 }) {
   const { loading, token, role, tenant, user, impersonating, logout, refresh, exitHelp, billingPastDue } =
     useStore();
+  const { lang, toggle, t } = useLang();
   const router = useRouter();
 
   useEffect(() => {
@@ -36,7 +52,7 @@ export function AppShell({
   }, [loading, token, role, tenant, user, refresh]);
 
   if (!tenant || !user) {
-    return <div className={styles.loading}>Loading…</div>;
+    return <div className={styles.loading}>{t("loading")}</div>;
   }
 
   return (
@@ -45,10 +61,9 @@ export function AppShell({
       <div className={styles.main}>
         {impersonating && (
           <div className={styles.helpBanner} role="status">
-            <strong>Help mode · Super</strong>
+            <strong>{t("helpTitle")}</strong>
             <span>
-              You are helping {tenant.branding.name} ({tenant.code}). This is not ORDO HQ and not their
-              Admin login — open any Admin screen without their password.
+              {t("helpBody").replace("{name}", tenant.branding.name).replace("{code}", tenant.code)}
             </span>
             <button
               type="button"
@@ -58,18 +73,16 @@ export function AppShell({
                 router.push("/control");
               }}
             >
-              Back to ORDO HQ
+              {t("backHq")}
             </button>
           </div>
         )}
         {billingPastDue && !impersonating && (
           <div className={styles.billingBanner} role="status">
-            <strong>Billing past due</strong>
-            <span>
-              Contact ORDO Super to renew. Staff tools stay open. Guests can still use Scanner → menu.
-            </span>
+            <strong>{t("billingTitle")}</strong>
+            <span>{t("billingBody")}</span>
             <a href="/scan" className={styles.helpExit}>
-              Open scanner
+              {t("openScanner")}
             </a>
           </div>
         )}
@@ -89,15 +102,23 @@ export function AppShell({
             )}
             <div>
               <p className={styles.brand}>{tenant.branding.name}</p>
-              <h1 className={styles.title}>{title}</h1>
+              <h1 className={styles.title}>{title ? (TITLE_KEYS[title] ? t(TITLE_KEYS[title]) : title) : undefined}</h1>
             </div>
           </div>
           <div className={styles.meta}>
+            <button
+              type="button"
+              className={styles.langBtn}
+              onClick={toggle}
+              title={lang === "en" ? "اردو / Roman Urdu" : "English"}
+            >
+              {lang === "en" ? "اردو" : "EN"}
+            </button>
             {impersonating ? (
-              <span className={styles.badge}>Super helping this restaurant</span>
+              <span className={styles.badge}>{t("superHelping")}</span>
             ) : (
               <span className={styles.badgeMuted}>
-                {user.role === "admin" ? "Restaurant Admin" : "Staff"} · {tenant.code}
+                {user.role === "admin" ? t("restaurantAdmin") : t("staffRole")} · {tenant.code}
               </span>
             )}
             <span className={styles.user}>
@@ -112,7 +133,7 @@ export function AppShell({
                 router.push(impersonating ? "/login?owner=1" : "/login");
               }}
             >
-              Log out
+              {t("logout")}
             </button>
           </div>
         </header>

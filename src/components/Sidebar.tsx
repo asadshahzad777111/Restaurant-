@@ -4,26 +4,29 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { useLang } from "@/lib/lang-context";
 import type { Permission } from "@/lib/types";
+import type { DictKey } from "@/lib/i18n";
 import styles from "./Sidebar.module.css";
 
-const NAV: { href: string; label: string; perm: Permission | "any" }[] = [
-  { href: "/home", label: "Home", perm: "home" },
-  { href: "/pos", label: "POS", perm: "pos" },
-  { href: "/orders", label: "Orders", perm: "orders" },
-  { href: "/kitchen", label: "Kitchen", perm: "kitchen" },
-  { href: "/tables", label: "Tables", perm: "pos" },
-  { href: "/menu", label: "Menu", perm: "menu" },
-  { href: "/staff", label: "Staff", perm: "staff" },
-  { href: "/day-close", label: "Day close", perm: "settings" },
-  { href: "/sales", label: "Sales & Profit", perm: "settings" },
-  { href: "/settings", label: "Settings", perm: "settings" },
+const NAV: { href: string; key: DictKey; perm: Permission | "any" }[] = [
+  { href: "/home", key: "home", perm: "home" },
+  { href: "/pos", key: "pos", perm: "pos" },
+  { href: "/orders", key: "orders", perm: "orders" },
+  { href: "/kitchen", key: "kitchen", perm: "kitchen" },
+  { href: "/tables", key: "tables", perm: "pos" },
+  { href: "/menu", key: "menu", perm: "menu" },
+  { href: "/staff", key: "staff", perm: "staff" },
+  { href: "/day-close", key: "dayClose", perm: "settings" },
+  { href: "/sales", key: "sales", perm: "settings" },
+  { href: "/settings", key: "settings", perm: "settings" },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, tenant } = useStore();
+  const { t } = useLang();
   const perms = new Set(user?.permissions ?? []);
   const isAdmin = user?.role === "admin";
 
@@ -54,7 +57,7 @@ export function Sidebar() {
               prefetch
               className={pathname === n.href ? styles.active : styles.link}
             >
-              {n.label}
+              {t(n.key)}
             </Link>
           ),
         )}

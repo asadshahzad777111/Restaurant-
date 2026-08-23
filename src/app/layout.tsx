@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import { StoreProvider } from "@/lib/store";
+import { LanguageProvider } from "@/lib/lang-context";
 import { ApkExperience } from "@/components/ApkExperience";
 import { TenantPwaMeta } from "@/components/TenantPwaMeta";
 import "./globals.css";
@@ -70,9 +71,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={outfit.variable}>
         <StoreProvider>
-          <TenantPwaMeta />
-          <ApkExperience />
-          {children}
+          <LanguageProvider>
+            <TenantPwaMeta />
+            <ApkExperience />
+            {children}
+          </LanguageProvider>
         </StoreProvider>
       </body>
     </html>

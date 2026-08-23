@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
+import { useLang } from "@/lib/lang-context";
 import { showApkNotify } from "@/lib/apk-notify";
 import { serviceTypeLabel } from "@/lib/notify";
 import {
@@ -47,6 +48,7 @@ function orderAlertCopy(o: Order): { title: string; body: string } {
 
 export function StaffAlerts() {
   const { tenant, api, mergeOrders, user } = useStore();
+  const { t } = useLang();
   const [panel, setPanel] = useState<{
     kind: "order" | "stock";
     title: string;
@@ -219,7 +221,7 @@ export function StaffAlerts() {
     <>
       {!soundOk && (canHearOrders || canHearStock) && (
         <button type="button" className={styles.enable} onClick={() => void enableSound()}>
-          Enable order sound
+          {t("enableSound")}
         </button>
       )}
       {soundOk && !panel && canHearOrders && (
@@ -233,7 +235,7 @@ export function StaffAlerts() {
           }}
           title="Mute order alerts on this device"
         >
-          Sound on
+          {t("soundOn")}
         </button>
       )}
       {panel && (
@@ -242,11 +244,11 @@ export function StaffAlerts() {
             <strong>{panel.title}</strong>
             <p>{panel.body}</p>
             {panel.kind === "order" && (
-              <p className={styles.hint}>Beep continues until you stop it.</p>
+              <p className={styles.hint}>{t("beepContinues")}</p>
             )}
           </div>
           <button type="button" className={styles.stop} onClick={acknowledge}>
-            Stop alert
+            {t("stopAlert")}
           </button>
         </div>
       )}
