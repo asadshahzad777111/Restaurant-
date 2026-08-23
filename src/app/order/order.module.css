@@ -159,7 +159,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
   padding: 0.65rem 0.9rem;
   border: 1px solid var(--guest-line);
   border-radius: 999px;
@@ -167,9 +167,77 @@
   color: var(--guest-muted);
 }
 
+.modeBarRight {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
 .modeBar a {
   color: var(--ember-bright);
   font-weight: 700;
+}
+
+.langBtn {
+  border: 1px solid rgba(255, 133, 0, 0.5);
+  background: var(--guest-elevated);
+  color: var(--ember-bright);
+  border-radius: 999px;
+  padding: 0.26rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  transition: transform 0.18s var(--ease-primary), box-shadow 0.18s ease;
+}
+
+.langBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(255, 133, 0, 0.28);
+}
+
+/* Menu search */
+.searchBox {
+  position: relative;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.9rem;
+  font-size: 0.95rem;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.searchBox input {
+  width: 100%;
+  border: 1px solid var(--guest-line);
+  background: var(--guest-elevated);
+  color: var(--guest-text);
+  border-radius: 999px;
+  padding: 0.72rem 2.6rem 0.72rem 2.4rem;
+  font-size: 0.95rem;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.searchBox input:focus {
+  outline: none;
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px rgba(255, 133, 0, 0.22);
+}
+
+.searchClear {
+  position: absolute;
+  right: 0.7rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: none;
+  background: var(--guest-soft);
+  color: var(--guest-muted);
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .deals h2,

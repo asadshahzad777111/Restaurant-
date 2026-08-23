@@ -87,6 +87,22 @@ export default function HomePage() {
   const openShown = useCountUp(open);
   const doneShown = useCountUp(completed);
 
+  // Analytics — today's orders by channel / service
+  const byChannel = useMemo(() => {
+    const c: Record<string, number> = {};
+    today.forEach((o) => {
+      c[o.channel] = (c[o.channel] || 0) + 1;
+    });
+    return Object.entries(c);
+  }, [today]);
+  const byService = useMemo(() => {
+    const s: Record<string, number> = {};
+    today.forEach((o) => {
+      s[o.serviceType] = (s[o.serviceType] || 0) + 1;
+    });
+    return Object.entries(s);
+  }, [today]);
+
   const dateLine = now.toLocaleDateString("en-PK", {
     weekday: "long",
     day: "numeric",
@@ -147,6 +163,38 @@ export default function HomePage() {
             hint={t("todayShiftLabel")}
           />
         </motion.div>
+
+        {today.length > 0 && (
+          <motion.div
+            className={styles.reportSplit}
+            variants={listContainer(0.08)}
+            initial="hidden"
+            animate="show"
+          >
+            <div className={styles.card}>
+              <h3 style={{ marginTop: 0 }}>By channel</h3>
+              <ul className={styles.reportList}>
+                {byChannel.map(([k, v]) => (
+                  <li key={k}>
+                    <span>{k}</span>
+                    <strong>{v}</strong>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className={styles.card}>
+              <h3 style={{ marginTop: 0 }}>By service · today</h3>
+              <ul className={styles.reportList}>
+                {byService.map(([k, v]) => (
+                  <li key={k}>
+                    <span>{k}</span>
+                    <strong>{v}</strong>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+        )}
 
         {lowStock.length > 0 && (
           <motion.div

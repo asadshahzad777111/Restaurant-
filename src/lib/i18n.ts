@@ -66,6 +66,14 @@ export const dict = {
   completedVoid: { en: "Completed / void", ur: "Mukammal / void" },
   todayShiftLabel: { en: "today", ur: "aaj" },
   note: { en: "NOTE", ur: "NOTE" },
+
+  // guest ordering
+  yourOrder: { en: "Your order", ur: "Aapka order" },
+  addDishes: { en: "Add dishes. This cart stays on this restaurant only.", ur: "Dishes add karein. Yeh cart sirf isi restaurant mein rehta hai." },
+  searchPlaceholder: { en: "Search dishes…", ur: "Dishes dhoondein…" },
+  noResults: { en: "No dishes match your search.", ur: "Aapki search se koi dish nahi mili." },
+  browseMenu: { en: "Browse menu", ur: "Menu dekhein" },
+  items: { en: "item", ur: "item" },
 } as const;
 
 export type DictKey = keyof typeof dict;

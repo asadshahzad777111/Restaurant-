@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { LineModifier, MenuItem, ModifierGroup, TenantPayments, TenantSpecialOffer } from "@/lib/tenant-types";
 import type { AdvanceRail, PaymentMethod, ServiceType } from "@/lib/types";
 import { lineUnitPrice } from "@/lib/fees";
+import { useLang } from "@/lib/lang-context";
 import {
   LAST_GUEST_TENANT_KEY,
   assertOrderRules,
@@ -380,6 +381,8 @@ function OrderInner() {
   const enter = pageEnter(reduced, coarse);
   const empty = emptyState(reduced);
   const itemVar = listItem(reduced, coarse);
+  const { lang, toggle, t } = useLang();
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (!tenantCode) {
@@ -456,10 +459,15 @@ function OrderInner() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const deals = useMemo(() => menu.filter((m) => m.isDeal), [menu]);
+  const query = search.trim().toLowerCase();
+  const visibleMenu = useMemo(
+    () => (query ? menu.filter((m) => m.name.toLowerCase().includes(query)) : menu),
+    [menu, query],
+  );
+  const deals = useMemo(() => visibleMenu.filter((m) => m.isDeal), [visibleMenu]);
   const categories = useMemo(() => {
     const map = new Map<string, MenuItem[]>();
-    menu
+    visibleMenu
       .filter((m) => !m.isDeal)
       .forEach((m) => {
         const list = map.get(m.category) || [];
@@ -467,7 +475,7 @@ function OrderInner() {
         map.set(m.category, list);
       });
     return [...map.entries()];
-  }, [menu]);
+  }, [visibleMenu]);
 
   // Category nav: scroll-spy + bottom-sheet popup (mobile)
   const [activeCat, setActiveCat] = useState("");
@@ -838,7 +846,34 @@ function OrderInner() {
                   {modeLabel(mode!)}
                   {table ? ` · Table ${table}` : ""}
                 </span>
-                <Link href={`/order?tenant=${tenantCode}`}>Change</Link>
+                <div className={styles.modeBarRight}>
+                  <button
+                    type="button"
+                    className={styles.langBtn}
+                    onClick={toggle}
+                    title={lang === "en" ? "اردو / Roman Urdu" : "English"}
+                  >
+                    {lang === "en" ? "اردو" : "EN"}
+                  </button>
+                  <Link href={`/order?tenant=${tenantCode}`}>Change</Link>
+                </div>
+              </div>
+
+              <div className={styles.searchBox}>
+                <span className={styles.searchIcon} aria-hidden>
+                  🔎
+                </span>
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={t("searchPlaceholder")}
+                  aria-label={t("searchPlaceholder")}
+                />
+                {search && (
+                  <button type="button" className={styles.searchClear} onClick={() => setSearch("")} aria-label="Clear">
+                    ×
+                  </button>
+                )}
               </div>
 
               {(orderingClosed || billingPastDue) && (
@@ -862,7 +897,7 @@ function OrderInner() {
               )}
               {loading && <p className={styles.muted}>Loading this kitchen’s menu…</p>}
 
-              {!loading && menu.length === 0 && (
+              {!loading && !query && menu.length === 0 && (
                 <motion.div
                   className={styles.empty}
                   variants={empty}
@@ -871,6 +906,17 @@ function OrderInner() {
                 >
                   <h2>No dishes on the board</h2>
                   <p>This restaurant has no available items right now.</p>
+                </motion.div>
+              )}
+
+              {!loading && query && visibleMenu.length === 0 && (
+                <motion.div
+                  className={styles.empty}
+                  variants={empty}
+                  initial="hidden"
+                  animate="show"
+                >
+                  <h2>{t("noResults")}</h2>
                 </motion.div>
               )}
 
@@ -916,7 +962,7 @@ function OrderInner() {
                 <nav className={styles.catBar} aria-label="Menu sections">
                   <button type="button" className={styles.catMenuBtn} onClick={() => setCatOpen(true)}>
                     <span aria-hidden>☰</span>
-                    <span>{activeCat || "Browse menu"}</span>
+                    <span>{activeCat || t("browseMenu")}</span>
                   </button>
                   <div className={styles.catChips}>
                     {[
@@ -1008,9 +1054,9 @@ function OrderInner() {
 
         {showMenu && (
           <aside className={styles.rail} aria-label="Cart">
-            <h2>Your order</h2>
+            <h2>{t("yourOrder")}</h2>
             {count === 0 ? (
-              <p className={styles.muted}>Add dishes. This cart stays on this restaurant only.</p>
+              <p className={styles.muted}>{t("addDishes")}</p>
             ) : (
               checkout
             )}
@@ -1080,7 +1126,7 @@ function OrderInner() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className={styles.sheetHead}>
-                <h3 id="cart-title">Your order</h3>
+                <h3 id="cart-title">{t("yourOrder")}</h3>
                 <button type="button" onClick={() => setSheetOpen(false)}>
                   Close
                 </button>
@@ -1115,7 +1161,7 @@ function OrderInner() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className={styles.catSheetHead}>
-                <h3 id="cat-title">Browse menu</h3>
+                <h3 id="cat-title">{t("browseMenu")}</h3>
                 <button type="button" onClick={() => setCatOpen(false)} aria-label="Close">
                   Close
                 </button>
