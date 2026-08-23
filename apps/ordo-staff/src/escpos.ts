@@ -1,19 +1,54 @@
 /**
  * ESC/POS command builder for a 58mm thermal printer (public command set only).
- * Pure JS -> bytes; the native BLE/USB transport sends them. No vendor SDK.
+ * Pure JS WITHOUT Node's Buffer — Hermes (Android JS engine) has no global Buffer.
+ * Returns Uint8Array; the native BLE/USB transport sends them. No vendor SDK.
  */
 
-type Row = { text: string; align?: "left" | "center"; bold?: boolean };
-
-const INIT = Buffer.from([0x1b, 0x40]); // ESC @
-const ALIGN = (n: number) => Buffer.from([0x1b, 0x61, n]); // ESC a n
-const BOLD = (n: number) => Buffer.from([0x1b, 0x45, n]); // ESC E n
-const LF = Buffer.from([0x0a]);
-const CUT = Buffer.from([0x1d, 0x56, 0x00]); // GS V 0
-const KICK = Buffer.from([0x1b, 0x70, 0x00, 0x19, 0xfa]); // cash drawer pulse (optional)
+type Row = { text: string; align?: "left" | "center" | "right"; bold?: boolean };
 
 const WIDTH = 32;
 const TICK = "-";
+
+/** UTF-8 encoder (no Buffer / TextEncoder dependency). */
+function utf8(str: string): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < str.length; i++) {
+    let code = str.codePointAt(i)!;
+    if (code > 0xffff) i++;
+    if (code < 0x80) out.push(code);
+    else if (code < 0x800) {
+      out.push(0xc0 | (code >> 6));
+      out.push(0x80 | (code & 0x3f));
+    } else if (code < 0x10000) {
+      out.push(0xe0 | (code >> 12));
+      out.push(0x80 | ((code >> 6) & 0x3f));
+      out.push(0x80 | (code & 0x3f));
+    } else {
+      out.push(0xf0 | (code >> 18));
+      out.push(0x80 | ((code >> 12) & 0x3f));
+      out.push(0x80 | ((code >> 6) & 0x3f));
+      out.push(0x80 | (code & 0x3f));
+    }
+  }
+  return out;
+}
+
+function concat(parts: number[][]): Uint8Array {
+  let len = 0;
+  for (const p of parts) len += p.length;
+  const out = new Uint8Array(len);
+  let o = 0;
+  for (const p of parts) {
+    out.set(p, o);
+    o += p.length;
+  }
+  return out;
+}
+
+const INIT = [0x1b, 0x40]; // ESC @
+const LF = [0x0a];
+const CUT = [0x1d, 0x56, 0x00]; // GS V 0
+const KICK = [0x1b, 0x70, 0x00, 0x19, 0xfa]; // cash drawer pulse
 
 function padRow(row: Row): string {
   const text = row.text.slice(0, WIDTH);
@@ -28,22 +63,29 @@ function padRow(row: Row): string {
 }
 
 /** Build the full ESC/POS byte stream for a 58mm bill. */
-export function buildReceiptEscPos(lines: Row[], opts: { cut?: boolean; cashDrawer?: boolean } = {}): Buffer {
-  const parts: Buffer[] = [INIT, ALIGN(0)];
+export function buildReceiptEscPos(
+  lines: Row[],
+  opts: { cut?: boolean; cashDrawer?: boolean } = {},
+): Uint8Array {
+  const parts: number[][] = [INIT, [0x1b, 0x61, 0]]; // init + align left
   for (const row of lines) {
     if (row.text === TICK) {
-      parts.push(ALIGN(0), BOLD(0), Buffer.from(TICK.repeat(WIDTH), "utf8"), LF);
+      parts.push(
+        [0x1b, 0x61, 0],
+        [0x1b, 0x45, 0],
+        utf8(TICK.repeat(WIDTH)),
+        LF,
+      );
       continue;
     }
-    parts.push(ALIGN(row.align === "center" ? 1 : row.align === "right" ? 2 : 0));
-    parts.push(BOLD(row.bold ? 1 : 0));
-    parts.push(Buffer.from(padRow(row), "utf8"), LF);
+    parts.push([0x1b, 0x61, row.align === "center" ? 1 : row.align === "right" ? 2 : 0]);
+    parts.push([0x1b, 0x45, row.bold ? 1 : 0]);
+    parts.push(utf8(padRow(row)), LF);
   }
-  // Feeds for the tear + optional cash drawer + cut.
   parts.push(LF, LF);
   if (opts.cashDrawer) parts.push(KICK);
   if (opts.cut) parts.push(CUT);
-  return Buffer.concat(parts);
+  return concat(parts);
 }
 
 /** Convenience: a typical ORDO 58mm bill as ESC/POS rows. */
