@@ -1,22 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif, Plus_Jakarta_Sans } from "next/font/google";
+import { Outfit } from "next/font/google";
 import { StoreProvider } from "@/lib/store";
 import { ApkExperience } from "@/components/ApkExperience";
 import { TenantPwaMeta } from "@/components/TenantPwaMeta";
 import "./globals.css";
 
-const jakarta = Plus_Jakarta_Sans({
+/* Cemio-style type system: one clean geometric sans everywhere (400-800). */
+const outfit = Outfit({
   subsets: ["latin"],
-  variable: "--font-jakarta",
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
-
-const display = Instrument_Serif({
-  subsets: ["latin"],
-  variable: "--font-display",
-  weight: "400",
-  style: ["normal", "italic"],
+  variable: "--font-outfit",
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -40,7 +33,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#c45c26",
+  themeColor: "#ff8500",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -49,7 +42,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${jakarta.variable} ${display.variable}`}>
+      <body className={outfit.variable}>
         <StoreProvider>
           <TenantPwaMeta />
           <ApkExperience />

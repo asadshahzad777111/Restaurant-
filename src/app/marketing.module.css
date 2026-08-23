@@ -1,25 +1,25 @@
 .page {
-  --m-bg: #f6eee2;
-  --m-paper: #fbf6ee;
-  --m-elevated: #fffdf8;
-  --m-ink: #1a1612;
-  --m-muted: #5e554c;
-  --m-line: #eadfce;
+  --m-bg: #f7f4ef;
+  --m-paper: #fff8f1;
+  --m-elevated: #ffffff;
+  --m-ink: #211a15;
+  --m-muted: #71675e;
+  --m-line: #e8dfd5;
   --m-line-strong: #d9ccb6;
-  --m-orange: #f58220;
-  --m-orange-hot: #ff9338;
-  --m-orange-deep: #d46e14;
-  --m-orange-soft: rgba(245, 130, 32, 0.14);
+  --m-orange: #ff8500;
+  --m-orange-hot: #ff9d2e;
+  --m-orange-deep: #d96300;
+  --m-orange-soft: rgba(255, 133, 0, 0.14);
   --m-charcoal: #241e19;
   --m-studio: #2a241c;
-  --m-success: #2f9e6b;
-  --m-shadow: 0 1px 2px rgba(36, 30, 25, 0.05), 0 28px 70px rgba(36, 30, 25, 0.1);
+  --m-success: #12a66a;
+  --m-shadow: 0 8px 24px rgba(62, 39, 20, 0.06), 0 30px 90px rgba(55, 31, 12, 0.16);
   --m-pad: clamp(1.15rem, 5vw, 3.75rem);
   --m-max: 84rem;
   --m-nav: 4.4rem;
   background:
-    radial-gradient(ellipse 80% 50% at 100% -10%, rgba(245, 130, 32, 0.12), transparent 52%),
-    radial-gradient(ellipse 60% 40% at -10% 20%, rgba(245, 130, 32, 0.06), transparent 46%),
+    radial-gradient(ellipse 80% 50% at 100% -10%, rgba(255, 133, 0, 0.12), transparent 52%),
+    radial-gradient(ellipse 60% 40% at -10% 20%, rgba(255, 133, 0, 0.06), transparent 46%),
     var(--m-bg);
   color: var(--m-ink);
   min-height: 100vh;
@@ -38,16 +38,16 @@
 }
 
 .page[data-theme="dark"] {
-  --m-bg: #14110e;
+  --m-bg: #171411;
   --m-paper: #1b1713;
-  --m-elevated: #211c17;
-  --m-ink: #f4eee5;
+  --m-elevated: #211c18;
+  --m-ink: #f7f4ef;
   --m-muted: #b0a69b;
-  --m-line: rgba(244, 238, 229, 0.12);
-  --m-line-strong: rgba(244, 238, 229, 0.22);
-  --m-charcoal: #f4eee5;
+  --m-line: rgba(247, 244, 239, 0.12);
+  --m-line-strong: rgba(247, 244, 239, 0.22);
+  --m-charcoal: #f7f4ef;
   --m-studio: #0e0c0a;
-  --m-orange-soft: rgba(245, 130, 32, 0.2);
+  --m-orange-soft: rgba(255, 133, 0, 0.2);
   --m-shadow: 0 28px 70px rgba(0, 0, 0, 0.38);
 }
 
@@ -172,6 +172,7 @@
 .primary:hover,
 .planCta:hover {
   background: var(--m-orange-hot);
+  box-shadow: 0 14px 34px rgba(255, 133, 0, 0.28);
 }
 
 .ghost {
@@ -236,17 +237,17 @@
 
 .themeSwitchDark {
   background: #2a241c;
-  border-color: rgba(245, 130, 32, 0.4);
+  border-color: rgba(255, 133, 0, 0.4);
 }
 
 .themeSwitchDark .themeKnob {
   transform: translateX(20px);
   background: #fbf6ee;
-  border-color: rgba(245, 130, 32, 0.55);
+  border-color: rgba(255, 133, 0, 0.55);
 }
 
 .themeSwitchDark .themeIconLeft {
-  color: rgba(245, 130, 32, 0.85);
+  color: rgba(255, 133, 0, 0.85);
 }
 
 .themeSwitchDark .themeIconRight {
@@ -473,6 +474,22 @@
   min-width: 0;
   width: 100%;
   position: relative;
+}
+
+/* Cemio-style orbital ring — slow rotating dashed circle behind the shot */
+.heroOrbit {
+  pointer-events: none;
+  position: absolute;
+  inset: -1.6rem -1.6rem -1.6rem auto;
+  width: 112%;
+  height: 112%;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(255, 133, 0, 0.35);
+  animation: orbitSpin 26s linear infinite;
+}
+
+.page[data-theme="dark"] .heroOrbit {
+  border-color: rgba(255, 133, 0, 0.28);
 }
 
 .productShot {
@@ -747,7 +764,7 @@
 .stillKitchen {
   background:
     radial-gradient(circle at 18% 22%, rgba(255, 176, 92, 0.55), transparent 28%),
-    radial-gradient(circle at 78% 18%, rgba(245, 130, 32, 0.35), transparent 32%),
+    radial-gradient(circle at 78% 18%, rgba(255, 133, 0, 0.35), transparent 32%),
     radial-gradient(circle at 60% 80%, rgba(80, 40, 18, 0.5), transparent 40%),
     linear-gradient(160deg, #3a2a1c 0%, #1a1410 55%, #2c1c12 100%);
 }
@@ -765,7 +782,7 @@
 
 .stillTicket {
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(245, 130, 32, 0.18), transparent 50%),
+    radial-gradient(ellipse at 50% 0%, rgba(255, 133, 0, 0.18), transparent 50%),
     linear-gradient(180deg, #1f1a16 0%, #2c241c 100%);
 }
 
@@ -805,7 +822,7 @@
 
 .bokeh i:nth-child(1) { width: 4.2rem; height: 4.2rem; left: 12%; top: 18%; }
 .bokeh i:nth-child(2) { width: 2.2rem; height: 2.2rem; right: 18%; top: 28%; background: rgba(255, 220, 160, 0.4); }
-.bokeh i:nth-child(3) { width: 3.1rem; height: 3.1rem; left: 48%; bottom: 22%; background: rgba(245, 130, 32, 0.28); }
+.bokeh i:nth-child(3) { width: 3.1rem; height: 3.1rem; left: 48%; bottom: 22%; background: rgba(255, 133, 0, 0.28); }
 .bokeh i:nth-child(4) { width: 1.4rem; height: 1.4rem; right: 12%; bottom: 30%; }
 
 .rail {
@@ -1780,7 +1797,7 @@
 .ticker {
   overflow: hidden;
   border-block: 1px solid var(--line, #e6ddd2);
-  background: rgba(196, 92, 38, 0.05);
+  background: rgba(255, 133, 0, 0.05);
   padding: 0.55rem 0;
   white-space: nowrap;
 }
@@ -1806,7 +1823,7 @@
 
 .tickerTrack i {
   font-style: normal;
-  color: var(--ember, #c45c26);
+  color: var(--ember, #ff8500);
 }
 
 @keyframes ordo-marquee {

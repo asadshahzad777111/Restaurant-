@@ -6,7 +6,7 @@
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(ellipse 80% 55% at 15% 10%, rgba(196, 92, 38, 0.28), transparent 55%),
+    radial-gradient(ellipse 80% 55% at 15% 10%, rgba(255, 133, 0, 0.28), transparent 55%),
     radial-gradient(ellipse 70% 50% at 90% 85%, rgba(47, 158, 107, 0.12), transparent 50%),
     linear-gradient(165deg, #120d0a 0%, #1a1511 45%, #0e0b09 100%);
 }
@@ -90,7 +90,7 @@
   width: 52px;
   height: 52px;
   border-radius: 12px;
-  background: var(--ember, #c45c26);
+  background: var(--ember, #ff8500);
   color: #fff;
   display: grid;
   place-items: center;
@@ -179,7 +179,7 @@
 .input:focus {
   outline: none;
   border-color: var(--ember);
-  box-shadow: 0 0 0 3px rgba(196, 92, 38, 0.25);
+  box-shadow: 0 0 0 3px rgba(255, 133, 0, 0.25);
   background: rgba(12, 10, 8, 0.75);
 }
 

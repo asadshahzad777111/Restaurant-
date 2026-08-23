@@ -43,7 +43,7 @@
   padding: 0.95rem 1rem;
   border-radius: 12px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
-  border-left: 4px solid var(--accent, #c45c26);
+  border-left: 4px solid var(--accent, #ff8500);
   animation: slide 0.35s ease;
 }
 

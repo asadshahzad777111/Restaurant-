@@ -86,11 +86,11 @@
 }
 
 .accent {
-  fill: #c45c26;
+  fill: #ff8500;
 }
 
 .arrow {
-  stroke: #c45c26;
+  stroke: #ff8500;
 }
 
 .row {
@@ -99,7 +99,7 @@
 
 .rowHi {
   fill: #fde8d8;
-  stroke: #c45c26;
+  stroke: #ff8500;
   stroke-width: 1.5;
 }
 
@@ -117,7 +117,7 @@
 }
 
 .icon {
-  fill: #c45c26;
+  fill: #ff8500;
   opacity: 0.95;
 }
 
@@ -144,7 +144,7 @@
 }
 
 .dotOn {
-  background: #c45c26;
+  background: #ff8500;
   width: 1.1rem;
 }
 

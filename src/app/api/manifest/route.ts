@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
       scope: "/",
       display: "standalone",
       background_color: "#14110e",
-      theme_color: "#c45c26",
+      theme_color: "#ff8500",
       orientation: "portrait",
       icons,
     };

@@ -259,13 +259,13 @@
 }
 
 .catChip:hover {
-  border-color: rgba(196, 92, 38, 0.5);
+  border-color: rgba(255, 133, 0, 0.5);
   color: var(--ember-bright);
 }
 
 .deal {
   text-align: left;
-  border: 1px solid rgba(196, 92, 38, 0.4);
+  border: 1px solid rgba(255, 133, 0, 0.4);
   background: var(--guest-elevated);
   border-radius: var(--radius-lg);
   padding: 0.7rem;
@@ -288,7 +288,7 @@
   border-radius: 8px;
   display: grid;
   place-items: center;
-  background: rgba(196, 92, 38, 0.16);
+  background: rgba(255, 133, 0, 0.16);
   color: var(--ember-bright);
   font-family: var(--display);
   font-weight: 600;
@@ -303,7 +303,7 @@
 .tile:hover,
 .deal:hover {
   transform: translateY(-2px);
-  border-color: rgba(196, 92, 38, 0.45);
+  border-color: rgba(255, 133, 0, 0.45);
 }
 
 .tileTop {
@@ -564,7 +564,7 @@
 
 .payOn {
   border-color: var(--ember);
-  background: rgba(196, 92, 38, 0.1);
+  background: rgba(255, 133, 0, 0.1);
 }
 
 .payOff em,

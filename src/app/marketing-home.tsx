@@ -504,6 +504,7 @@ export function MarketingHome() {
           animate="show"
           transition={{ delay: reduced || coarse ? 0 : 0.06 }}
         >
+          <div className={styles.heroOrbit} aria-hidden />
           <figure className={styles.productShot}>
             <picture>
               <source srcSet="/ordo-lifestyle-hero.webp" type="image/webp" />

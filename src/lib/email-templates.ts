@@ -5,7 +5,7 @@
  */
 import { escapeHtml } from "./email-escape";
 
-const ORANGE = "#c45c26";
+const ORANGE = "#ff8500";
 const INK = "#1c1916";
 const MUTED = "#6b635a";
 const LINE = "#e6ddd2";

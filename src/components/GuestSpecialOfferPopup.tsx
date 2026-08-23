@@ -144,7 +144,7 @@ export function GuestSpecialOfferPopup({
                 width: "100%",
                 border: "none",
                 borderRadius: 999,
-                background: "var(--ember, #c45c26)",
+                background: "var(--ember, #ff8500)",
                 color: "var(--ember-ink, #fff)",
                 fontWeight: 800,
                 padding: "0.75rem",
