@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { getOrders, patchOrder } from "../api";
+import { patchOrder } from "../api";
+import { useNewOrders } from "../hooks/useNewOrders";
+import { OrderAlert } from "../components/OrderAlert";
 import type { Order } from "../types";
 import { theme } from "../theme";
 
@@ -15,26 +16,9 @@ const NEXT: Record<string, string> = {
 
 export function KitchenScreen() {
   const { width } = useWindowDimensions();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const { orders, newOrders, dismiss } = useNewOrders(4000);
   const [err, setErr] = useState("");
   const colW = Math.max(240, width / 2);
-
-  const load = useCallback(async () => {
-    try {
-      setOrders(await getOrders());
-      setErr("");
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Load error");
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      void load();
-      const id = setInterval(() => void load(), 4000);
-      return () => clearInterval(id);
-    }, [load]),
-  );
 
   async function advance(o: Order) {
     const next = NEXT[o.status];
@@ -50,9 +34,11 @@ export function KitchenScreen() {
   const open = orders.filter((o) => !["completed", "cancelled"].includes(o.status));
 
   return (
-    <ScrollView style={s.container} contentContainerStyle={{ padding: 16 }}>
-      {err ? <Text style={s.err}>{err}</Text> : null}
-      <View style={s.board}>
+    <View style={s.root}>
+      <OrderAlert newOrders={newOrders} onDismiss={dismiss} />
+      <ScrollView style={s.container} contentContainerStyle={{ padding: 16 }}>
+        {err ? <Text style={s.err}>{err}</Text> : null}
+        <View style={s.board}>
         {LANES.map((lane) => {
           const items = open.filter((o) => o.status === lane);
           return (
@@ -87,11 +73,13 @@ export function KitchenScreen() {
           );
         })}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: theme.bg },
   container: { flex: 1, backgroundColor: theme.bg },
   err: { color: theme.danger, padding: 12, fontWeight: "600" },
   board: { flexDirection: "row", flexWrap: "wrap", gap: 12 },

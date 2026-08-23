@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { getOrders, patchOrder } from "../api";
-import type { Order } from "../types";
+import { patchOrder } from "../api";
+import { useNewOrders } from "../hooks/useNewOrders";
 import { ReceiptView } from "../components/ReceiptView";
+import { OrderAlert } from "../components/OrderAlert";
+import type { Order } from "../types";
 import { theme, radius } from "../theme";
 
 const NEXT: Record<string, string> = {
@@ -15,28 +16,9 @@ const NEXT: Record<string, string> = {
 };
 
 export function OrdersScreen() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const { orders, setOrders, newOrders, dismiss } = useNewOrders(5000);
   const [err, setErr] = useState("");
   const [selected, setSelected] = useState<Order | null>(null);
-
-  const load = useCallback(async () => {
-    try {
-      setOrders(await getOrders());
-      setErr("");
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Load error");
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      void load();
-      const id = setInterval(() => void load(), 5000);
-      return () => clearInterval(id);
-    }, [load]),
-  );
-
-  async function advance(o: Order) {
     const next = NEXT[o.status];
     if (!next) return;
     try {
@@ -84,6 +66,7 @@ export function OrdersScreen() {
           </View>
         )}
       />
+      <OrderAlert newOrders={newOrders} onDismiss={dismiss} />
       <ReceiptView visible={!!selected} order={selected} currency="PKR" onClose={() => setSelected(null)} />
     </View>
   );
