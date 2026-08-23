@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { modeLabel, trackSteps } from "@/lib/guest";
+import { modeLabel, trackSteps, guestOrderPath } from "@/lib/guest";
 import { guestWhatsappLink } from "@/lib/whatsapp";
 import {
   backdropTransition,
@@ -18,6 +18,7 @@ import styles from "./track.module.css";
 
 interface TrackData {
   branding: { name: string; logoUrl: string };
+  code: string;
   shop: { currency: string; phone: string };
   order: {
     number: number;
@@ -250,7 +251,20 @@ export default function TrackPage() {
       )}
 
       <p className={styles.footerNav}>
-        <Link href="/guest">Order again</Link>
+        <Link
+          href={guestOrderPath({
+            tenant: data.code,
+            mode:
+              data.order.serviceType === "pickup"
+                ? "pickup"
+                : data.order.serviceType === "delivery"
+                  ? "delivery"
+                  : undefined,
+          })}
+        >
+          Order again
+        </Link>
+        <Link href="/guest">Find a restaurant</Link>
       </p>
 
       <AnimatePresence>

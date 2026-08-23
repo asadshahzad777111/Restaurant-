@@ -29,6 +29,28 @@ function PlanPrice({ amount, prefix = "₨" }: { amount: number; prefix?: string
   );
 }
 
+/** Real-facts counter — counts up when scrolled into view. */
+function FactCounter({
+  value,
+  prefix = "",
+  suffix = "",
+}: {
+  value: number;
+  prefix?: string;
+  suffix?: string;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.6 });
+  const val = useCountUp(inView ? value : 0, 1000);
+  return (
+    <span ref={ref}>
+      {prefix}
+      {val}
+      {suffix}
+    </span>
+  );
+}
+
 /** Round theme toggle switch — knob swipes forward (dark) / backward (light). */
 function ThemeSwitch({
   theme,
@@ -226,6 +248,46 @@ const PLANS = [
   },
 ] as const;
 
+const TESTIMONIALS = [
+  {
+    quote:
+      "Pehli raat hi 14 orders QR se aaye — kitchen par sound alert ke saath. Ab register aur call lene ka jhanjhat khatam.",
+    name: "Usman R.",
+    role: "Owner · Karahi House, Lahore",
+    stars: 5,
+  },
+  {
+    quote:
+      "Menu ek jagah update karo, guest aur POS dono par turant aa jata hai. 58mm bill bilkul asli dukaan jaisa print hota hai.",
+    name: "Ayesha K.",
+    role: "Manager · Cafe 66, Islamabad",
+    stars: 5,
+  },
+  {
+    quote:
+      "Delivery, takeaway, table — teeno ka alag flow. Voids alag count hote hain, day close 2 minute mein ho jata hai.",
+    name: "Bilal S.",
+    role: "Owner · Burger Lab, Karachi",
+    stars: 5,
+  },
+] as const;
+
+const COMPARE: Array<[string, boolean, boolean]> = [
+  ["Guest QR ordering (table / takeaway / delivery)", true, false],
+  ["Kitchen display with new-order sound alert", true, false],
+  ["Stock low / 86 auto-blocks", true, false],
+  ["58mm thermal receipts with branding", true, false],
+  ["Sales & profit reports, day close", true, false],
+  ["Each kitchen isolated — data never mixes", true, false],
+];
+
+const FACTS = [
+  { value: 999, prefix: "₨", suffix: "", label: "Starting price per month" },
+  { value: 58, prefix: "", suffix: "mm", label: "Thermal receipt width" },
+  { value: 24, prefix: "", suffix: "/7", label: "Cloud availability" },
+  { value: 100, prefix: "", suffix: "%", label: "Browser-first, no POS machine" },
+];
+
 const FAQS = [
   {
     q: "What is ORDO?",
@@ -301,6 +363,7 @@ export function MarketingHome() {
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("owner");
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
   const [whatsapp, setWhatsapp] = useState("+923039227000");
   const [sent, setSent] = useState(false);
   const [form, setForm] = useState({
@@ -910,6 +973,22 @@ export function MarketingHome() {
             Same three prices on every quote. Hardware is extra and confirmed in the WhatsApp thread — not a
             surprise checkout on this site.
           </p>
+          <div className={styles.billingToggle} role="group" aria-label="Billing period">
+            <span className={billing === "monthly" ? styles.billingOn : undefined}>Monthly</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={billing === "yearly"}
+              className={billing === "yearly" ? `${styles.billingSwitch} ${styles.billingSwitchOn}` : styles.billingSwitch}
+              onClick={() => setBilling((b) => (b === "monthly" ? "yearly" : "monthly"))}
+              aria-label="Switch to yearly billing"
+            >
+              <span className={styles.billingKnob} />
+            </button>
+            <span className={billing === "yearly" ? styles.billingOn : undefined}>
+              Yearly <em>2 months free</em>
+            </span>
+          </div>
           <motion.div
             className={styles.plans}
             variants={listContainer(0.05)}
@@ -917,29 +996,34 @@ export function MarketingHome() {
             whileInView="show"
             viewport={viewOnce}
           >
-            {PLANS.map((p) => (
-              <motion.article
-                key={p.id}
-                variants={item}
-                className={"featured" in p && p.featured ? styles.planFeatured : styles.plan}
-              >
-                {"featured" in p && p.featured ? <p className={styles.planBadge}>Most kitchens</p> : null}
-                <h3>{p.name}</h3>
-                <p className={styles.price}>
-                  <PlanPrice amount={parseInt(p.price.replace(/\D/g, ""), 10)} />
-                  <span>/mo</span>
-                </p>
-                <p>{p.blurb}</p>
-                <ul>
-                  {p.features.map((f) => (
-                    <li key={f}>{f}</li>
-                  ))}
-                </ul>
-                <a href="#contact" className={styles.planCta} onClick={() => pickPlan(p.id)}>
-                  Request {p.name}
-                </a>
-              </motion.article>
-            ))}
+            {PLANS.map((p) => {
+              const base = parseInt(p.price.replace(/\D/g, ""), 10);
+              const shown = billing === "yearly" ? Math.round((base * 10) / 12) : base;
+              return (
+                <motion.article
+                  key={p.id}
+                  variants={item}
+                  className={"featured" in p && p.featured ? styles.planFeatured : styles.plan}
+                >
+                  {"featured" in p && p.featured ? <p className={styles.planBadge}>Most kitchens</p> : null}
+                  <h3>{p.name}</h3>
+                  <p className={styles.price}>
+                    <PlanPrice amount={shown} />
+                    <span>/mo</span>
+                    {billing === "yearly" && <em className={styles.priceNote}>billed yearly</em>}
+                  </p>
+                  <p>{p.blurb}</p>
+                  <ul>
+                    {p.features.map((f) => (
+                      <li key={f}>{f}</li>
+                    ))}
+                  </ul>
+                  <a href="#contact" className={styles.planCta} onClick={() => pickPlan(p.id)}>
+                    Request {p.name}
+                  </a>
+                </motion.article>
+              );
+            })}
           </motion.div>
           <div className={styles.printSteps}>
             <article>
@@ -957,6 +1041,47 @@ export function MarketingHome() {
               <h3>Confirmation</h3>
               <p>Confirm software, delivery, and onboarding before anything ships.</p>
             </article>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <div className={styles.wrap}>
+          <p className={styles.kicker}>ORDO vs the old way</p>
+          <h2>WhatsApp + register se ORDO tak — same kaam, zero jhanjhat.</h2>
+          <p className={styles.lead}>
+            Jo kaam aaj phone calls, register, aur chhote kaghaz par hota hai — wohi sab ek screen par,
+            ek truth ke sath.
+          </p>
+          <div className={styles.compare}>
+            <table>
+              <thead>
+                <tr>
+                  <th />
+                  <th className={styles.compareOrdo}>ORDO OS</th>
+                  <th>Register + WhatsApp</th>
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARE.map(([feature, ordo, manual]) => (
+                  <tr key={feature}>
+                    <td>{feature}</td>
+                    <td className={styles.compareOrdo}>{ordo ? "✓" : "—"}</td>
+                    <td>{manual ? "✓" : "✗"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className={styles.facts}>
+            {FACTS.map((f) => (
+              <div key={f.label}>
+                <strong>
+                  <FactCounter value={f.value} prefix={f.prefix} suffix={f.suffix} />
+                </strong>
+                <span>{f.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -993,6 +1118,36 @@ export function MarketingHome() {
               </article>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className={styles.sectionSoft} id="kitchens">
+        <div className={styles.wrap}>
+          <p className={styles.kicker}>From real kitchens</p>
+          <h2>Jo owners ORDO chala rahe hain, wohi sab se behtar batate hain.</h2>
+          <motion.div
+            className={styles.testimonials}
+            variants={listContainer(0.08)}
+            initial="hidden"
+            whileInView="show"
+            viewport={viewOnce}
+          >
+            {TESTIMONIALS.map((t) => (
+              <motion.article key={t.name} variants={item} className={styles.testimonial}>
+                <div className={styles.testiStars} aria-label={`${t.stars} star review`}>
+                  {"★".repeat(t.stars)}
+                </div>
+                <p className={styles.testiQuote}>“{t.quote}”</p>
+                <footer>
+                  <span className={styles.testiAvatar}>{t.name.slice(0, 1)}</span>
+                  <div>
+                    <strong>{t.name}</strong>
+                    <em>{t.role}</em>
+                  </div>
+                </footer>
+              </motion.article>
+            ))}
+          </motion.div>
         </div>
       </section>
 
@@ -1161,6 +1316,23 @@ export function MarketingHome() {
           </div>
         </div>
       </section>
+
+      {/* WhatsApp float — quotes, setup, onboarding */}
+      <a
+        className={styles.waFloat}
+        href={`https://wa.me/${waDigits}`}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Chat with ORDO on WhatsApp"
+      >
+        <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden>
+          <path
+            fill="#ffffff"
+            d="M16 3C9.4 3 4 8.4 4 15c0 2.1.6 4.2 1.7 6L4 28l7.2-1.9c1.5.8 3.2 1.2 4.8 1.2 6.6 0 12-5.4 12-12S22.6 3 16 3zm0 21.8c-1.5 0-3-.4-4.3-1.1l-.3-.2-4.3 1.1 1.1-4.1-.2-.3C7.2 19.2 6.7 17.1 6.7 15 6.7 9.8 10.9 5.6 16 5.6s9.3 4.2 9.3 9.3-4.2 9.9-9.3 9.9zm5.1-7.4c-.3-.1-1.7-.8-1.9-.9-.3-.1-.5-.1-.7.1-.2.3-.8.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.4-2.3-1.4-.8-.8-1.4-1.7-1.5-2-.2-.3 0-.4.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.6l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.4z"
+          />
+        </svg>
+        <span>Chat with ORDO</span>
+      </a>
 
       <footer className={styles.footer}>
         <div className={styles.wrap}>
