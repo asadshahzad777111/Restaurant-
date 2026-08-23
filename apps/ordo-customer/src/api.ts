@@ -46,3 +46,36 @@ export async function getTrack(code: string, token: string): Promise<{ order: { 
   if (!res.ok) return null;
   return data;
 }
+
+export async function reserveTable(code: string, tableId: string, name: string, minutes: number) {
+  const res = await fetch(`${BASE_URL}/tables/reserve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tenantCode: code, tableId, name, minutes }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Could not book");
+  return data;
+}
+
+export async function claimTable(code: string, tableId: string, token: string) {
+  const res = await fetch(`${BASE_URL}/tables/claim`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tenantCode: code, tableId, token }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Could not claim");
+  return data;
+}
+
+export async function releaseTable(code: string, tableId: string, token?: string) {
+  const res = await fetch(`${BASE_URL}/tables/release`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tenantCode: code, tableId, token }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Could not release");
+  return data;
+}

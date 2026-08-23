@@ -69,6 +69,9 @@ export function MenuScreen({ code }: any) {
         <Text style={s.sub}>{code}</Text>
       </View>
       {err ? <Text style={s.err}>{err}</Text> : null}
+      <TouchableOpacity style={s.bookBar} onPress={() => navigation.navigate("Booking", { code })}>
+        <Text style={s.bookBarText}>🪑 Book a table</Text>
+      </TouchableOpacity>
       <TextInput
         style={s.search}
         value={q}
@@ -131,6 +134,8 @@ const s = StyleSheet.create({
   brand: { color: "#fff", fontSize: 20, fontWeight: "800" },
   sub: { color: theme.muted, fontSize: 13 },
   err: { color: theme.danger, padding: 12, fontWeight: "600" },
+  bookBar: { backgroundColor: theme.darkSurface, borderRadius: 999, marginHorizontal: 12, marginTop: 8, padding: 12, alignItems: "center", borderWidth: 1, borderColor: theme.accent },
+  bookBarText: { color: theme.accentHot, fontWeight: "800" },
   search: { backgroundColor: theme.darkSurface, borderRadius: 999, padding: 12, marginHorizontal: 12, marginTop: 8, color: theme.text },
   cats: { maxHeight: 48, paddingHorizontal: 12, paddingVertical: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: theme.line, marginRight: 8, backgroundColor: theme.darkSurface },
