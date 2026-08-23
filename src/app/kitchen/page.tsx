@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useEffect, useCallback, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
@@ -42,9 +42,32 @@ function ticketClass(status: string) {
 export default function KitchenPage() {
   const { tenant, api, applyOrder } = useStore();
   const [printKind, setPrintKind] = useState<"bill" | "kitchen" | null>(null);
+  const [countdowns, setCountdowns] = useState<Record<string, number>>({}); // orderId -> end ms
+  const [, forceTick] = useState(0);
   const tickets = (tenant?.orders ?? []).filter(
     (o) => !["completed", "cancelled"].includes(o.status),
   );
+
+  // Live tick while any countdown is running.
+  useEffect(() => {
+    const anyActive = Object.values(countdowns).some((e) => e - Date.now() > 0);
+    if (!anyActive) return;
+    const id = setInterval(() => forceTick((x) => x + 1), 1000);
+    return () => clearInterval(id);
+  }, [countdowns]);
+
+  function setTimer(id: string) {
+    const mins = Number(prompt("Set timer (minutes)", "15")) || 15;
+    setCountdowns((prev) => ({ ...prev, [id]: Date.now() + mins * 60000 }));
+  }
+  function clearTimer(id: string) {
+    setCountdowns((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }
+
   const byLane = useMemo(() => {
     const map: Record<string, Order[]> = {};
     for (const lane of LANES) map[lane.status] = [];
@@ -69,13 +92,29 @@ export default function KitchenPage() {
 
   const dismissPrint = useCallback(() => setPrintKind(null), []);
 
+  function remain(endsAt?: number) {
+    if (!endsAt) return "";
+    const s = Math.floor((endsAt - Date.now()) / 1000);
+    if (s <= 0) return "READY!";
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return `${m}:${r < 10 ? "0" : ""}${r}`;
+  }
+
   function ticketCard(o: Order) {
+    const cd = countdowns[o.id];
+    const expired = cd !== undefined && cd - Date.now() <= 0;
     return (
       <article key={o.id} className={ticketClass(o.status)}>
         <h3>
           #{o.number}
           <span className={styles.ticketTime}>{ago(o.createdAt)}</span>
         </h3>
+        {cd !== undefined && (
+          <div className={`${styles.timerBadge} ${expired ? styles.timerBadgeExpired : ""}`}>
+            ⏱ {expired ? "READY — serve it" : remain(cd)}
+          </div>
+        )}
         <p className={styles.muted}>
           {o.serviceType}
           {o.tableNumber ? ` · Table ${o.tableNumber}` : ""}
@@ -116,6 +155,9 @@ export default function KitchenPage() {
               Print ticket
             </button>
           )}
+          <button type="button" className={styles.btnGhost} onClick={() => (cd ? clearTimer(o.id) : setTimer(o.id))}>
+            {cd ? "Clear timer" : "⏱ Timer"}
+          </button>
         </div>
       </article>
     );
@@ -140,6 +182,12 @@ export default function KitchenPage() {
                   }
                 >
                   {byLane.map[lane.status]?.length || 0}
+                </span>
+                <span className={styles.laneTimers}>
+                  {(() => {
+                    const n = (byLane.map[lane.status] || []).filter((o) => countdowns[o.id]).length;
+                    return n ? `⏱ ${n}` : "";
+                  })()}
                 </span>
               </header>
               <div className={styles.laneStack}>{(byLane.map[lane.status] || []).map(ticketCard)}</div>
