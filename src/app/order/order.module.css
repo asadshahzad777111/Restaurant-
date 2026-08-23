@@ -349,6 +349,120 @@
   min-width: 1.2rem;
   text-align: center;
   font-weight: 700;
+  display: inline-block;
+  animation: qtyPop 0.35s var(--ease-primary);
+}
+
+@keyframes qtyPop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Item in cart -> accent highlight + tick */
+.tile {
+  position: relative;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.14s var(--ease-primary);
+}
+
+.tile:active {
+  transform: scale(0.97);
+}
+
+.tileInCart {
+  border-color: rgba(255, 133, 0, 0.65) !important;
+  box-shadow: 0 0 0 2px rgba(255, 133, 0, 0.22);
+  background: rgba(255, 133, 0, 0.06);
+}
+
+.inCartBadge {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ember);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  animation: qtyPop 0.4s var(--ease-primary);
+}
+
+/* Brief flash ring right after adding */
+.tileFlash {
+  animation: tileFlash 0.6s ease;
+}
+
+@keyframes tileFlash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 133, 0, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 12px rgba(255, 133, 0, 0);
+  }
+}
+
+/* Billing paused banner */
+.billingBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(201, 147, 14, 0.4);
+  background: rgba(201, 147, 14, 0.1);
+  margin-bottom: 1rem;
+}
+
+.billingBanner p {
+  margin: 0;
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+.billingPaused {
+  border-color: rgba(196, 74, 60, 0.45);
+  background: rgba(196, 74, 60, 0.1);
+}
+
+.billingDot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  flex: none;
+  margin-top: 0.3rem;
+  background: #d9930e;
+  animation: billingPulse 1.4s ease-out infinite;
+}
+
+.billingPaused .billingDot {
+  background: #e54838;
+}
+
+@keyframes billingPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(217, 147, 14, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(217, 147, 14, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(217, 147, 14, 0);
+  }
 }
 
 .price {

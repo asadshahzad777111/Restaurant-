@@ -497,6 +497,9 @@ function OrderInner() {
     }, 700);
   }
 
+  // Brief accent flash on the tile right after an item is added
+  const [flashId, setFlashId] = useState<string | null>(null);
+
   function pushLine(item: MenuItem, modifiers: LineModifier[], fromEl?: HTMLElement | null) {
     const unitPrice = lineUnitPrice(item.price, modifiers);
     const key = `${item.id}:${modifiers.map((m) => m.optionId).sort().join(",")}`;
@@ -507,6 +510,8 @@ function OrderInner() {
     });
     flyToCart(fromEl || null, item);
     setToast(`Added ${item.name}`);
+    setFlashId(item.id);
+    window.setTimeout(() => setFlashId((cur) => (cur === item.id ? null : cur)), 620);
   }
 
   function addItem(item: MenuItem, fromEl?: HTMLElement | null) {
@@ -813,14 +818,23 @@ function OrderInner() {
               </div>
 
               {(orderingClosed || billingPastDue) && (
-                <p className={styles.error} role="status">
-                  {orderingClosed
-                    ? "Billing paused — browse the menu; placing orders is closed until Super renews. Scanner still opens this kitchen."
-                    : "Billing past due — you can still order. Scanner → menu always works."}{" "}
-                  <a href="/scan" className={styles.textLink}>
-                    Open scanner
-                  </a>
-                </p>
+                <motion.div
+                  className={`${styles.billingBanner}${orderingClosed ? ` ${styles.billingPaused}` : ""}`}
+                  role="status"
+                  initial={reduced ? { opacity: 0 } : { opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <span className={styles.billingDot} aria-hidden />
+                  <p>
+                    {orderingClosed
+                      ? "Billing paused — browse the menu; placing orders is closed until Super renews. Scanner still opens this kitchen."
+                      : "Billing past due — you can still order. Scanner → menu always works."}{" "}
+                    <a href="/scan" className={styles.textLink}>
+                      Open scanner
+                    </a>
+                  </p>
+                </motion.div>
               )}
               {loading && <p className={styles.muted}>Loading this kitchen’s menu…</p>}
 
@@ -894,47 +908,59 @@ function OrderInner() {
                     whileInView="show"
                     viewport={viewOnce}
                   >
-                    {items.map((menuItem) => (
-                      <motion.article key={menuItem.id} className={styles.tile} variants={itemVar}>
-                        {menuItem.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={menuItem.imageUrl} alt="" className={styles.tilePhoto} loading="lazy" />
-                        ) : null}
-                        <div className={styles.tileTop}>
-                          {!menuItem.imageUrl && (
-                            <span className={styles.letter} aria-hidden>
-                              {menuItem.name.slice(0, 1)}
+                    {items.map((menuItem) => {
+                      const inCart = qtyOf(cart, menuItem.id) > 0;
+                      return (
+                        <motion.article
+                          key={menuItem.id}
+                          className={`${styles.tile}${inCart ? ` ${styles.tileInCart}` : ""}${flashId === menuItem.id ? ` ${styles.tileFlash}` : ""}`}
+                          variants={itemVar}
+                        >
+                          {menuItem.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={menuItem.imageUrl} alt="" className={styles.tilePhoto} loading="lazy" />
+                          ) : null}
+                          {inCart && (
+                            <span className={styles.inCartBadge} aria-hidden>
+                              ✓
                             </span>
                           )}
-                          <div>
-                            <strong>{menuItem.name}</strong>
-                            <p>{menuItem.description}</p>
+                          <div className={styles.tileTop}>
+                            {!menuItem.imageUrl && (
+                              <span className={styles.letter} aria-hidden>
+                                {menuItem.name.slice(0, 1)}
+                              </span>
+                            )}
+                            <div>
+                              <strong>{menuItem.name}</strong>
+                              <p>{menuItem.description}</p>
+                            </div>
                           </div>
-                        </div>
-                        <div className={styles.tileBottom}>
-                          <span className={styles.price}>
-                            {currency} {menuItem.price}
-                          </span>
-                          <div className={styles.qty}>
-                            <button
-                              type="button"
-                              onClick={() => removeItem(menuItem.id)}
-                              aria-label={`Remove ${menuItem.name}`}
-                            >
-                              −
-                            </button>
-                            <span>{qtyOf(cart, menuItem.id)}</span>
-                            <button
-                              type="button"
-                              onClick={(e) => addItem(menuItem, e.currentTarget.closest("article") as HTMLElement)}
-                              aria-label={`Add ${menuItem.name}`}
-                            >
-                              +
-                            </button>
+                          <div className={styles.tileBottom}>
+                            <span className={styles.price}>
+                              {currency} {menuItem.price}
+                            </span>
+                            <div className={styles.qty}>
+                              <button
+                                type="button"
+                                onClick={() => removeItem(menuItem.id)}
+                                aria-label={`Remove ${menuItem.name}`}
+                              >
+                                −
+                              </button>
+                              <span key={qtyOf(cart, menuItem.id)}>{inCart ? qtyOf(cart, menuItem.id) : ""}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => addItem(menuItem, e.currentTarget.closest("article") as HTMLElement)}
+                                aria-label={`Add ${menuItem.name}`}
+                              >
+                                +
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      </motion.article>
-                    ))}
+                        </motion.article>
+                      );
+                    })}
                   </motion.div>
                 </section>
               ))}
