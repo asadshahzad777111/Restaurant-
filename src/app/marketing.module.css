@@ -114,8 +114,35 @@
   color: var(--m-muted);
 }
 
-.navCenter a:hover {
+/* Animated underline on hover + active (scroll-spy) */
+.navCenter a {
+  position: relative;
+  padding: 0.3rem 0.15rem;
+  transition: color 0.18s ease;
+}
+
+.navCenter a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  border-radius: 999px;
+  background: var(--m-orange);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s var(--ease-primary);
+}
+
+.navCenter a:hover,
+.navCenter .navLinkActive {
   color: var(--m-ink);
+}
+
+.navCenter a:hover::after,
+.navCenter .navLinkActive::after {
+  transform: scaleX(1);
 }
 
 .navActions {
@@ -2462,6 +2489,170 @@
   .waFloat {
     padding: 0.8rem;
   }
+}
+
+/* ---- World-class header ---- */
+
+.navLogo {
+  transition: transform 0.3s var(--ease-primary);
+}
+
+.navBrand:hover .navLogo {
+  transform: rotate(-4deg) scale(1.04);
+}
+
+/* Shine sweep on the primary CTA */
+.navSolid,
+.primary {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.navSolid::after,
+.primary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  height: 100%;
+  width: 60%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.55s var(--ease-primary);
+}
+
+.navSolid:hover::after,
+.primary:hover::after {
+  left: 130%;
+}
+
+/* ---- World-class footer ---- */
+
+.footerCta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1.9rem;
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 120% at 8% 0%, rgba(255, 133, 0, 0.16), transparent 55%),
+    var(--m-elevated);
+  border: 1px solid var(--m-line);
+  box-shadow: var(--m-shadow);
+  margin-bottom: 2.2rem;
+}
+
+.footerCta h2 {
+  margin: 0 0 0.3rem;
+}
+
+.footerCta p {
+  margin: 0;
+  color: var(--m-muted);
+}
+
+.footerCtaBtns {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.footerSocial {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.footerSocial a {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--m-line);
+  background: var(--m-elevated);
+  color: var(--m-muted);
+  transition:
+    transform 0.2s var(--ease-primary),
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.footerSocial a:hover {
+  transform: translateY(-3px);
+  color: #fff;
+  border-color: var(--m-orange);
+  background: var(--m-orange);
+}
+
+.footerCol a {
+  transition: color 0.18s ease, transform 0.18s var(--ease-primary);
+  display: inline-block;
+}
+
+.footerCol a:hover {
+  color: var(--m-orange-deep);
+  transform: translateX(3px);
+}
+
+/* Big brand wordmark */
+.footerWordmark {
+  margin: 2rem 0 0.5rem;
+  font-size: clamp(4rem, 13vw, 10rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 0.9;
+  text-align: center;
+  background: linear-gradient(180deg, var(--m-ink) 0%, color-mix(in srgb, var(--m-ink) 20%, transparent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  user-select: none;
+}
+
+.page[data-theme="dark"] .footerWordmark {
+  background: linear-gradient(180deg, var(--m-ink) 0%, color-mix(in srgb, var(--m-ink) 18%, transparent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Back-to-top */
+.backTop {
+  position: fixed;
+  left: 1.2rem;
+  bottom: 1.2rem;
+  z-index: 45;
+  width: 2.9rem;
+  height: 2.9rem;
+  border-radius: 50%;
+  border: 1px solid var(--m-line);
+  background: var(--m-elevated);
+  color: var(--m-ink);
+  font-size: 1.15rem;
+  font-weight: 700;
+  box-shadow: var(--m-shadow);
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s var(--ease-primary),
+    border-color 0.2s ease;
+}
+
+.backTopShow {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.backTop:hover {
+  border-color: var(--m-orange);
+  color: var(--m-orange-deep);
 }
 
 @media (prefers-reduced-motion: reduce) {

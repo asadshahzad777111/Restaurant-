@@ -412,6 +412,7 @@ export function MarketingHome() {
   // Next-level: scroll progress + sticky nav elevation
   const [progress, setProgress] = useState(0);
   const [scrolled, setScrolled] = useState(false);
+  const [showTop, setShowTop] = useState(false);
   useEffect(() => {
     let raf = 0;
     const onScroll = () => {
@@ -420,6 +421,7 @@ export function MarketingHome() {
         const max = document.documentElement.scrollHeight - window.innerHeight;
         setProgress(max > 0 ? Math.min(1, window.scrollY / max) : 0);
         setScrolled(window.scrollY > 10);
+        setShowTop(window.scrollY > 700);
       });
     };
     onScroll();
@@ -428,6 +430,23 @@ export function MarketingHome() {
       window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(raf);
     };
+  }, []);
+
+  // Scroll-spy: highlight the nav link for the section in view
+  const [activeSection, setActiveSection] = useState("");
+  useEffect(() => {
+    const ids = NAV.map((n) => n.href.slice(1));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) if (e.isIntersecting) setActiveSection(`#${e.target.id}`);
+      },
+      { rootMargin: "-45% 0px -50% 0px" },
+    );
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
   }, []);
 
   // Next-level: soft mouse-follow glow (fine pointers only)
@@ -501,7 +520,11 @@ export function MarketingHome() {
 
           <nav className={styles.navCenter} aria-label="Primary">
             {NAV.map((item) => (
-              <a key={item.href} href={item.href}>
+              <a
+                key={item.href}
+                href={item.href}
+                className={activeSection === item.href ? styles.navLinkActive : undefined}
+              >
                 {item.label}
               </a>
             ))}
@@ -1390,6 +1413,27 @@ export function MarketingHome() {
 
       <footer className={styles.footer}>
         <div className={styles.wrap}>
+          <motion.div
+            className={styles.footerCta}
+            variants={section}
+            initial="hidden"
+            whileInView="show"
+            viewport={viewOnce}
+          >
+            <div>
+              <h2>Ready to modernize your kitchen?</h2>
+              <p>Guest QR, counter POS, 58mm receipts — ek hi system mein. Demo dekho ya baat karo.</p>
+            </div>
+            <div className={styles.footerCtaBtns}>
+              <Link href="/order?tenant=DEMO" className={styles.primary}>
+                Start with the demo
+              </Link>
+              <a href="#contact" className={styles.secondary}>
+                Talk to ORDO
+              </a>
+            </div>
+          </motion.div>
+
           <div className={styles.footerInner}>
             <div className={styles.footerBrand}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1401,6 +1445,24 @@ export function MarketingHome() {
                 width={175}
               />
               <p>Modern tech for premium hospitality — guest QR, counter POS, and the pass in one system.</p>
+              <div className={styles.footerSocial}>
+                <a href={`https://wa.me/${waDigits}`} target="_blank" rel="noreferrer" aria-label="WhatsApp">
+                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
+                    <path
+                      fill="currentColor"
+                      d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.4A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 20zm4.4-6c-.2-.1-1.3-.7-1.5-.8-.2-.1-.4-.1-.6.1-.2.2-.7.8-.8 1-.1.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.3.1-.4l.4-.4c.1-.2.2-.3.2-.5s0-.3-.1-.5c-.1-.1-.6-1.5-.8-2s-.4-.5-.6-.5h-.5c-.2 0-.5.1-.8.4-.2.2-.9.9-.9 2.2 0 1.3.9 2.5 1.1 2.7.1.2 1.9 2.9 4.6 4 .6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1z"
+                    />
+                  </svg>
+                </a>
+                <a href="https://instagram.com" target="_blank" rel="noreferrer" aria-label="Instagram">
+                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
+                    <path
+                      fill="currentColor"
+                      d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1 .4 2.2.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .4-2.2.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1-.4-2.2-.1-1.3-.1-1.7-.1-4.9s0-3.6.1-4.9c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.4 2.2-.4 1.3-.1 1.7-.1 4.9-.1zm0 2c-3.1 0-3.5 0-4.7.1-1.1.1-1.5.2-1.9.4-.5.2-.8.4-1.2.7-.3.4-.5.7-.7 1.2-.2.4-.3.8-.4 1.9-.1 1.2-.1 1.6-.1 4.7s0 3.5.1 4.7c.1 1.1.2 1.5.4 1.9.2.5.4.8.7 1.2.4.3.7.5 1.2.7.4.2.8.3 1.9.4 1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1.1-.1 1.5-.2 1.9-.4.5-.2.8-.4 1.2-.7.3-.4.5-.7.7-1.2.2-.4.3-.8.4-1.9.1-1.2.1-1.6.1-4.7s0-3.5-.1-4.7c-.1-1.1-.2-1.5-.4-1.9-.2-.5-.4-.8-.7-1.2-.3-.3-.7-.5-1.2-.7-.4-.2-.8-.3-1.9-.4-1.2-.1-1.6-.1-4.7-.1zm0 3.5a5.3 5.3 0 1 0 0 10.6 5.3 5.3 0 0 0 0-10.6zm0 8.7a3.4 3.4 0 1 1 0-6.8 3.4 3.4 0 0 1 0 6.8zm6.7-8.9a1.2 1.2 0 0 0-2.4 0 1.2 1.2 0 0 0 2.4 0z"
+                    />
+                  </svg>
+                </a>
+              </div>
             </div>
             <div className={styles.footerCols}>
               <div className={styles.footerCol}>
@@ -1423,12 +1485,27 @@ export function MarketingHome() {
               </div>
             </div>
           </div>
+
+          <div className={styles.footerWordmark} aria-hidden>
+            ORDO
+          </div>
+
           <div className={styles.footerBottom}>
             <span>© {new Date().getFullYear()} ORDO · asfins.com</span>
             <span>Isolated per kitchen · priced in PKR</span>
           </div>
         </div>
       </footer>
+
+      {/* Back-to-top */}
+      <button
+        type="button"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        className={`${styles.backTop}${showTop ? ` ${styles.backTopShow}` : ""}`}
+        aria-label="Back to top"
+      >
+        ↑
+      </button>
     </div>
   );
 }
