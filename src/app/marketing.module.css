@@ -2620,6 +2620,73 @@
   .waFloat {
     padding: 0.8rem;
   }
+
+  .appCard {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* App download card */
+.appCard {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.6rem;
+  align-items: center;
+  padding: 1.9rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--m-line);
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(255, 133, 0, 0.14), transparent 55%),
+    var(--m-elevated);
+  box-shadow: var(--m-shadow);
+}
+
+.appVis {
+  display: grid;
+  gap: 0.7rem;
+  justify-items: center;
+}
+
+.appIcon {
+  width: 5.2rem;
+  height: 5.2rem;
+  border-radius: 1.2rem;
+  display: grid;
+  place-items: center;
+  font-size: 2.6rem;
+  background: linear-gradient(160deg, var(--m-orange), var(--m-orange-hot));
+  box-shadow: 0 20px 46px rgba(255, 133, 0, 0.32);
+}
+
+.appMeta {
+  text-align: center;
+}
+
+.appName {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.appBadge {
+  font-size: 0.74rem;
+  color: var(--m-muted);
+  font-weight: 600;
+}
+
+.appCopy h2 {
+  margin-bottom: 0.4rem;
+}
+
+.appCopy > p {
+  color: var(--m-muted);
+  line-height: 1.6;
+}
+
+.appNote {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: var(--m-muted);
 }
 
 /* ---- World-class header ---- */

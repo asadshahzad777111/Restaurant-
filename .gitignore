@@ -60,3 +60,9 @@ mobile/**/android/captures/
 *.keystore
 **/keystore.properties
 !mobile/keystore.properties.example
+
+# Root Capacitor APK projects (build output + node_modules — never commit)
+/ordo-client/
+/ordo-guest/
+/ordo-pos/
+

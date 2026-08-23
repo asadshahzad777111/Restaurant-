@@ -824,6 +824,40 @@ export function MarketingHome() {
         </div>
       </section>
 
+      <section className={styles.sectionSoft} id="app">
+        <div className={styles.wrap}>
+          <motion.div className={styles.appCard} variants={section} initial="hidden" whileInView="show" viewport={viewOnce}>
+            <div className={styles.appVis}>
+              <span className={styles.appIcon}>📱</span>
+              <div className={styles.appMeta}>
+                <strong className={styles.appName}>ORDO Staff app</strong>
+                <span className={styles.appBadge}>Android · v1.0 · ~3.6 MB</span>
+              </div>
+            </div>
+            <div className={styles.appCopy}>
+              <p className={styles.kicker}>Download the app</p>
+              <h2>ORDO ko phone mein try karein.</h2>
+              <p>
+                Yeh staff app hai — POS, orders, kitchen, aur 58mm thermal print (AsFix Bluetooth).
+                Staff login se hi kholta hai, kabhi bhi Super HQ nahi. Demo build — full branded per-kitchen
+                app Super se upload hoti hai.
+              </p>
+              <div className={styles.heroCtas}>
+                <a className={styles.primary} href="/apk/ordo-staff.apk" download>
+                  Download APK →
+                </a>
+                <Link href="/order?tenant=DEMO" className={styles.secondary}>
+                  Ya web demo dekhein
+                </Link>
+              </div>
+              <p className={styles.appNote}>
+                Install: Android → Settings → Security → allow "Unknown sources" → open the APK.
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       <section className={styles.section} id="tour">
         <div className={styles.wrap}>
           <motion.div variants={section} initial="hidden" whileInView="show" viewport={viewOnce}>
