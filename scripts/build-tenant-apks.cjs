@@ -3,9 +3,9 @@
  * Build per-restaurant Staff + Customer Capacitor configs (and APKs/AABs when Android SDK exists).
  *
  * Usage:
- *   node scripts/build-tenant-apks.cjs --code=LAHORE1 --name="Lahore Grill"
+ *   node scripts/build-tenant-apks.cjs --code=LAHORE1 --name="Lahore Grill" --color=#ff8500
  *   node scripts/build-tenant-apks.cjs --code=DEMO --name="Demo Kitchen" --release --version-code=1 --version-name=1.0.0
- *   node scripts/build-tenant-apks.cjs --code=DEMO --name="Demo Kitchen" --skip-gradle
+ *   node scripts/build-tenant-apks.cjs --code=DEMO --name="Demo Kitchen" --skip-gradle --color=#c45c26
  *
  * Uses project-local GRADLE_USER_HOME (.gradle-home) unless already set.
  * Warns if SDK platforms/android-34 is missing or named android-34-2.
@@ -34,6 +34,7 @@ const skipGradle = process.argv.includes("--skip-gradle");
 const release = process.argv.includes("--release");
 const versionCode = arg("version-code", "1");
 const versionName = arg("version-name", "1.0.0");
+const brandColor = (arg("color", "#ff8500") || "#ff8500").trim();
 const host = (arg("host", "https://ordo.asfins.com") || "https://ordo.asfins.com").replace(/\/$/, "");
 
 if (!codeRaw) {
@@ -83,18 +84,46 @@ function writeConfig(shell) {
     appId: shell.appId,
     appName: shell.appName,
     webDir: "www",
+    // Branded splash / native background — this is what makes the APK feel "native",
+    // not a bare web preview.
+    backgroundColor: brandColor,
     server: {
       url: shell.url,
       cleartext: false,
       allowNavigation: ["ordo.asfins.com", "localhost", "127.0.0.1", "api.ordo.asfins.com"],
     },
-    android: { allowMixedContent: false },
+    android: { allowMixedContent: false, backgroundColor: brandColor },
+    plugins: {
+      SplashScreen: {
+        backgroundColor: brandColor,
+        showSpinner: false,
+        launchAutoHide: true,
+      },
+    },
   };
   fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2) + "\n");
   fs.writeFileSync(
     path.join(outRoot, `capacitor.${shell.slot}.json`),
     JSON.stringify(cfg, null, 2) + "\n",
   );
+
+  // Per-kitchen native label + theme (launcher name, status bar / splash color).
+  const androidValuesDir = path.join(dir, "android", "app", "src", "main", "res", "values");
+  try {
+    fs.mkdirSync(androidValuesDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(androidValuesDir, "strings.xml"),
+      `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n  <string name="app_name">${shell.appName}</string>\n</resources>\n`,
+    );
+    fs.writeFileSync(
+      path.join(androidValuesDir, "colors.xml"),
+      `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n  <color name="colorPrimary">${brandColor}</color>\n  <color name="colorPrimaryDark">${brandColor}</color>\n  <color name="colorAccent">${brandColor}</color>\n</resources>\n`,
+    );
+    console.log(`Branded theme: ${shell.appName} → ${brandColor}`);
+  } catch (e) {
+    console.warn("Theme write skipped:", e.message);
+  }
+
   console.log(`Configured ${shell.appName} → ${shell.url}`);
 }
 
