@@ -1,0 +1,11 @@
+# Vercel deploys only the Next.js web app at the repo root.
+# Native (Expo/Capacitor) + build caches are excluded — the Next build never needs them.
+node_modules
+.next
+.gradle-home
+.data
+apps
+mobile
+terraform
+*.log
+dsh-*.log
