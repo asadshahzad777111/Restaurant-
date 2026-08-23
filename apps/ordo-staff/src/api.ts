@@ -74,3 +74,25 @@ export async function patchOrder(id: string, patch: Partial<Order>): Promise<Ord
   if (!res.ok) throw new Error(data.error || "Update failed");
   return data.order;
 }
+
+/** Toggle 86 (availability) on a menu item → returns the updated tenant. */
+export async function toggle86(itemId: string): Promise<Tenant> {
+  const res = await authFetch("/admin", {
+    method: "PUT",
+    body: JSON.stringify({ action: "toggle86", itemId }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Update failed");
+  return data.tenant;
+}
+
+/** Save the table list → returns the updated tenant. */
+export async function saveTables(tables: unknown[]): Promise<Tenant> {
+  const res = await authFetch("/admin", {
+    method: "PUT",
+    body: JSON.stringify({ action: "tables", tables }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Update failed");
+  return data.tenant;
+}

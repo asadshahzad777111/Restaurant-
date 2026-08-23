@@ -47,6 +47,26 @@ export interface Tenant {
   shop: { currency: string };
   users: TenantUser[];
   orders: Order[];
+  menu: MenuItem[];
+  tables: DiningTable[];
+}
+
+export interface MenuItem {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  category: string;
+  available: boolean;
+  isDeal?: boolean;
+}
+
+export interface DiningTable {
+  id: string;
+  label: string;
+  seats: number;
+  status: "empty" | "occupied" | "bill";
+  currentOrderId?: string;
 }
 
 export interface Session {

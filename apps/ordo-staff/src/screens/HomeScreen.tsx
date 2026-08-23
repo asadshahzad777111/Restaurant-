@@ -7,6 +7,8 @@ import type { Tenant, TenantUser } from "../types";
 import { theme } from "../theme";
 import { OrdersScreen } from "./OrdersScreen";
 import { KitchenScreen } from "./KitchenScreen";
+import { MenuScreen } from "./MenuScreen";
+import { TablesScreen } from "./TablesScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -55,6 +57,8 @@ export function HomeScreen({ navigation }: any) {
       >
         <Tab.Screen name="Orders" component={OrdersScreen} options={{ tabBarIcon: () => <Text>🧾</Text> }} />
         <Tab.Screen name="Kitchen" component={KitchenScreen} options={{ tabBarIcon: () => <Text>🍳</Text> }} />
+        <Tab.Screen name="Menu" component={MenuScreen} options={{ tabBarIcon: () => <Text>📋</Text> }} />
+        <Tab.Screen name="Tables" component={TablesScreen} options={{ tabBarIcon: () => <Text>🪑</Text> }} />
       </Tab.Navigator>
     </SafeAreaView>
   );
