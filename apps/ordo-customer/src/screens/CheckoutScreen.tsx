@@ -43,7 +43,7 @@ export function CheckoutScreen({ route, navigation }: any) {
         })),
       });
       setDone(true);
-      navigation.replace("Menu");
+      navigation.replace("Track", { code, token: res.order.trackToken });
       // eslint-disable-next-line no-console
       console.log("Order #", res.order.number);
     } catch (e) {

@@ -10,6 +10,7 @@ import { KitchenScreen } from "./KitchenScreen";
 import { MenuScreen } from "./MenuScreen";
 import { TablesScreen } from "./TablesScreen";
 import { POSScreen } from "./POSScreen";
+import { DashboardScreen } from "./DashboardScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -56,6 +57,7 @@ export function HomeScreen({ navigation }: any) {
           tabBarLabelStyle: { fontWeight: "700" },
         })}
       >
+        <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ tabBarIcon: () => <Text>🏠</Text> }} />
         <Tab.Screen name="POS" component={POSScreen} options={{ tabBarIcon: () => <Text>🛒</Text> }} />
         <Tab.Screen name="Orders" component={OrdersScreen} options={{ tabBarIcon: () => <Text>🧾</Text> }} />
         <Tab.Screen name="Kitchen" component={KitchenScreen} options={{ tabBarIcon: () => <Text>🍳</Text> }} />

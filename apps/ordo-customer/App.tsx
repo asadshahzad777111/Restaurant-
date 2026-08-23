@@ -7,6 +7,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { readCode, saveCode } from "./src/api";
 import { MenuScreen } from "./src/screens/MenuScreen";
 import { CheckoutScreen } from "./src/screens/CheckoutScreen";
+import { TrackScreen } from "./src/screens/TrackScreen";
 import { theme } from "./src/theme";
 
 const Stack = createNativeStackNavigator();
@@ -61,6 +62,7 @@ export default function App() {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Menu">{() => <MenuScreen code={code} />}</Stack.Screen>
           <Stack.Screen name="Checkout" component={CheckoutScreen} />
+          <Stack.Screen name="Track" component={TrackScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

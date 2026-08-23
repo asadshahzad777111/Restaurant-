@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { getMenu } from "../api";
 import type { PublicMenu, MenuItem } from "../types";
 import { theme } from "../theme";
@@ -11,6 +11,7 @@ export function MenuScreen({ code, navigation }: any) {
   const [err, setErr] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [cat, setCat] = useState("All");
+  const [q, setQ] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -28,12 +29,14 @@ export function MenuScreen({ code, navigation }: any) {
     const s = new Set((menu?.menu || []).map((m) => (m.isDeal ? "Deals" : m.category)));
     return ["All", ...[...s]];
   }, [menu?.menu]);
+  const query = q.trim().toLowerCase();
   const items = useMemo(() => {
     const all = menu?.menu || [];
-    if (cat === "All") return all;
-    if (cat === "Deals") return all.filter((m) => m.isDeal || m.category === "Deals");
-    return all.filter((m) => !m.isDeal && m.category === cat);
-  }, [menu?.menu, cat]);
+    const filtered = query ? all.filter((m) => m.name.toLowerCase().includes(query)) : all;
+    if (cat === "All") return filtered;
+    if (cat === "Deals") return filtered.filter((m) => m.isDeal || m.category === "Deals");
+    return filtered.filter((m) => !m.isDeal && m.category === cat);
+  }, [menu?.menu, cat, query]);
 
   const total = cart.reduce((s, l) => s + l.item.price * l.qty, 0);
   const count = cart.reduce((s, l) => s + l.qty, 0);
@@ -63,6 +66,13 @@ export function MenuScreen({ code, navigation }: any) {
         <Text style={s.sub}>{code}</Text>
       </View>
       {err ? <Text style={s.err}>{err}</Text> : null}
+      <TextInput
+        style={s.search}
+        value={q}
+        onChangeText={setQ}
+        placeholder="Search dishes…"
+        placeholderTextColor={theme.muted}
+      />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.cats}>
         {cats.map((c) => (
           <TouchableOpacity key={c} style={[s.chip, cat === c && s.chipOn]} onPress={() => setCat(c)}>
@@ -118,6 +128,7 @@ const s = StyleSheet.create({
   brand: { color: "#fff", fontSize: 20, fontWeight: "800" },
   sub: { color: theme.muted, fontSize: 13 },
   err: { color: theme.danger, padding: 12, fontWeight: "600" },
+  search: { backgroundColor: theme.darkSurface, borderRadius: 999, padding: 12, marginHorizontal: 12, marginTop: 8, color: theme.text },
   cats: { maxHeight: 48, paddingHorizontal: 12, paddingVertical: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: theme.line, marginRight: 8, backgroundColor: theme.darkSurface },
   chipOn: { backgroundColor: theme.accent, borderColor: theme.accent },

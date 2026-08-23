@@ -29,7 +29,7 @@ export async function getMenu(code: string): Promise<PublicMenu> {
   return data.public as PublicMenu;
 }
 
-export async function placeGuestOrder(input: unknown): Promise<{ order: { number: number } }> {
+export async function placeGuestOrder(input: unknown): Promise<{ order: { number: number; trackToken: string } }> {
   const res = await fetch(`${BASE_URL}/orders`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -37,5 +37,12 @@ export async function placeGuestOrder(input: unknown): Promise<{ order: { number
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Could not place order");
+  return data;
+}
+
+export async function getTrack(code: string, token: string): Promise<{ order: { status: string; lines: { name: string; qty: number }[]; total: number }; code: string } | null> {
+  const res = await fetch(`${BASE_URL}/track/${token}`);
+  const data = await res.json();
+  if (!res.ok) return null;
   return data;
 }
