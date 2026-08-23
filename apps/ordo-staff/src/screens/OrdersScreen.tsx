@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native
 import { useFocusEffect } from "@react-navigation/native";
 import { getOrders, patchOrder } from "../api";
 import type { Order } from "../types";
+import { ReceiptView } from "../components/ReceiptView";
 import { theme, radius } from "../theme";
 
 const NEXT: Record<string, string> = {
@@ -16,6 +17,7 @@ const NEXT: Record<string, string> = {
 export function OrdersScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [err, setErr] = useState("");
+  const [selected, setSelected] = useState<Order | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -55,15 +57,18 @@ export function OrdersScreen() {
         ListEmptyComponent={<Text style={s.empty}>No orders yet</Text>}
         renderItem={({ item }) => (
           <View style={s.card}>
-            <View style={s.row}>
-              <Text style={s.num}>#{item.number}</Text>
-              <Text style={s.status}>{item.status}</Text>
-              <Text style={s.total}>{item.total}</Text>
-            </View>
-            <Text style={s.meta}>
-              {item.channel}/{item.serviceType}
-              {item.tableNumber ? ` · T${item.tableNumber}` : ""}
-            </Text>
+            <TouchableOpacity onPress={() => setSelected(item)}>
+              <View style={s.row}>
+                <Text style={s.num}>#{item.number}</Text>
+                <Text style={s.status}>{item.status}</Text>
+                <Text style={s.total}>{item.total}</Text>
+              </View>
+              <Text style={s.meta}>
+                {item.channel}/{item.serviceType}
+                {item.tableNumber ? ` · T${item.tableNumber}` : ""}
+                {item.customerName ? ` · ${item.customerName}` : ""}
+              </Text>
+            </TouchableOpacity>
             <View style={s.lines}>
               {item.lines.map((l, i) => (
                 <Text key={i} style={s.line}>
@@ -79,6 +84,7 @@ export function OrdersScreen() {
           </View>
         )}
       />
+      <ReceiptView visible={!!selected} order={selected} currency="PKR" onClose={() => setSelected(null)} />
     </View>
   );
 }

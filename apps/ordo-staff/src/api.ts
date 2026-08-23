@@ -114,3 +114,14 @@ export async function placeOrder(input: {
   if (!res.ok) throw new Error(data.error || "Failed to place order");
   return data.order;
 }
+
+/** Pause / resume guest ordering (billing pause) → returns updated tenant. */
+export async function pauseOrdering(paused: boolean): Promise<Tenant> {
+  const res = await authFetch("/admin", {
+    method: "PUT",
+    body: JSON.stringify({ action: "orderingPaused", paused }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Update failed");
+  return data.tenant;
+}

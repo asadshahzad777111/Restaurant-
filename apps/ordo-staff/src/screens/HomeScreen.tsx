@@ -11,6 +11,7 @@ import { MenuScreen } from "./MenuScreen";
 import { TablesScreen } from "./TablesScreen";
 import { POSScreen } from "./POSScreen";
 import { DashboardScreen } from "./DashboardScreen";
+import { SettingsScreen } from "./SettingsScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -63,6 +64,7 @@ export function HomeScreen({ navigation }: any) {
         <Tab.Screen name="Kitchen" component={KitchenScreen} options={{ tabBarIcon: () => <Text>🍳</Text> }} />
         <Tab.Screen name="Menu" component={MenuScreen} options={{ tabBarIcon: () => <Text>📋</Text> }} />
         <Tab.Screen name="Tables" component={TablesScreen} options={{ tabBarIcon: () => <Text>🪑</Text> }} />
+        <Tab.Screen name="Settings" component={SettingsScreen} options={{ tabBarIcon: () => <Text>⚙️</Text> }} />
       </Tab.Navigator>
     </SafeAreaView>
   );

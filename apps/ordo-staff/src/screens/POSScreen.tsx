@@ -2,19 +2,20 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { getTenant, placeOrder } from "../api";
-import type { Tenant, MenuItem } from "../types";
+import type { Tenant, MenuItem, Order } from "../types";
+import { ReceiptView } from "../components/ReceiptView";
 import { theme, radius } from "../theme";
 
 type Line = { key: string; item: MenuItem; qty: number };
 
-export function POSScreen() {
-  const [tenant, setTenant] = useState<Tenant | null>(null);
+export function POSScreen() {  const [tenant, setTenant] = useState<Tenant | null>(null);
   const [cat, setCat] = useState("All");
   const [cart, setCart] = useState<Line[]>([]);
   const [pay, setPay] = useState("cash");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
+  const [lastOrder, setLastOrder] = useState<Order | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -87,6 +88,7 @@ export function POSScreen() {
       });
       setCart([]);
       setMsg(`Order #${order.number} placed`);
+      setLastOrder(order);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Failed");
     } finally {
@@ -170,6 +172,7 @@ export function POSScreen() {
           {msg ? <Text style={s.ok}>{msg}</Text> : null}
         </View>
       </View>
+      <ReceiptView visible={!!lastOrder} order={lastOrder} currency={tenant?.shop.currency || "PKR"} onClose={() => setLastOrder(null)} />
     </View>
   );
 }
