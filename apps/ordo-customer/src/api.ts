@@ -29,7 +29,7 @@ export async function getMenu(code: string): Promise<PublicMenu> {
   return data.public as PublicMenu;
 }
 
-export async function placeGuestOrder(input: unknown): Promise<{ order: { number: number; trackToken: string } }> {
+export async function placeGuestOrder(input: Record<string, unknown>): Promise<{ order: { number: number; trackToken: string } }> {
   const res = await fetch(`${BASE_URL}/orders`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
