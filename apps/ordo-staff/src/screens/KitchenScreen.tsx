@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions } from "react-native";
 import { patchOrder } from "../api";
 import { useNewOrders } from "../hooks/useNewOrders";
@@ -29,6 +29,34 @@ export function KitchenScreen() {
   const [err, setErr] = useState("");
   const colW = Math.max(240, width / 2);
   const loaded = orders.length > 0 || err !== "";
+  const [countdowns, setCountdowns] = useState<Record<string, number>>({});
+  const [, forceTick] = useState(0);
+
+  useEffect(() => {
+    const anyActive = Object.values(countdowns).some((e) => e - Date.now() > 0);
+    if (!anyActive) return;
+    const id = setInterval(() => forceTick((x) => x + 1), 1000);
+    return () => clearInterval(id);
+  }, [countdowns]);
+
+  function setTimer(id: string) {
+    setCountdowns((prev) => ({ ...prev, [id]: Date.now() + 15 * 60000 }));
+  }
+  function clearTimer(id: string) {
+    setCountdowns((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }
+  function remain(endsAt?: number) {
+    if (!endsAt) return "";
+    const sec = Math.floor((endsAt - Date.now()) / 1000);
+    if (sec <= 0) return "READY!";
+    const m = Math.floor(sec / 60);
+    const r = sec % 60;
+    return `${m}:${r < 10 ? "0" : ""}${r}`;
+  }
 
   async function advance(o: Order) {
     const next = NEXT[o.status];
@@ -59,12 +87,20 @@ export function KitchenScreen() {
                 <Text style={s.laneTitle}>{lane}</Text>
                 <Text style={s.laneCount}>{items.length}</Text>
               </View>
-              {items.map((o) => (
+              {items.map((o) => {
+                const cd = countdowns[o.id];
+                const expired = cd !== undefined && cd - Date.now() <= 0;
+                return (
                 <View key={o.id} style={s.ticket}>
                   <View style={s.row}>
                     <Text style={s.num}>#{o.number}</Text>
                     <Text style={s.time}>{o.createdAt.slice(11, 16)}</Text>
                   </View>
+                  {cd !== undefined && (
+                    <Text style={[s.timerBadge, expired && s.timerBadgeExpired]}>
+                      ⏱ {expired ? "READY — serve it" : remain(cd)}
+                    </Text>
+                  )}
                   <Text style={s.meta}>
                     {o.serviceType}
                     {o.tableNumber ? ` · T${o.tableNumber}` : ""}
@@ -79,8 +115,12 @@ export function KitchenScreen() {
                       <Text style={s.btnText}>{o.status === "ready" || o.status === "out_for_delivery" ? "✓ Done" : `→ ${NEXT[o.status]}`}</Text>
                     </TouchableOpacity>
                   ) : null}
+                  <TouchableOpacity style={s.timerBtn} onPress={() => (cd ? clearTimer(o.id) : setTimer(o.id))}>
+                    <Text style={s.timerBtnText}>{cd ? "Clear timer" : "⏱ Timer"}</Text>
+                  </TouchableOpacity>
                 </View>
-              ))}
+                );
+              })}
               {!items.length ? <Text style={s.emptyLane}>—</Text> : null}
             </View>
           );
@@ -129,5 +169,9 @@ const s = StyleSheet.create({
   line: { color: theme.ink, fontSize: 14 },
   btn: { backgroundColor: theme.accent, borderRadius: 999, paddingVertical: 9, alignItems: "center", marginTop: 4 },
   btnText: { color: "#fff", fontWeight: "800" },
+  timerBadge: { alignSelf: "flex-start", fontSize: 12, fontWeight: "800", color: "#fff", backgroundColor: "#7a5a12", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, marginBottom: 2 },
+  timerBadgeExpired: { backgroundColor: theme.danger },
+  timerBtn: { borderWidth: 1, borderColor: theme.line, borderRadius: 999, paddingVertical: 7, alignItems: "center", marginTop: 4 },
+  timerBtnText: { color: theme.muted, fontWeight: "700", fontSize: 12 },
   emptyLane: { color: theme.muted, textAlign: "center" },
 });
