@@ -327,6 +327,25 @@
   border-color: #ff8500;
 }
 
+/* Group: both apps download */
+.installGroup {
+  margin: 0 0 1rem;
+}
+
+.installHead {
+  font-size: 0.85rem;
+  color: var(--guest-muted);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+}
+
+.installRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
 /* ---- Paste form ---- */
 .form {
   display: grid;
