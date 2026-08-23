@@ -9,7 +9,7 @@ export function PressScale({
   scaleTo = 0.96,
   disabled,
 }: {
-  children: React.ReactNode;
+  children: any;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
   scaleTo?: number;
