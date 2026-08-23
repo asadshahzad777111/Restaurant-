@@ -440,6 +440,10 @@ export function MarketingHome() {
     el.style.setProperty("--my", `${e.clientY - r.top}px`);
   }, []);
 
+  // Hide the WhatsApp float while the contact section is on screen
+  const contactRef = useRef<HTMLElement>(null);
+  const contactInView = useInView(contactRef, { amount: 0.25 });
+
   const active = TABS.find((t) => t.id === tab)!;
   const waDigits = whatsapp.replace(/\D/g, "");
 
@@ -1250,76 +1254,126 @@ export function MarketingHome() {
         </div>
       </section>
 
-      <section className={styles.sectionSoft} id="contact">
+      <section ref={contactRef} className={`${styles.sectionSoft} ${styles.contactSection}`} id="contact">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>Start a conversation</p>
-          <h2>Talk to ORDO</h2>
-          <p className={styles.lead}>
-            Requests land in Super → Leads. Try Demo Kitchen first if you only want to click the guest path.
-          </p>
-          <div className={styles.contactGrid}>
+          <motion.div variants={section} initial="hidden" whileInView="show" viewport={viewOnce}>
+            <p className={styles.kicker}>Start a conversation</p>
+            <h2>Talk to ORDO</h2>
+            <p className={styles.lead}>
+              Kitchen shuru karni hai, demo dekhna hai, ya 58mm printer ka quote chahiye? Ek message —
+              hum batayen ge.
+            </p>
+          </motion.div>
+
+          <motion.div
+            className={styles.contactCard}
+            variants={listContainer(0.06)}
+            initial="hidden"
+            whileInView="show"
+            viewport={viewOnce}
+          >
             {sent ? (
-              <p className={styles.success}>Thanks — we received your request.</p>
+              <motion.div className={styles.successCard} variants={item}>
+                <span className={styles.successCheck} aria-hidden>
+                  ✓
+                </span>
+                <h3>Request received</h3>
+                <p>Hum Super ke inbox mein dekh lein ge — WhatsApp ya email par jald wapis aayen ge.</p>
+                <Link href="/order?tenant=DEMO" className={styles.secondary}>
+                  Open the demo meanwhile
+                </Link>
+              </motion.div>
             ) : (
-              <form className={styles.form} onSubmit={submit}>
-                <input
-                  required
-                  placeholder="Your name"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                />
-                <input
-                  required
-                  type="email"
-                  placeholder="Email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                />
-                <input
-                  placeholder="Phone / WhatsApp"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                />
-                <input
-                  placeholder="Restaurant name"
-                  value={form.restaurantName}
-                  onChange={(e) => setForm({ ...form, restaurantName: e.target.value })}
-                />
-                <select value={form.planId} onChange={(e) => setForm({ ...form, planId: e.target.value })}>
-                  <option value="starter">Starter · ₨999</option>
-                  <option value="pro">Pro · ₨1,999</option>
-                  <option value="enterprise">Enterprise · ₨4,499</option>
-                </select>
-                <textarea
-                  placeholder="City, dine-in / takeaway / delivery, printer yes or no"
-                  rows={4}
-                  value={form.message}
-                  onChange={(e) => setForm({ ...form, message: e.target.value })}
-                />
-                <button type="submit" className={styles.primary}>
-                  Send request
+              <motion.form className={styles.form} variants={item} onSubmit={submit}>
+                <h3 className={styles.formTitle}>Kitchen details</h3>
+                <label className={styles.field}>
+                  <span>Your name</span>
+                  <input
+                    required
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="e.g. Usman"
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Email</span>
+                  <input
+                    required
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    placeholder="you@kitchen.pk"
+                  />
+                </label>
+                <div className={styles.formRow}>
+                  <label className={styles.field}>
+                    <span>Phone / WhatsApp</span>
+                    <input
+                      value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      placeholder="03xx xxxxxxx"
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    <span>Restaurant name</span>
+                    <input
+                      value={form.restaurantName}
+                      onChange={(e) => setForm({ ...form, restaurantName: e.target.value })}
+                      placeholder="Karahi House"
+                    />
+                  </label>
+                </div>
+                <label className={styles.field}>
+                  <span>Plan</span>
+                  <select value={form.planId} onChange={(e) => setForm({ ...form, planId: e.target.value })}>
+                    <option value="starter">Starter · ₨999</option>
+                    <option value="pro">Pro · ₨1,999</option>
+                    <option value="enterprise">Enterprise · ₨4,499</option>
+                  </select>
+                </label>
+                <label className={styles.field}>
+                  <span>Message</span>
+                  <textarea
+                    rows={3}
+                    value={form.message}
+                    onChange={(e) => setForm({ ...form, message: e.target.value })}
+                    placeholder="City, dine-in / takeaway / delivery, printer yes or no"
+                  />
+                </label>
+                <button type="submit" className={styles.cta}>
+                  Send request <span aria-hidden>→</span>
                 </button>
-              </form>
+              </motion.form>
             )}
-            <aside className={styles.contactAside}>
-              <p>Prefer WhatsApp? Same conversation we use for quotes.</p>
-              <a className={styles.wa} href={`https://wa.me/${waDigits}`} target="_blank" rel="noreferrer">
-                WhatsApp {whatsapp}
-              </a>
-              <Link href="/order?tenant=DEMO" className={styles.secondary}>
-                Skip the form — open demo
-              </Link>
-              <Link href="/login" className={styles.ghost}>
-                Existing kitchen login
-              </Link>
-            </aside>
-          </div>
+
+            <motion.aside className={styles.contactAside} variants={item}>
+              <div className={styles.asideInner}>
+                <span className={styles.asideIcon} aria-hidden>
+                  💬
+                </span>
+                <h3>Prefer WhatsApp?</h3>
+                <p>Wahi conversation jisme hum quotes dete hain — sab se tez jawab.</p>
+                <a className={styles.waCta} href={`https://wa.me/${waDigits}`} target="_blank" rel="noreferrer">
+                  Chat on WhatsApp
+                </a>
+                <p className={styles.waNumber}>{whatsapp}</p>
+                <div className={styles.asideLinks}>
+                  <Link href="/order?tenant=DEMO" className={styles.secondary}>
+                    Open live demo
+                  </Link>
+                  <Link href="/login" className={styles.ghost}>
+                    Existing kitchen login
+                  </Link>
+                </div>
+              </div>
+            </motion.aside>
+          </motion.div>
         </div>
       </section>
 
       {/* WhatsApp float — quotes, setup, onboarding */}
       <a
-        className={styles.waFloat}
+        className={contactInView ? `${styles.waFloat} ${styles.waFloatHidden}` : styles.waFloat}
         href={`https://wa.me/${waDigits}`}
         target="_blank"
         rel="noreferrer"
