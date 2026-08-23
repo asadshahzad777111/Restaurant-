@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -18,13 +18,28 @@ import { theme, radius } from "../theme";
 const COLOR: Record<string, string> = {
   empty: "#e8f5e9",
   occupied: theme.accentHot,
+  reserved: "#fbe3c0",
   bill: "#e3f2fd",
 };
+
+function remainMin(until?: string) {
+  if (!until) return null;
+  return Math.max(0, Math.ceil((new Date(until).getTime() - Date.now()) / 60000));
+}
 
 export function TablesScreen() {
   const { width } = useWindowDimensions();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [err, setErr] = useState("");
+  const [, forceTick] = useState(0);
+
+  // Refresh reserved countdown every 30s while any table is reserved.
+  useEffect(() => {
+    const reserved = (tenant?.tables || []).some((t) => t.status === "reserved");
+    if (!reserved) return;
+    const id = setInterval(() => forceTick((x) => x + 1), 30000);
+    return () => clearInterval(id);
+  }, [tenant?.tables]);
   const [busy, setBusy] = useState(false);
   const loaded = tenant !== null;
 
@@ -82,7 +97,7 @@ export function TablesScreen() {
             style={[
               s.table,
               { width: cellW },
-              { backgroundColor: t.status === "empty" ? COLOR.empty : t.status === "bill" ? COLOR.bill : COLOR.occupied },
+              { backgroundColor: COLOR[t.status] || COLOR.empty },
             ]}
             onPress={t.status !== "empty" ? () => void markEmpty(t) : undefined}
             activeOpacity={t.status !== "empty" ? 0.7 : 1}
@@ -93,6 +108,11 @@ export function TablesScreen() {
             <Text style={[s.status, t.status !== "empty" && s.statusOccupied]}>
               {t.status.toUpperCase()}
             </Text>
+            {t.status === "reserved" && (
+              <Text style={s.reservedMeta}>
+                {t.reservedBy || "Guest"} · {remainMin(t.reservedUntil) ?? 0} min
+              </Text>
+            )}
             {t.status !== "empty" ? <Text style={s.hint}>Tap to clear</Text> : null}
           </TouchableOpacity>
         ))}
@@ -121,5 +141,6 @@ const s = StyleSheet.create({
   seats: { fontSize: 12, color: theme.muted },
   status: { fontWeight: "700", color: theme.ink, marginTop: 4 },
   statusOccupied: { color: "#7a4100" },
+  reservedMeta: { fontSize: 11, fontWeight: "800", color: "#a4740a", marginTop: 3 },
   hint: { fontSize: 11, color: theme.muted, fontWeight: "600" },
 });
