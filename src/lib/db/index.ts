@@ -259,6 +259,13 @@ export async function updateGuestCommerce(
     : fileTenant.updateGuestCommerce(tenantId, input);
 }
 
+export async function updateOrderingPaused(tenantId: string, paused: boolean) {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.updateOrderingPausedMongo(tenantId, paused)
+    : fileTenant.updateOrderingPaused(tenantId, paused);
+}
+
 export async function addOrder(
   tenantId: string,
   order: Omit<Order, "id" | "number" | "createdAt" | "updatedAt">,

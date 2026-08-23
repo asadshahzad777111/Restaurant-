@@ -141,6 +141,7 @@ export function getPublicMenu(tenantId: string) {
     },
     payments: normalizeTenantPayments(t.payments),
     specialOffer: normalizeSpecialOffer(t.specialOffer),
+    orderingPaused: Boolean(t.orderingPaused),
     tables: t.tables.map((tb) => ({
       id: tb.id,
       label: tb.label,
@@ -254,6 +255,14 @@ export function updateGuestCommerce(
       updatedAt: new Date().toISOString(),
     });
   }
+  writeTenant(t);
+  return t;
+}
+
+/** Pause / resume guest ordering for this kitchen (bill pause). */
+export function updateOrderingPaused(tenantId: string, paused: boolean) {
+  const t = readTenant(tenantId);
+  t.orderingPaused = paused;
   writeTenant(t);
   return t;
 }

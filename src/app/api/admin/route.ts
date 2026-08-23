@@ -6,6 +6,7 @@ import {
   updateBranding,
   updateGuestCommerce,
   updateMenu,
+  updateOrderingPaused,
   updateStock,
   updateTables,
   updateUsers,
@@ -113,6 +114,15 @@ export async function PUT(req: NextRequest) {
         specialOffer: action === "specialOffer" ? body.specialOffer : undefined,
       });
       return NextResponse.json({ tenant: await readTenantStaffView(tenantId) });
+    }
+
+    if (action === "orderingPaused") {
+      if (!(await hasPermission(session, "settings")) && session.role !== "tenant_admin") {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      const paused = Boolean(body.paused);
+      await updateOrderingPaused(tenantId, paused);
+      return NextResponse.json({ tenant: await readTenantStaffView(tenantId), paused });
     }
 
     if (action === "changePassword") {

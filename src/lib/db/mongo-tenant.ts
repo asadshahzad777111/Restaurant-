@@ -113,6 +113,7 @@ export async function getPublicMenuMongo(tenantId: string) {
     },
     payments: t.payments,
     specialOffer: t.specialOffer,
+    orderingPaused: Boolean(t.orderingPaused),
     tables: t.tables.map((tb) => ({
       id: tb.id,
       label: tb.label,
@@ -306,6 +307,14 @@ export async function updateGuestCommerceMongo(
       updatedAt: new Date().toISOString(),
     });
   }
+  await writeTenantMongo(t);
+  return t;
+}
+
+/** Pause / resume guest ordering for this kitchen (bill pause). */
+export async function updateOrderingPausedMongo(tenantId: string, paused: boolean) {
+  const t = await readTenantMongo(tenantId);
+  t.orderingPaused = paused;
   await writeTenantMongo(t);
   return t;
 }

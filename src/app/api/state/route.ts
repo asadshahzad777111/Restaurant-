@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
       {
         public: pub,
         meta,
-        orderingClosed: meta.status === "suspended",
+        orderingClosed: meta.status === "suspended" || Boolean(pub.orderingPaused),
         billingPastDue: meta.status === "past_due",
         storage: storageMode(),
       },

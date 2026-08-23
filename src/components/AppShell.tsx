@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { useLang } from "@/lib/lang-context";
@@ -32,6 +32,7 @@ export function AppShell({
   const { loading, token, role, tenant, user, impersonating, logout, refresh, exitHelp, billingPastDue } =
     useStore();
   const { lang, toggle, t } = useLang();
+  const [navOpen, setNavOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -57,7 +58,7 @@ export function AppShell({
 
   return (
     <div className={styles.shell}>
-      <Sidebar />
+      <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
       <div className={styles.main}>
         {impersonating && (
           <div className={styles.helpBanner} role="status">
@@ -87,6 +88,11 @@ export function AppShell({
           </div>
         )}
         <header className={styles.top}>
+          <button type="button" className={styles.burgerBtn} onClick={() => setNavOpen(true)} aria-label="Open menu">
+            <span />
+            <span />
+            <span />
+          </button>
           <div className={styles.brandBlock}>
             {tenant.branding.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element

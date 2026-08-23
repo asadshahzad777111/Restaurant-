@@ -177,6 +177,29 @@
   box-shadow: 0 8px 20px rgba(255, 133, 0, 0.3);
 }
 
+/* Mobile burger (shown under 860px) */
+.burgerBtn {
+  display: none;
+  border: 1px solid #ddd6cc;
+  background: #fff;
+  border-radius: 8px;
+  width: 2.4rem;
+  height: 2.4rem;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.burgerBtn span {
+  display: block;
+  width: 1.15rem;
+  height: 2px;
+  background: var(--staff-ink, #211a15);
+  border-radius: 2px;
+}
+
 .logout {
   border: 1px solid #ddd6cc;
   background: #fff;
@@ -206,6 +229,10 @@
   .top {
     flex-wrap: wrap;
     padding: 0.9rem 1rem;
+  }
+
+  .burgerBtn {
+    display: flex;
   }
 
   .content {

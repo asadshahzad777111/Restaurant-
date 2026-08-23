@@ -237,6 +237,8 @@ export interface TenantState {
   payments?: TenantPayments;
   /** Dismissible special offer popup on guest order */
   specialOffer?: TenantSpecialOffer;
+  /** Kitchen admin toggle — pauses guest ordering (bill is paused) without suspending staff. */
+  orderingPaused?: boolean;
   users: TenantUser[];
   menu: MenuItem[];
   stock: StockItem[];
