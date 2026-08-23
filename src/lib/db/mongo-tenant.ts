@@ -119,6 +119,8 @@ export async function getPublicMenuMongo(tenantId: string) {
       label: tb.label,
       seats: tb.seats,
       status: tb.status,
+      reservedBy: tb.reservedBy,
+      reservedUntil: tb.reservedUntil,
     })),
     menu: t.menu.filter((m) => m.available).map(({ costPrice: _c, ...m }) => m),
   };
@@ -281,6 +283,61 @@ export async function updateTablesMongo(tenantId: string, tables: DiningTable[])
   t.tables = tables;
   await writeTenantMongo(t);
   return t;
+}
+
+/** Reserve a table (anti double-book): only when it is empty. */
+export async function reserveTableMongo(
+  tenantId: string,
+  tableId: string,
+  name: string,
+  minutes: number,
+  token: string,
+) {
+  const t = await readTenantMongo(tenantId);
+  const table = t.tables.find((x) => x.id === tableId);
+  if (!table) throw new Error("Table not found");
+  if (table.status !== "empty") throw new Error("Table is unavailable");
+  table.status = "reserved";
+  table.reservedBy = name || "Guest";
+  table.reservedMinutes = minutes;
+  table.reservedUntil = new Date(Date.now() + minutes * 60000).toISOString();
+  table.reservationToken = token;
+  await writeTenantMongo(t);
+  return table;
+}
+
+export async function claimTableMongo(tenantId: string, tableId: string, token: string) {
+  const t = await readTenantMongo(tenantId);
+  const table = t.tables.find((x) => x.id === tableId);
+  if (!table) throw new Error("Table not found");
+  if (table.status !== "reserved") throw new Error("Table is not reserved");
+  if (table.reservationToken && table.reservationToken !== token) throw new Error("Invalid reservation");
+  if (table.reservedUntil && Date.now() > new Date(table.reservedUntil).getTime()) {
+    throw new Error("Reservation expired");
+  }
+  table.status = "occupied";
+  table.reservedBy = undefined;
+  table.reservedUntil = undefined;
+  table.reservedMinutes = undefined;
+  table.reservationToken = undefined;
+  await writeTenantMongo(t);
+  return table;
+}
+
+export async function releaseTableMongo(tenantId: string, tableId: string, token?: string) {
+  const t = await readTenantMongo(tenantId);
+  const table = t.tables.find((x) => x.id === tableId);
+  if (!table) throw new Error("Table not found");
+  if (table.reservationToken && token && table.reservationToken !== token) {
+    throw new Error("Invalid reservation");
+  }
+  table.status = "empty";
+  table.reservedBy = undefined;
+  table.reservedUntil = undefined;
+  table.reservedMinutes = undefined;
+  table.reservationToken = undefined;
+  await writeTenantMongo(t);
+  return table;
 }
 
 export async function updateBrandingMongo(

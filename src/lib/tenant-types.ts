@@ -186,7 +186,7 @@ export interface TenantSpecialOffer {
   updatedAt: string;
 }
 
-export type TableStatus = "empty" | "occupied" | "bill";
+export type TableStatus = "empty" | "occupied" | "reserved" | "bill";
 
 export interface DiningTable {
   id: string;
@@ -194,6 +194,11 @@ export interface DiningTable {
   seats: number;
   status: TableStatus;
   currentOrderId?: string;
+  /** Reservation state (guest booked this table from outside). */
+  reservedBy?: string;
+  reservedUntil?: string; // ISO timestamp
+  reservedMinutes?: number;
+  reservationToken?: string;
 }
 
 /** Guest who signed in with Google for this kitchen (Customer APK / web). */

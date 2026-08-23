@@ -235,6 +235,34 @@ export async function updateTables(tenantId: string, tables: DiningTable[]) {
     : fileTenant.updateTables(tenantId, tables);
 }
 
+export { tableToken } from "../tenant-store";
+export async function reserveTable(
+  tenantId: string,
+  tableId: string,
+  name: string,
+  minutes: number,
+  token: string,
+) {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.reserveTableMongo(tenantId, tableId, name, minutes, token)
+    : fileTenant.reserveTable(tenantId, tableId, name, minutes, token);
+}
+
+export async function claimTable(tenantId: string, tableId: string, token: string) {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.claimTableMongo(tenantId, tableId, token)
+    : fileTenant.claimTable(tenantId, tableId, token);
+}
+
+export async function releaseTable(tenantId: string, tableId: string, token?: string) {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.releaseTableMongo(tenantId, tableId, token)
+    : fileTenant.releaseTable(tenantId, tableId, token);
+}
+
 export async function updateBranding(
   tenantId: string,
   branding: Partial<TenantState["branding"]>,

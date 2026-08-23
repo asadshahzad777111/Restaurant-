@@ -147,6 +147,8 @@ export function getPublicMenu(tenantId: string) {
       label: tb.label,
       seats: tb.seats,
       status: tb.status,
+      reservedBy: tb.reservedBy,
+      reservedUntil: tb.reservedUntil,
     })),
     menu: t.menu.filter((m) => m.available).map(({ costPrice: _c, ...m }) => m),
   };
@@ -229,6 +231,70 @@ export function updateTables(tenantId: string, tables: DiningTable[]) {
   t.tables = tables;
   writeTenant(t);
   return t;
+}
+
+let resSeq = 0;
+export function tableToken() {
+  return `res_${Date.now().toString(36)}${(resSeq = (resSeq + 1) % 1296).toString(36)}${Math.random()
+    .toString(36)
+    .slice(2, 7)}`;
+}
+
+/** Reserve a table (anti double-book): only when it is empty. */
+export function reserveTable(
+  tenantId: string,
+  tableId: string,
+  name: string,
+  minutes: number,
+  token: string,
+) {
+  const t = readTenant(tenantId);
+  const table = t.tables.find((x) => x.id === tableId);
+  if (!table) throw new Error("Table not found");
+  if (table.status !== "empty") throw new Error("Table is unavailable");
+  table.status = "reserved";
+  table.reservedBy = name || "Guest";
+  table.reservedMinutes = minutes;
+  table.reservedUntil = new Date(Date.now() + minutes * 60000).toISOString();
+  table.reservationToken = token;
+  writeTenant(t);
+  return table;
+}
+
+/** Claim a reserved table on arrival (within the window). */
+export function claimTable(tenantId: string, tableId: string, token: string) {
+  const t = readTenant(tenantId);
+  const table = t.tables.find((x) => x.id === tableId);
+  if (!table) throw new Error("Table not found");
+  if (table.status !== "reserved") throw new Error("Table is not reserved");
+  if (table.reservationToken && table.reservationToken !== token) throw new Error("Invalid reservation");
+  if (table.reservedUntil && Date.now() > new Date(table.reservedUntil).getTime()) {
+    throw new Error("Reservation expired");
+  }
+  table.status = "occupied";
+  table.reservedBy = undefined;
+  table.reservedUntil = undefined;
+  table.reservedMinutes = undefined;
+  table.reservationToken = undefined;
+  writeTenant(t);
+  return table;
+}
+
+/** Cancel a reservation / free the table. */
+export function releaseTable(tenantId: string, tableId: string, token?: string) {
+  const t = readTenant(tenantId);
+  const table = t.tables.find((x) => x.id === tableId);
+  if (!table) throw new Error("Table not found");
+  if (table.reservationToken && token && table.reservationToken !== token) {
+    throw new Error("Invalid reservation");
+  }
+  table.status = "empty";
+  table.reservedBy = undefined;
+  table.reservedUntil = undefined;
+  table.reservedMinutes = undefined;
+  table.reservationToken = undefined;
+  writeTenant(t);
+  return table;
 }
 
 export function updateBranding(
