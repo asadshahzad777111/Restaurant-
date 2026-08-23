@@ -469,6 +469,30 @@ function OrderInner() {
     return [...map.entries()];
   }, [menu]);
 
+  // Category nav: scroll-spy + bottom-sheet popup (mobile)
+  const [activeCat, setActiveCat] = useState("");
+  const [catOpen, setCatOpen] = useState(false);
+  useEffect(() => {
+    const sections = document.querySelectorAll("[data-cat]");
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) if (e.isIntersecting) setActiveCat(e.target.getAttribute("data-cat") || "");
+      },
+      { rootMargin: "-45% 0px -50% 0px" },
+    );
+    sections.forEach((s) => obs.observe(s));
+    return () => obs.disconnect();
+  }, [deals, categories]);
+
+  function goCat(cat: string) {
+    const el = document.getElementById(`cat-${cat}`);
+    if (el) {
+      const top = el.getBoundingClientRect().top + window.scrollY - 74;
+      window.scrollTo({ top, behavior: reduced ? "auto" : "smooth" });
+    }
+    setCatOpen(false);
+  }
+
   const total = cart.reduce((s, c) => s + c.unitPrice * c.qty, 0);
   const count = cart.reduce((s, c) => s + c.qty, 0);
   const currency = shop?.currency || "PKR";
@@ -851,7 +875,7 @@ function OrderInner() {
               )}
 
               {deals.length > 0 && (
-                <section className={styles.deals} id="cat-Deals">
+                <section className={styles.deals} id="cat-Deals" data-cat="Deals">
                   <h2>Deals</h2>
                   <motion.div
                     className={styles.dealRail}
@@ -889,17 +913,31 @@ function OrderInner() {
               )}
 
               {categories.length > 0 && (
-                <nav className={styles.catNav} aria-label="Menu sections">
-                  {categories.map(([cat]) => (
-                    <a key={cat} href={`#cat-${cat}`} className={styles.catChip}>
-                      {cat}
-                    </a>
-                  ))}
+                <nav className={styles.catBar} aria-label="Menu sections">
+                  <button type="button" className={styles.catMenuBtn} onClick={() => setCatOpen(true)}>
+                    <span aria-hidden>☰</span>
+                    <span>{activeCat || "Browse menu"}</span>
+                  </button>
+                  <div className={styles.catChips}>
+                    {[
+                      ...(deals.length ? [{ id: "Deals", label: "Deals" }] : []),
+                      ...categories.map(([cat]) => ({ id: cat, label: cat })),
+                    ].map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className={activeCat === c.id ? `${styles.catChip} ${styles.catChipActive}` : styles.catChip}
+                        onClick={() => goCat(c.id)}
+                      >
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
                 </nav>
               )}
 
               {categories.map(([cat, items]) => (
-                <section key={cat} className={styles.cat} id={`cat-${cat}`}>
+                <section key={cat} className={styles.cat} id={`cat-${cat}`} data-cat={cat}>
                   <h2>{cat}</h2>
                   <motion.div
                     className={styles.grid}
@@ -1048,6 +1086,56 @@ function OrderInner() {
                 </button>
               </div>
               {checkout}
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      {/* Category popup — bottom sheet */}
+      <AnimatePresence>
+        {catOpen ? (
+          <motion.div
+            key="cat-sheet"
+            className={styles.catBackdrop}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cat-title"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={backdropTransition(reduced)}
+            onClick={() => setCatOpen(false)}
+          >
+            <motion.div
+              className={styles.catSheet}
+              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 320 }}
+              animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              exit={reduced ? { opacity: 0 } : { opacity: 0, y: 320 }}
+              transition={reduced ? backdropTransition(true) : sheetTransition}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={styles.catSheetHead}>
+                <h3 id="cat-title">Browse menu</h3>
+                <button type="button" onClick={() => setCatOpen(false)} aria-label="Close">
+                  Close
+                </button>
+              </div>
+              <div className={styles.catSheetList}>
+                {[
+                  ...(deals.length ? [{ id: "Deals", label: "Deals" }] : []),
+                  ...categories.map(([cat]) => ({ id: cat, label: cat })),
+                ].map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className={activeCat === c.id ? styles.catSheetActive : styles.catSheetItem}
+                    onClick={() => goCat(c.id)}
+                  >
+                    <span>{c.label}</span>
+                    {activeCat === c.id && <span aria-hidden>✓</span>}
+                  </button>
+                ))}
+              </div>
             </motion.div>
           </motion.div>
         ) : null}

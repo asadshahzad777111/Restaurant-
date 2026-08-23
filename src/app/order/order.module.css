@@ -235,17 +235,49 @@
   padding-bottom: 0.9rem;
 }
 
-.catNav {
+/* Sticky category bar */
+.catBar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 -0.4rem 1.15rem;
+  padding: 0.5rem 0.4rem;
+  background: color-mix(in srgb, var(--guest-bg) 88%, transparent);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  border-radius: 999px;
+}
+
+/* Mobile popup trigger */
+.catMenuBtn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid rgba(255, 133, 0, 0.45);
+  background: var(--guest-elevated);
+  color: var(--guest-text);
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.catChips {
   display: flex;
   gap: 0.4rem;
   overflow-x: auto;
-  margin: 0 0 1.15rem;
-  padding-bottom: 0.25rem;
+  scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.15rem;
 }
 
 .catChip {
   flex-shrink: 0;
+  scroll-snap-align: start;
   border: 1px solid var(--guest-line);
   background: var(--guest-elevated);
   color: var(--guest-text);
@@ -260,6 +292,86 @@
 
 .catChip:hover {
   border-color: rgba(255, 133, 0, 0.5);
+  color: var(--ember-bright);
+}
+
+.catChipActive {
+  background: var(--ember);
+  border-color: var(--ember);
+  color: var(--ember-ink);
+  font-weight: 800;
+}
+
+/* Category popup (bottom sheet) */
+.catBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(10, 8, 6, 0.6);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.catSheet {
+  width: min(100%, 30rem);
+  max-height: 82vh;
+  padding: 1.15rem 1.25rem 1.4rem;
+  border-radius: 22px 22px 0 0;
+  background: var(--guest-elevated);
+  border: 1px solid var(--guest-line);
+  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.catSheetHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.catSheetHead h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 600;
+}
+
+.catSheetHead button {
+  background: none;
+  border: none;
+  color: var(--guest-muted);
+  font-size: 0.9rem;
+}
+
+.catSheetList {
+  overflow-y: auto;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.catSheetItem,
+.catSheetActive {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 0.95rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--guest-text);
+  border: 1px solid transparent;
+}
+
+.catSheetItem:hover {
+  background: var(--guest-soft);
+}
+
+.catSheetActive {
+  background: rgba(255, 133, 0, 0.12);
+  border-color: rgba(255, 133, 0, 0.4);
   color: var(--ember-bright);
 }
 
