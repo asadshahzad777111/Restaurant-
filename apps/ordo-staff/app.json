@@ -21,6 +21,6 @@
       },
       "edgeToEdgeEnabled": true
     },
-    "plugins": ["expo-secure-store"]
+    "plugins": []
   }
 }

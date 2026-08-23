@@ -1,4 +1,4 @@
-import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Session, Tenant, Order } from "./types";
 
 export const BASE_URL =
@@ -9,15 +9,15 @@ const TOKEN_KEY = "ordo_staff_token_v1";
 
 export async function saveToken(token: string) {
   try {
-    await SecureStore.setItemAsync(TOKEN_KEY, token);
+    await AsyncStorage.setItem(TOKEN_KEY, token);
   } catch {
-    /* web fallback */
+    /* ignore */
   }
 }
 
 export async function readToken(): Promise<string | null> {
   try {
-    return await SecureStore.getItemAsync(TOKEN_KEY);
+    return await AsyncStorage.getItem(TOKEN_KEY);
   } catch {
     return null;
   }
@@ -25,7 +25,7 @@ export async function readToken(): Promise<string | null> {
 
 export async function clearToken() {
   try {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await AsyncStorage.removeItem(TOKEN_KEY);
   } catch {
     /* ignore */
   }
