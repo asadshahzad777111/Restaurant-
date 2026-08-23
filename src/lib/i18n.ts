@@ -74,6 +74,28 @@ export const dict = {
   noResults: { en: "No dishes match your search.", ur: "Aapki search se koi dish nahi mili." },
   browseMenu: { en: "Browse menu", ur: "Menu dekhein" },
   items: { en: "item", ur: "item" },
+
+  // marketing (landing)
+  heroTitle: {
+    en: "The floor, the pass, and the guest — one ORDO.",
+    ur: "Floor, pass, aur guest — sab ORDO mein.",
+  },
+  heroSub: {
+    en: "From QR order to ticket in hand — one system. Simple, fast, isolated.",
+    ur: "QR order se ticket tak — ek system. Simple, fast, isolated.",
+  },
+  openDemo: { en: "Open live demo", ur: "Demo kholo" },
+  scanTable: { en: "Scan a table", ur: "Table scan karo" },
+  fromPrice: { en: "From ₨999 / month", ur: "₨999 / mahinay se" },
+  adminLogin: { en: "Admin Login", ur: "Admin Login" },
+  talkOrdo: { en: "Talk to ORDO", ur: "ORDO se baat karo" },
+  appTitle: { en: "ORDO ko phone mein try karein.", ur: "ORDO ko phone mein try karein." },
+  appBody: {
+    en: "POS, orders, kitchen, aur 58mm Bluetooth thermal print. Demo build — full branded per-kitchen app Super se upload hoti hai.",
+    ur: "POS, orders, kitchen, aur 58mm Bluetooth thermal print. Demo build — full branded per-kitchen app Super se upload hoti hai.",
+  },
+  downloadApk: { en: "Download APK →", ur: "Download APK →" },
+  webDemo: { en: "Ya web demo dekhein", ur: "Ya web demo dekhein" },
 } as const;
 
 export type DictKey = keyof typeof dict;

@@ -151,6 +151,24 @@
   gap: 0.5rem;
 }
 
+.langBtn {
+  border: 1px solid var(--m-line-strong);
+  background: var(--m-elevated);
+  color: var(--m-ink);
+  border-radius: 999px;
+  padding: 0.42rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  transition: transform 0.18s var(--ease-primary), border-color 0.18s ease, color 0.18s ease;
+}
+
+.langBtn:hover {
+  border-color: var(--m-orange);
+  color: var(--m-orange-deep);
+  transform: translateY(-1px);
+}
+
 .navMobileBtns {
   display: none;
   align-items: center;

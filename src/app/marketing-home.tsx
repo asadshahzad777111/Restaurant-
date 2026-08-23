@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion, useInView } from "framer-motion";
 import { controlUrl } from "@/lib/urls";
 import { useCountUp } from "@/lib/use-count-up";
+import { useLang } from "@/lib/lang-context";
 import {
   listContainer,
   listItem,
@@ -294,6 +295,7 @@ const OUTCOMES = [
 ] as const;
 
 export function MarketingHome() {
+  const { lang, toggle, t } = useLang();
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("owner");
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -466,16 +468,32 @@ export function MarketingHome() {
 
           <div className={styles.navActions}>
             <ThemeSwitch theme={theme} onToggle={toggleTheme} />
+            <button
+              type="button"
+              className={styles.langBtn}
+              onClick={toggle}
+              title={lang === "en" ? "اردو / Roman Urdu" : "English"}
+            >
+              {lang === "en" ? "اردو" : "EN"}
+            </button>
             <Link href="/login" className={styles.navOutline}>
-              Admin Login
+              {t("adminLogin")}
             </Link>
             <a href="#contact" className={styles.navSolid}>
-              Talk to ORDO
+              {t("talkOrdo")}
             </a>
           </div>
 
           <div className={styles.navMobileBtns}>
             <ThemeSwitch theme={theme} onToggle={toggleTheme} />
+            <button
+              type="button"
+              className={styles.langBtn}
+              onClick={toggle}
+              title={lang === "en" ? "اردو / Roman Urdu" : "English"}
+            >
+              {lang === "en" ? "اردو" : "EN"}
+            </button>
             <button
               type="button"
               className={menuOpen ? `${styles.navBurger} ${styles.navBurgerOpen}` : styles.navBurger}
@@ -507,10 +525,10 @@ export function MarketingHome() {
                 </a>
               ))}
               <Link href="/login" className={styles.navOutline} onClick={closeMenu}>
-                Admin Login
+                {t("adminLogin")}
               </Link>
               <a href="#contact" className={styles.navSolid} onClick={closeMenu}>
-                Talk to ORDO
+                {t("talkOrdo")}
               </a>
             </motion.div>
           ) : null}
@@ -528,20 +546,20 @@ export function MarketingHome() {
         >
           <p className={styles.eyebrow}>Modern tech for premium hospitality</p>
           <h1 className={styles.heroTitle}>
-            The floor, the pass, and the guest — <em>one ORDO.</em>
+            {t("heroTitle")}
           </h1>
           <p className={styles.heroSub}>
-            QR order se ticket tak — ek system. Simple, fast, isolated.
+            {t("heroSub")}
           </p>
           <div className={styles.heroCtas}>
             <Link href="/order?tenant=DEMO" className={styles.primary}>
-              Open live demo
+              {t("openDemo")}
             </Link>
             <Link href="/scan" className={styles.secondary}>
-              Scan a table
+              {t("scanTable")}
             </Link>
             <a href="#shop" className={styles.ghost}>
-              From ₨999 / month
+              {t("fromPrice")}
             </a>
           </div>
           <ul className={styles.chips}>
@@ -769,18 +787,14 @@ export function MarketingHome() {
             </div>
             <div className={styles.appCopy}>
               <p className={styles.kicker}>Download the app</p>
-              <h2>ORDO ko phone mein try karein.</h2>
-              <p>
-                Yeh staff app hai — POS, orders, kitchen, aur 58mm thermal print (AsFix Bluetooth).
-                Staff login se hi kholta hai, kabhi bhi Super HQ nahi. Demo build — full branded per-kitchen
-                app Super se upload hoti hai.
-              </p>
+              <h2>{t("appTitle")}</h2>
+              <p>{t("appBody")}</p>
               <div className={styles.heroCtas}>
                 <a className={styles.primary} href="/apk/ordo-staff.apk" download>
-                  Download APK →
+                  {t("downloadApk")}
                 </a>
                 <Link href="/order?tenant=DEMO" className={styles.secondary}>
-                  Ya web demo dekhein
+                  {t("webDemo")}
                 </Link>
               </div>
               <p className={styles.appNote}>
