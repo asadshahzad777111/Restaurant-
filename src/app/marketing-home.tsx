@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useInView } from "framer-motion";
 import { controlUrl } from "@/lib/urls";
@@ -346,6 +346,37 @@ export function MarketingHome() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  // Next-level: scroll progress + sticky nav elevation
+  const [progress, setProgress] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        setProgress(max > 0 ? Math.min(1, window.scrollY / max) : 0);
+        setScrolled(window.scrollY > 10);
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  // Next-level: soft mouse-follow glow (fine pointers only)
+  const glowRef = useRef<HTMLDivElement>(null);
+  const onMouseMove = useCallback((e: React.MouseEvent) => {
+    const el = glowRef.current;
+    if (!el) return;
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+    el.style.setProperty("--my", `${e.clientY - r.top}px`);
+  }, []);
+
   const active = TABS.find((t) => t.id === tab)!;
   const waDigits = whatsapp.replace(/\D/g, "");
 
@@ -380,8 +411,15 @@ export function MarketingHome() {
   }
 
   return (
-    <div className={styles.page} data-theme={theme} data-marketing-page>
-      <header className={styles.nav}>
+    <div
+      className={styles.page}
+      data-theme={theme}
+      data-marketing-page
+      onMouseMove={onMouseMove}
+    >
+      <div ref={glowRef} className={styles.mouseGlow} aria-hidden />
+      <div className={styles.scrollProgress} style={{ width: `${progress * 100}%` }} aria-hidden />
+      <header className={scrolled ? `${styles.nav} ${styles.navScrolled}` : styles.nav}>
         <div className={styles.navInner}>
           <Link href="/" className={styles.navBrand} onClick={closeMenu} aria-label="ORDO home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -456,6 +494,8 @@ export function MarketingHome() {
       </header>
 
       <section className={styles.hero}>
+        <div className={styles.heroGlow1} aria-hidden />
+        <div className={styles.heroGlow2} aria-hidden />
         <motion.div
           className={styles.heroCopy}
           variants={enter}
@@ -519,6 +559,18 @@ export function MarketingHome() {
               />
             </picture>
           </figure>
+
+          {/* Floating live-order cards — real POS feel */}
+          <div className={styles.floatCardA} aria-hidden>
+            <span className={styles.floatLive}>● LIVE</span>
+            <strong>Order #1042</strong>
+            <em>Karahi ₨890 · Naan ×2 ₨160</em>
+            <b>TOTAL ₨1,130</b>
+          </div>
+          <div className={styles.floatCardB} aria-hidden>
+            <span>✓ 58mm bill printed</span>
+            <em>Guest track open</em>
+          </div>
           <p className={styles.productCaption}>ORDO OS · live dashboard · ticket in hand</p>
         </motion.div>
       </section>
