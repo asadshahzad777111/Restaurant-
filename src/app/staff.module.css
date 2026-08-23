@@ -326,8 +326,20 @@
 .tableOccupied {
   background: linear-gradient(160deg, #fff3e0, #ffe9cf);
 }
+.tableReserved {
+  background: linear-gradient(160deg, #fdf1de, #fbe3c0);
+  border-left-color: #d9930e !important;
+}
 .tableBill {
   background: linear-gradient(160deg, #e9f1fd, #dcebfb);
+}
+
+.tableReservedMeta {
+  color: #a4740a !important;
+  font-weight: 700;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .ticket h3 {

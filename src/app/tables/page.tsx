@@ -27,7 +27,13 @@ export default function TablesPage() {
   }, [tenant, refresh]);
 
   const statusClass = (s: string) =>
-    s === "empty" ? styles.tableEmpty : s === "occupied" ? styles.tableOccupied : styles.tableBill;
+    s === "empty"
+      ? styles.tableEmpty
+      : s === "occupied"
+        ? styles.tableOccupied
+        : s === "reserved"
+          ? styles.tableReserved
+          : styles.tableBill;
 
   async function saveTables(next: DiningTable[]) {
     setBusy(true);
@@ -169,6 +175,19 @@ export default function TablesPage() {
                   <h3>Table {tb.label}</h3>
                   <p className={styles.muted}>{tb.seats} seats</p>
                   <strong aria-live="polite">{tb.status}</strong>
+                  {tb.status === "reserved" && (
+                    <p className={`${styles.muted} ${styles.tableReservedMeta}`}>
+                      {tb.reservedBy || "Guest"} arriving in{" "}
+                      {tb.reservedUntil ? (
+                        <>
+                          {Math.max(0, Math.ceil((new Date(tb.reservedUntil).getTime() - Date.now()) / 60000))} min
+                          <span> · {new Date(tb.reservedUntil).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                        </>
+                      ) : (
+                        "soon"
+                      )}
+                    </p>
+                  )}
                   {tb.currentOrderId && <p className={styles.muted}>Order linked</p>}
                   {canEdit && (
                     <div className={styles.row} style={{ marginTop: 8 }}>
