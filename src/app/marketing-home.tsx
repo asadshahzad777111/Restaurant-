@@ -784,8 +784,8 @@ export function MarketingHome() {
             <div className={styles.appVis}>
               <span className={styles.appIcon}>📱</span>
               <div className={styles.appMeta}>
-                <strong className={styles.appName}>ORDO Staff app</strong>
-                <span className={styles.appBadge}>Android · v1.0 · ~3.6 MB</span>
+                <strong className={styles.appName}>ORDO Staff + Customer apps</strong>
+                <span className={styles.appBadge}>Android · v2 · Staff 62 MB · Customer 61 MB</span>
               </div>
             </div>
             <div className={styles.appCopy}>
@@ -793,8 +793,19 @@ export function MarketingHome() {
               <h2>{t("appTitle")}</h2>
               <p>{t("appBody")}</p>
               <div className={styles.heroCtas}>
-                <a className={styles.primary} href="/apk/ordo-staff.apk" download>
-                  {t("downloadApk")}
+                <a
+                  className={styles.primary}
+                  href="https://github.com/asadshahzad777111/Restaurant-/releases/download/ordo-apps-v1/ORDO-Staff.apk"
+                  download
+                >
+                  🧑‍🍳 {t("downloadApk")}
+                </a>
+                <a
+                  className={styles.secondary}
+                  href="https://github.com/asadshahzad777111/Restaurant-/releases/download/ordo-apps-v1/ORDO-Customer.apk"
+                  download
+                >
+                  🍽️ Customer app
                 </a>
                 <Link href="/order?tenant=DEMO" className={styles.secondary}>
                   {t("webDemo")}
@@ -1464,7 +1475,7 @@ export function MarketingHome() {
                 height={40}
                 width={175}
               />
-              <p>t("footerTag")</p>
+              <p>{t("footerTag")}</p>
               <div className={styles.footerSocial}>
                 <a href={`https://wa.me/${waDigits}`} target="_blank" rel="noreferrer" aria-label="WhatsApp">
                   <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
