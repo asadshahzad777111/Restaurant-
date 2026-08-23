@@ -74,3 +74,6 @@ apps/**/node_modules/
 # Expo local cache
 apps/ordo-staff/.expo/
 
+
+dsh-*.log
+
