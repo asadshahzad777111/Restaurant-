@@ -1,7 +1,8 @@
 import { useCallback, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { getTenant, pauseOrdering, clearToken } from "../api";
+import { getPrinter, savePrinter, clearPrinter } from "../printerStorage";
 import type { Tenant } from "../types";
 import { theme, radius } from "../theme";
 
@@ -12,11 +13,18 @@ export function SettingsScreen({ navigation }: any) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
+  const [printerName, setPrinterName] = useState("");
+  const [printerMac, setPrinterMac] = useState("");
 
   const load = useCallback(async () => {
     try {
       const d = await getTenant();
       setTenant(d.tenant);
+      const p = await getPrinter();
+      if (p) {
+        setPrinterName(p.name);
+        setPrinterMac(p.mac);
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Load error");
     }
@@ -71,6 +79,21 @@ export function SettingsScreen({ navigation }: any) {
         </Text>
       </TouchableOpacity>
 
+      <Text style={s.title}>Printer (58mm)</Text>
+      <View style={s.card}>
+        <Text style={s.muted}>Pair your Bluetooth thermal printer, then Save. The receipt Prints to it.</Text>
+        <TextInput style={s.input} value={printerName} onChangeText={setPrinterName} placeholder="Printer name" placeholderTextColor={theme.muted} />
+        <TextInput style={s.input} value={printerMac} onChangeText={setPrinterMac} placeholder="MAC / address (e.g. A0:BC:11:22:33)" placeholderTextColor={theme.muted} autoCapitalize="characters" />
+        <View style={s.rowBtns}>
+          <TouchableOpacity style={s.smallBtn} onPress={async () => { await savePrinter({ name: printerName, mac: printerMac }); setMsg("Printer saved"); }}>
+            <Text style={s.smallBtnText}>Save printer</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.smallGhost} onPress={async () => { setPrinterName(""); setPrinterMac(""); await clearPrinter(); setMsg("Printer cleared"); }}>
+            <Text style={s.smallGhostText}>Clear</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <Text style={s.title}>Account</Text>
       <TouchableOpacity
         style={s.logout}
@@ -100,4 +123,10 @@ const s = StyleSheet.create({
   logout: { backgroundColor: theme.danger, borderRadius: radius.md, padding: 15, alignItems: "center" },
   logoutText: { color: "#fff", fontWeight: "800" },
   foot: { color: theme.muted, textAlign: "center", fontSize: 12, marginTop: 4 },
+  input: { backgroundColor: "#fff", borderRadius: radius.sm, borderWidth: 1, borderColor: theme.line, padding: 11, color: theme.ink, marginTop: 4 },
+  rowBtns: { flexDirection: "row", gap: 8, marginTop: 8 },
+  smallBtn: { backgroundColor: theme.accent, paddingHorizontal: 14, paddingVertical: 10, borderRadius: radius.sm },
+  smallBtnText: { color: "#fff", fontWeight: "800" },
+  smallGhost: { borderWidth: 1, borderColor: theme.line, paddingHorizontal: 14, paddingVertical: 10, borderRadius: radius.sm },
+  smallGhostText: { color: theme.muted, fontWeight: "700" },
 });

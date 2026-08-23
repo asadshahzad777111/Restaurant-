@@ -1,4 +1,5 @@
 import { buildReceiptEscPos, receiptRows } from "./escpos";
+import { getPrinter } from "./printerStorage";
 import type { Order } from "./types";
 
 /**
@@ -7,11 +8,11 @@ import type { Order } from "./types";
  * wire the bottom of sendBytes() to your ESC/POS Bluetooth plugin (e.g.
  * react-native-thermal-printer, or the AsFix Capacitor bridge in the Staff APK).
  */
-async function sendBytes(bytes: Uint8Array): Promise<boolean> {
+async function sendBytes(bytes: Uint8Array, printer?: { name: string; mac: string }): Promise<boolean> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const RN = (globalThis as any);
-  /* React Native BLE thermal printer */
-  // if (RN?.ThermalPrinter?.printRaw) { await RN.ThermalPrinter.printRaw(bytes); return true; }
+  /* React Native BLE thermal printer — use printer?.mac to connect */
+  // if (RN?.ThermalPrinter?.printRaw) { await RN.ThermalPrinter.printRaw(bytes, printer?.mac); return true; }
   /* Capacitor AsFix bridge (Staff APK) */
   // if (window?.Capacitor?.Plugins?.AsfixThermalPrint?.printEscPos) {
   //   const { printEscPos } = window.Capacitor.Plugins.AsfixThermalPrint;
@@ -19,11 +20,12 @@ async function sendBytes(bytes: Uint8Array): Promise<boolean> {
   //   if (r?.ok) return true;
   // }
   // eslint-disable-next-line no-console
-  console.log("ESC/POS bytes built (", bytes.length, ") — no native printer transport in this run");
+  console.log("ESC/POS bytes built (", bytes.length, ") — no native printer transport in this run", printer?.name || "");
   return false;
 }
 
 export async function printOrder(order: Order, currency: string): Promise<boolean> {
+  const printer = await getPrinter();
   const shop = order.serviceType.toUpperCase();
   const date = new Date(order.createdAt).toLocaleString();
   const lines = order.lines.map((l) => ({
@@ -37,8 +39,8 @@ export async function printOrder(order: Order, currency: string): Promise<boolea
     date,
     lines,
     total: `${currency} ${order.total}`,
-    footer: "Thank you",
+    footer: printer ? `Printer: ${printer.name}` : "Thank you",
   });
   const bytes = buildReceiptEscPos(rows, { cut: true });
-  return sendBytes(bytes);
+  return sendBytes(bytes, printer ?? undefined);
 }
