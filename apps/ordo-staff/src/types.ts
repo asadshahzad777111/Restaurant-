@@ -120,8 +120,11 @@ export interface DiningTable {
   id: string;
   label: string;
   seats: number;
-  status: "empty" | "occupied" | "bill";
+  status: "empty" | "occupied" | "reserved" | "bill";
   currentOrderId?: string;
+  reservedBy?: string;
+  reservedUntil?: string;
+  reservedMinutes?: number;
 }
 
 export interface Session {

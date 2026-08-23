@@ -270,8 +270,19 @@ export default function ScanPage() {
         <motion.div className={styles.installGroup} variants={item} initial="hidden" animate="show">
           <div className={styles.installHead}>📲 Get ORDO on your phone</div>
           <div className={styles.installRow}>
-            <motion.a className={styles.install} href="/apk/ordo-staff.apk" download>
+            <motion.a
+              className={styles.install}
+              href="https://github.com/asadshahzad777111/Restaurant-/releases/download/ordo-apps-v1/ORDO-Staff.apk"
+              download
+            >
               🧑‍🍳 Staff app
+            </motion.a>
+            <motion.a
+              className={styles.install}
+              href="https://github.com/asadshahzad777111/Restaurant-/releases/download/ordo-apps-v1/ORDO-Customer.apk"
+              download
+            >
+              🍽️ Customer app
             </motion.a>
           </div>
         </motion.div>
