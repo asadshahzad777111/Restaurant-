@@ -26,12 +26,12 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar style="light" />
       <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {hasToken ? (
-            <Stack.Screen name="Home" component={HomeScreen} />
-          ) : (
-            <Stack.Screen name="Login" component={LoginScreen} />
-          )}
+        <Stack.Navigator
+          screenOptions={{ headerShown: false }}
+          initialRouteName={hasToken ? "Home" : "Login"}
+        >
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Home" component={HomeScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
