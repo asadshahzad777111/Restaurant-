@@ -19,6 +19,8 @@ export function OrdersScreen() {
   const { orders, setOrders, newOrders, dismiss } = useNewOrders(5000);
   const [err, setErr] = useState("");
   const [selected, setSelected] = useState<Order | null>(null);
+
+  async function advance(o: Order) {
     const next = NEXT[o.status];
     if (!next) return;
     try {
