@@ -7,19 +7,25 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { login } from "../api";
 import { theme, radius } from "../theme";
 
 export function LoginScreen({ navigation }: any) {
-  const [code, setCode] = useState("DEMO");
-  const [username, setUsername] = useState("admin");
+  const [code, setCode] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function onLogin() {
+    if (!code.trim() || !username.trim() || !password) {
+      setError("Enter code, username and password");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -38,44 +44,61 @@ export function LoginScreen({ navigation }: any) {
         <View style={s.card}>
           <Text style={s.brand}>ORDO</Text>
           <Text style={s.sub}>Staff login</Text>
-          <Input label="Restaurant code" value={code} onChange={setCode} autoCapitalize="characters" />
-          <Input label="Username" value={username} onChange={setUsername} />
-          <Input label="Password" value={password} onChange={setPassword} secure />
+          <View style={s.field}>
+            <Text style={s.label}>Restaurant code</Text>
+            <TextInput
+              style={s.input}
+              value={code}
+              onChangeText={setCode}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              placeholder="DEMO"
+              placeholderTextColor="#7a7064"
+            />
+          </View>
+          <View style={s.field}>
+            <Text style={s.label}>Username</Text>
+            <TextInput
+              style={s.input}
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="username"
+              placeholder="admin"
+              placeholderTextColor="#7a7064"
+            />
+          </View>
+          <View style={s.field}>
+            <Text style={s.label}>Password</Text>
+            <View style={s.passRow}>
+              <TextInput
+                style={[s.input, s.passInput]}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPass}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="current-password"
+                placeholder="••••••••"
+                placeholderTextColor="#7a7064"
+              />
+              <TouchableOpacity style={s.eye} onPress={() => setShowPass((v) => !v)}>
+                <Text style={s.eyeText}>{showPass ? "🙈" : "👁️"}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
           {error ? <Text style={s.error}>{error}</Text> : null}
           <TouchableOpacity style={s.btn} onPress={() => void onLogin()} disabled={busy}>
-            <Text style={s.btnText}>{busy ? "Signing in…" : "Sign in"}</Text>
+            {busy ? (
+              <ActivityIndicator color="#120b07" />
+            ) : (
+              <Text style={s.btnText}>Sign in</Text>
+            )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
-}
-
-function Input({
-  label,
-  value,
-  onChange,
-  secure,
-  autoCapitalize,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  secure?: boolean;
-  autoCapitalize?: "characters";
-}) {
-  return (
-    <View style={s.field}>
-      <Text style={s.label}>{label}</Text>
-      <TextInput
-        style={s.input}
-        value={value}
-        onChangeText={onChange}
-        secureTextEntry={secure}
-        autoCapitalize={autoCapitalize}
-        autoCorrect={false}
-      />
-    </View>
   );
 }
 
@@ -102,6 +125,10 @@ const s = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
   },
+  passRow: { flexDirection: "row", alignItems: "center" },
+  passInput: { flex: 1 },
+  eye: { padding: 10, position: "absolute", right: 6 },
+  eyeText: { fontSize: 18 },
   btn: {
     backgroundColor: theme.accent,
     borderRadius: 999,

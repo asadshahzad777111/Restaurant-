@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureStore, addOrder, readTenant, findTenantMetaByCode, findTenantMetaById } from "@/lib/db";
+import { ensureStore, addOrder, readTenant, findTenantMetaByCode, findTenantMetaById, updateStock } from "@/lib/db";
 import { AuthError, hasAnyPermission, hasPermission, requireTenantSession } from "@/lib/session";
 import { assertOrderRules } from "@/lib/guest";
 import { assertGuestPaymentAllowed } from "@/lib/payments";
 import { computeFees, lineUnitPrice } from "@/lib/fees";
+import { applyStockMovement } from "@/lib/stock";
 import type { LineModifier, OrderLine } from "@/lib/tenant-types";
 import type { AdvanceRail, PaymentMethod, PaymentStatus, ServiceType } from "@/lib/types";
 import { sendNewOrderEmail, sendOrderWhatsapp, tenantAdminEmails } from "@/lib/notify";
@@ -156,7 +157,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Track requested quantities per menu item for stock enforcement.
+    const requestedQtyByItem = new Map<string, number>();
     for (const line of rawLines) {
+      const qty = Math.round(Number(line.qty));
+      if (!Number.isFinite(qty) || qty <= 0) {
+        return NextResponse.json(
+          { error: `${line.name || "Item"} has an invalid quantity` },
+          { status: 400 },
+        );
+      }
       const item = tenant.menu.find((m) => m.id === line.itemId);
       if (!item || !item.available) {
         return NextResponse.json(
@@ -164,35 +174,67 @@ export async function POST(req: NextRequest) {
           { status: 400 },
         );
       }
-      // Stock 86: if a stock row shares this item name and qty is 0, block sale.
+      const itemQty = (requestedQtyByItem.get(item.id) || 0) + qty;
+      requestedQtyByItem.set(item.id, itemQty);
+      // Stock 86: block sale once requested qty exceeds what's available.
       const stockHit = (tenant.stock || []).find(
         (s) => s.name.trim().toLowerCase() === item.name.trim().toLowerCase(),
       );
-      if (stockHit && stockHit.quantity <= 0) {
+      if (stockHit && stockHit.quantity < itemQty) {
         return NextResponse.json(
-          { error: `${item.name} is out of stock (86)` },
+          {
+            error:
+              stockHit.quantity <= 0
+                ? `${item.name} is out of stock (86)`
+                : `${item.name}: only ${stockHit.quantity} in stock`,
+          },
           { status: 400 },
         );
       }
     }
 
-    const lines: OrderLine[] = rawLines.map((l) => ({
-      itemId: l.itemId,
-      name: l.name,
-      qty: l.qty,
-      modifiers: l.modifiers,
-      lineNote: l.lineNote,
-      unitPrice: l.unitPrice ?? lineUnitPrice(l.basePrice, l.modifiers),
-    }));
+    // Build authoritative lines from the tenant menu so a client can't tamper
+    // with prices. unitPrice = menu base + validated modifier priceDeltas.
+    const lines: OrderLine[] = rawLines.map((l) => {
+      const item = tenant.menu.find((m) => m.id === l.itemId)!;
+      const validMods = (l.modifiers || []).filter((m) => {
+        const group = (item.modifiers || []).find((g) => g.id === m.groupId);
+        return group && group.options.some((o) => o.id === m.optionId);
+      });
+      return {
+        itemId: item.id,
+        name: item.name,
+        qty: Math.round(Number(l.qty)),
+        modifiers: validMods,
+        lineNote: l.lineNote,
+        unitPrice: lineUnitPrice(item.price, validMods),
+      };
+    });
 
-    const fees = computeFees(tenant.shop, serviceType, lines);
-    let discount = 0;
-    if (channel === "pos") {
-      const n = Math.round(Number(rawDiscount) || 0);
-      discount = Math.max(0, Math.min(n, fees.total));
-    }
-    const total = Math.max(0, fees.total - discount);
+    const fees = computeFees(tenant.shop, serviceType, lines, rawDiscount && channel === "pos" ? Math.round(Number(rawDiscount)) : 0);
+    const discount = fees.discount;
+    const total = fees.total;
     const now = new Date().toISOString();
+
+    // Idempotency guard: if an identical order (same channel, service type,
+    // payment, and line signature) was just placed within 10s, return it instead
+    // of creating a duplicate from a double-tap / network retry.
+    const sig = JSON.stringify(
+      [...lines.map((l) => `${l.itemId}:${l.qty}:${l.unitPrice}`).sort(), serviceType, paymentMethod, total],
+    );
+    const dup = tenant.orders.find(
+      (o) =>
+        o.channel === channel &&
+        o.status === "placed" &&
+        Date.now() - new Date(o.createdAt).getTime() < 10_000 &&
+        JSON.stringify(
+          [...o.lines.map((l) => `${l.itemId}:${l.qty}:${l.unitPrice}`).sort(), o.serviceType, o.paymentMethod, o.total],
+        ) === sig,
+    );
+    if (dup) {
+      return NextResponse.json({ order: dup });
+    }
+
     const order = await addOrder(tenantId, {
       channel,
       serviceType,
@@ -225,6 +267,18 @@ export async function POST(req: NextRequest) {
       total,
       discount: discount || undefined,
     });
+
+    // Deduct stock for this sale (POS / guest). Best-effort — don't block the order.
+    if ((tenant.stock || []).length) {
+      void (async () => {
+        try {
+          const t = await readTenant(tenantId);
+          await updateStock(tenantId, applyStockMovement(t.stock || [], lines, -1));
+        } catch (err) {
+          console.error("[stock] deduct failed:", err instanceof Error ? err.message : err);
+        }
+      })();
+    }
 
     // Don't block the guest/POS response on Resend — free-tier latency killer.
     void (async () => {

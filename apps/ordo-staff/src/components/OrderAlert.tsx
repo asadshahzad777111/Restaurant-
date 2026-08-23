@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Animated, useEffect as _u } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native";
 import { useEffect, useRef } from "react";
 import type { Order } from "../types";
 import { theme } from "../theme";

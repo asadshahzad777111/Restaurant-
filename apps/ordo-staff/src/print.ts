@@ -28,18 +28,27 @@ export async function printOrder(order: Order, currency: string): Promise<boolea
   const printer = await getPrinter();
   const shop = order.serviceType.toUpperCase();
   const date = new Date(order.createdAt).toLocaleString();
-  const lines = order.lines.map((l) => ({
-    name: l.name,
-    qty: l.qty,
-    amount: `${currency} ${l.unitPrice * l.qty}`,
-  }));
+  const lines = order.lines.flatMap((l) => {
+    const base = { name: l.name, qty: l.qty, amount: `${currency} ${l.unitPrice * l.qty}` };
+    const mods = (l.modifiers || []).map((m) => ({
+      name: `  + ${m.optionName}`,
+      qty: 1,
+      amount: m.priceDelta ? `+${currency} ${m.priceDelta}` : "",
+    }));
+    return [base, ...mods];
+  });
+  const feeLines = [
+    order.fees?.serviceCharge ? `Service: ${currency} ${order.fees.serviceCharge}` : "",
+    order.fees?.tax ? `Tax: ${currency} ${order.fees.tax}` : "",
+    order.discount ? `Discount: -${currency} ${order.discount}` : "",
+  ].filter(Boolean);
   const rows = receiptRows({
     shop,
     billNo: `#${order.number}`,
     date,
     lines,
     total: `${currency} ${order.total}`,
-    footer: printer ? `Printer: ${printer.name}` : "Thank you",
+    footer: [...feeLines, printer ? `Printer: ${printer.name}` : "Thank you"].join(" | "),
   });
   const bytes = buildReceiptEscPos(rows, { cut: true });
   return sendBytes(bytes, printer ?? undefined);

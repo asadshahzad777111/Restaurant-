@@ -36,6 +36,9 @@
   --staff-muted: #71675e;
   --staff-accent: #ff8500;
   --staff-nav: #211a15;
+  --staff-warning: #d9930e;
+  --staff-danger: #c94a3c;
+  --staff-success: #2f9e6b;
 
   /* AsFix-aligned staff chrome (Admin / POS / Kitchen / Sales) — one background family */
   --asfix-bg: #f3eee7;

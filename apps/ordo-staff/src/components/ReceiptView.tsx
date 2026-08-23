@@ -34,12 +34,42 @@ export function ReceiptView({
                 </Text>
                 <View style={s.rule} />
                 {order.lines.map((l, i) => (
-                  <View key={i} style={s.lineRow}>
-                    <Text style={s.lineL}>{`${l.qty}× ${l.name}`}</Text>
-                    <Text style={s.lineR}>{l.unitPrice * l.qty}</Text>
+                  <View key={i} style={s.lineGroup}>
+                    <View style={s.lineRow}>
+                      <Text style={s.lineL}>{`${l.qty}× ${l.name}`}</Text>
+                      <Text style={s.lineR}>{l.unitPrice * l.qty}</Text>
+                    </View>
+                    {(l.modifiers || []).map((m) => (
+                      <Text key={m.optionId} style={s.mod}>
+                        + {m.optionName}
+                        {m.priceDelta ? ` (${m.priceDelta > 0 ? "+" : ""}${m.priceDelta})` : ""}
+                      </Text>
+                    ))}
                   </View>
                 ))}
                 <View style={s.rule} />
+                <View style={s.lineRow}>
+                  <Text style={s.totalL}>Subtotal</Text>
+                  <Text style={s.lineR}>{order.fees?.subtotal ?? order.subtotal}</Text>
+                </View>
+                {order.fees?.serviceCharge ? (
+                  <View style={s.lineRow}>
+                    <Text style={s.totalL}>Service</Text>
+                    <Text style={s.lineR}>{order.fees.serviceCharge}</Text>
+                  </View>
+                ) : null}
+                {order.fees?.tax ? (
+                  <View style={s.lineRow}>
+                    <Text style={s.totalL}>Tax</Text>
+                    <Text style={s.lineR}>{order.fees.tax}</Text>
+                  </View>
+                ) : null}
+                {order.discount ? (
+                  <View style={s.lineRow}>
+                    <Text style={s.totalL}>Discount</Text>
+                    <Text style={s.lineR}>-{order.discount}</Text>
+                  </View>
+                ) : null}
                 <View style={s.lineRow}>
                   <Text style={s.totalL}>TOTAL</Text>
                   <Text style={s.totalR}>
@@ -80,6 +110,8 @@ const s = StyleSheet.create({
   lineRow: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
   lineL: { color: "#111", fontSize: 12 },
   lineR: { color: "#111", fontWeight: "700", fontSize: 12 },
+  lineGroup: { gap: 1 },
+  mod: { color: "#555", fontSize: 11, paddingLeft: 8 },
   totalL: { color: "#111", fontWeight: "800", fontSize: 14 },
   totalR: { color: "#c45c26", fontWeight: "800", fontSize: 14 },
   foot: { color: "#555", textAlign: "center", fontSize: 11, marginTop: 8 },

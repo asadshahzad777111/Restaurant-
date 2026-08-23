@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { PlanGate } from "@/components/PlanGate";
 import { useStore } from "@/lib/store";
 import { uploadTenantMedia } from "@/lib/media-client";
+import { money } from "@/lib/fees";
 import type { MenuItem } from "@/lib/tenant-types";
 import styles from "../staff.module.css";
 
@@ -50,6 +51,27 @@ export default function MenuPage() {
     if ((data as { tenant?: typeof tenant }).tenant) {
       applyTenant((data as { tenant: NonNullable<typeof tenant> }).tenant);
     }
+  }
+
+  async function deleteItem(itemId: string) {
+    if (!tenant) return;
+    const res = await api("/api/admin", {
+      method: "PUT",
+      body: JSON.stringify({
+        action: "menu",
+        menu: tenant.menu.filter((m) => m.id !== itemId).map((m) => ({ ...m, modifiers: m.modifiers ?? [] })),
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setMsg((data as { error?: string }).error || "Failed");
+      return;
+    }
+    if ((data as { tenant?: typeof tenant }).tenant) {
+      applyTenant((data as { tenant: NonNullable<typeof tenant> }).tenant);
+    }
+    if (editingId === itemId) clearDraft();
+    setMsg("Item deleted");
   }
 
   function startEdit(item: MenuItem) {
@@ -213,21 +235,37 @@ export default function MenuPage() {
                   {(m.modifiers?.length || 0) > 0 ? " · mods" : ""}
                 </strong>
                 <p className={styles.muted}>
-                  {m.category} · {tenant?.shop.currency} {m.price}
+                  {m.category} · {tenant ? money(tenant.shop.currency, m.price) : m.price}
                 </p>
               </div>
-              <button type="button" className={styles.btnGhost} onClick={() => startEdit(m)}>
-                Edit
-              </button>
-              <button
-                type="button"
-                className={m.available ? styles.btnGhost : styles.btn}
-                onClick={() => void toggle86(m.id)}
-              >
-                {m.available ? "86" : "Restore"}
-              </button>
+              <div className={styles.cardActions}>
+                <button type="button" className={styles.btnGhost} onClick={() => startEdit(m)}>
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className={m.available ? styles.btnGhost : styles.btn}
+                  onClick={() => void toggle86(m.id)}
+                >
+                  {m.available ? "86" : "Restore"}
+                </button>
+                <button
+                  type="button"
+                  className={styles.btnGhost}
+                  onClick={() => {
+                    if (window.confirm(`Delete ${m.name}?`)) void deleteItem(m.id);
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
             </li>
           ))}
+          {(tenant?.menu ?? []).length === 0 && (
+            <li className={styles.mobileCard}>
+              <p className={styles.muted}>No items yet — add your first item above.</p>
+            </li>
+          )}
         </ul>
         <div className={`${styles.tableScroll} ${styles.tableScrollDesktop}`}>
         <table className={`${styles.table} ${styles.tableDesktop}`}>
@@ -249,7 +287,7 @@ export default function MenuPage() {
                   {(m.modifiers?.length || 0) > 0 ? " · mods" : ""}
                 </td>
                 <td>{m.category}</td>
-                <td>{m.price}</td>
+                <td>{tenant ? money(tenant.shop.currency, m.price) : m.price}</td>
                 <td>
                   <button
                     type="button"
@@ -260,12 +298,30 @@ export default function MenuPage() {
                   </button>
                 </td>
                 <td>
-                  <button type="button" className={styles.btnGhost} onClick={() => startEdit(m)}>
-                    Edit
-                  </button>
+                  <div className={styles.row}>
+                    <button type="button" className={styles.btnGhost} onClick={() => startEdit(m)}>
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.btnGhost}
+                      onClick={() => {
+                        if (window.confirm(`Delete ${m.name}?`)) void deleteItem(m.id);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
+            {(tenant?.menu ?? []).length === 0 && (
+              <tr>
+                <td colSpan={5} className={styles.muted} style={{ padding: "1rem" }}>
+                  No items yet — add your first item above.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
         </div>

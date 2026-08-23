@@ -76,20 +76,26 @@ export default function PosPage() {
       })),
     [cart],
   );
+  const discountStrNum = Math.max(0, Math.round(Number(discountStr) || 0));
   const fees = useMemo(() => {
     if (!tenant) return null;
-    return computeFees(tenant.shop, "counter", lines);
-  }, [tenant, lines]);
+    return computeFees(tenant.shop, "counter", lines, discountStrNum);
+  }, [tenant, lines, discountStrNum]);
+
+  const stockOf = useCallback((name: string) => {
+    const hit = (tenant?.stock ?? []).find(
+      (s) => s.name.trim().toLowerCase() === name.trim().toLowerCase(),
+    );
+    return hit ? hit.quantity : null;
+  }, [tenant?.stock]);
 
   function startAdd(item: MenuItem) {
     if (!item.available) {
       setMsg(`${item.name} is 86 / unavailable`);
       return;
     }
-    const stockHit = (tenant?.stock ?? []).find(
-      (s) => s.name.trim().toLowerCase() === item.name.trim().toLowerCase(),
-    );
-    if (stockHit && stockHit.quantity <= 0) {
+    const avail = stockOf(item.name);
+    if (avail !== null && avail <= 0) {
       setMsg(`${item.name} is out of stock (86)`);
       return;
     }
@@ -108,7 +114,13 @@ export default function PosPage() {
   function pushLine(item: MenuItem, modifiers: LineModifier[]) {
     const unitPrice = lineUnitPrice(item.price, modifiers);
     const key = `${item.id}:${modifiers.map((m) => m.optionId).sort().join(",")}`;
+    const avail = stockOf(item.name);
     setCart((prev) => {
+      const curQty = prev.reduce((s, p) => (p.item.id === item.id ? s + p.qty : s), 0);
+      if (avail !== null && curQty + 1 > avail) {
+        setMsg(avail <= 0 ? `${item.name} is out of stock (86)` : `${item.name}: only ${avail} left`);
+        return prev;
+      }
       const hit = prev.find((p) => p.key === key);
       if (hit) return prev.map((p) => (p.key === key ? { ...p, qty: p.qty + 1 } : p));
       return [...prev, { key, item, qty: 1, modifiers, unitPrice }];
@@ -120,7 +132,20 @@ export default function PosPage() {
       prev.flatMap((p) => {
         if (p.key !== key) return [p];
         const qty = p.qty + delta;
-        return qty <= 0 ? [] : [{ ...p, qty }];
+        if (qty <= 0) return [];
+        if (delta > 0) {
+          const avail = stockOf(p.item.name);
+          if (avail !== null) {
+            const onOtherLines = prev
+              .filter((x) => x.key !== key && x.item.id === p.item.id)
+              .reduce((s, x) => s + x.qty, 0);
+            if (onOtherLines + qty > avail) {
+              setMsg(avail <= 0 ? `${p.item.name} is out of stock (86)` : `${p.item.name}: only ${avail} left`);
+              return [p];
+            }
+          }
+        }
+        return [{ ...p, qty }];
       }),
     );
   }
@@ -129,13 +154,14 @@ export default function PosPage() {
     return cart.filter((c) => c.item.id === itemId).reduce((s, c) => s + c.qty, 0);
   }
 
-  const discount = Math.max(
-    0,
-    Math.min(Math.round(Number(discountStr) || 0), fees?.total || 0),
-  );
-  const billTotal = Math.max(0, (fees?.total || 0) - discount);
+  const discount = fees?.discount ?? 0;
+  const billTotal = fees?.total ?? 0;
   const tendered = Math.round(Number(cashGiven) || 0);
   const change = pay === "cash" && tendered > 0 ? tendered - billTotal : null;
+  // Block a cash sale only when the cashier typed an amount that's short.
+  const cashShort = pay === "cash" && cashGiven.trim() !== "" && change !== null && change < 0;
+  const canCharge =
+    !charging && cart.length > 0 && customerName.trim() !== "" && !cashShort;
 
   async function checkout() {
     if (!cart.length || !tenant || !fees || charging) return;
@@ -223,24 +249,35 @@ export default function PosPage() {
               ))}
             </div>
             <div className={styles.menuGrid}>
+              {visibleMenu.length === 0 && (
+                <p className={styles.muted} style={{ gridColumn: "1 / -1", padding: "1rem" }}>
+                  No items in this category — add some under Menu.
+                </p>
+              )}
               {visibleMenu.map((m) => {
                 const inCart = qtyOf(m.id);
+                const isOff = !m.available;
                 return (
                   <button
                     key={m.id}
                     type="button"
-                    className={styles.item}
+                    className={`${styles.item} ${isOff ? styles.item86 : ""}`}
                     onClick={() => startAdd(m)}
-                    style={{ opacity: m.available ? 1 : 0.45 }}
+                    style={{ opacity: m.available ? 1 : 0.55 }}
                   >
+                    {isOff ? <span className={styles.item86Badge}>86</span> : null}
                     {inCart > 0 ? <span className={styles.itemQtyBadge}>{inCart}</span> : null}
                     {m.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={m.imageUrl} alt="" loading="lazy" className={styles.itemImg} />
-                    ) : null}
+                    ) : (
+                      <span className={styles.itemAvatar} aria-hidden>
+                        {(m.imageEmoji || m.name.slice(0, 1) || "•").toUpperCase()}
+                      </span>
+                    )}
                     <strong>
                       {m.name}
-                      {!m.available ? " · 86" : ""}
+                      {isOff ? " · 86" : ""}
                     </strong>
                     <span className={styles.muted}>
                       {tenant?.shop.currency} {m.price}
@@ -411,7 +448,7 @@ export default function PosPage() {
                 />
               </label>
               <label>
-                Discount PKR (optional)
+                Discount {tenant?.shop.currency} (optional)
                 <input
                   value={discountStr}
                   onChange={(e) => setDiscountStr(e.target.value.replace(/[^\d]/g, ""))}
@@ -442,7 +479,7 @@ export default function PosPage() {
               <button
                 type="button"
                 className={styles.btn}
-                disabled={charging || !cart.length || !customerName.trim()}
+                disabled={!canCharge}
                 onClick={() => void checkout()}
               >
                 {charging ? "Charging…" : "Charge & print"}

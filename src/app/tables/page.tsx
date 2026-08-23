@@ -26,8 +26,8 @@ export default function TablesPage() {
     if (!tenant) void refresh({ force: true });
   }, [tenant, refresh]);
 
-  const color = (s: string) =>
-    s === "empty" ? "#e8f5e9" : s === "occupied" ? "#fff3e0" : "#e3f2fd";
+  const statusClass = (s: string) =>
+    s === "empty" ? styles.tableEmpty : s === "occupied" ? styles.tableOccupied : styles.tableBill;
 
   async function saveTables(next: DiningTable[]) {
     setBusy(true);
@@ -114,20 +114,24 @@ export default function TablesPage() {
         {canEdit && (
           <form className={styles.form} onSubmit={(e) => void addTable(e)} style={{ marginBottom: "1rem" }}>
             <h3 style={{ margin: 0 }}>Add table</h3>
-            <input
-              placeholder="Label (e.g. 1, A3, Patio)"
-              value={draft.label}
-              onChange={(e) => setDraft({ ...draft, label: e.target.value })}
-              required
-            />
-            <input
-              type="number"
-              min={1}
-              max={50}
-              placeholder="Seats"
-              value={draft.seats}
-              onChange={(e) => setDraft({ ...draft, seats: Number(e.target.value) })}
-            />
+            <label>
+              Label (e.g. 1, A3, Patio)
+              <input
+                value={draft.label}
+                onChange={(e) => setDraft({ ...draft, label: e.target.value })}
+                required
+              />
+            </label>
+            <label>
+              Seats
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={draft.seats}
+                onChange={(e) => setDraft({ ...draft, seats: Number(e.target.value) })}
+              />
+            </label>
             <button type="submit" className={styles.btn} disabled={busy}>
               Add table
             </button>
@@ -136,7 +140,7 @@ export default function TablesPage() {
 
         <div className={styles.kitchen}>
           {tables.map((tb) => (
-            <article key={tb.id} className={styles.ticket} style={{ background: color(tb.status) }}>
+            <article key={tb.id} className={`${styles.ticket} ${statusClass(tb.status)}`}>
               {editingId === tb.id ? (
                 <>
                   <input
@@ -164,7 +168,7 @@ export default function TablesPage() {
                 <>
                   <h3>Table {tb.label}</h3>
                   <p className={styles.muted}>{tb.seats} seats</p>
-                  <strong style={{ textTransform: "uppercase" }}>{tb.status}</strong>
+                  <strong aria-live="polite">{tb.status}</strong>
                   {tb.currentOrderId && <p className={styles.muted}>Order linked</p>}
                   {canEdit && (
                     <div className={styles.row} style={{ marginTop: 8 }}>

@@ -23,6 +23,13 @@
   margin-top: 0.35rem;
 }
 
+/* Stat card values own their size — don't inherit the 1.6rem card heading. */
+.statCard strong {
+  display: block;
+  margin-top: 0;
+  font-size: 1.45rem;
+}
+
 .muted {
   color: var(--staff-muted);
   font-size: 0.9rem;
@@ -152,6 +159,42 @@
   background: #f3eee8;
 }
 
+/* Letter / emoji avatar when an item has no image */
+.itemAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 96px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  background:
+    linear-gradient(150deg, rgba(255, 133, 0, 0.14), rgba(255, 133, 0, 0.04) 60%),
+    #f3eee8;
+  color: var(--staff-accent);
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+/* 86 / unavailable treatment */
+.item86 {
+  filter: grayscale(0.6);
+}
+
+.item86Badge {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.4rem;
+  z-index: 1;
+  background: var(--staff-danger, #c94a3c);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.12rem 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
 .catRow {
   display: flex;
   gap: 0.4rem;
@@ -255,6 +298,17 @@
   border-left-color: #2f9e6b;
 }
 
+/* Table floor-map status cards (use theme hues, not raw inline hex) */
+.tableEmpty {
+  background: linear-gradient(160deg, #eef7ee, #e6f2e7);
+}
+.tableOccupied {
+  background: linear-gradient(160deg, #fff3e0, #ffe9cf);
+}
+.tableBill {
+  background: linear-gradient(160deg, #e9f1fd, #dcebfb);
+}
+
 .ticket h3 {
   margin: 0 0 0.5rem;
   overflow-wrap: anywhere;
@@ -288,6 +342,37 @@
   border: 1px solid #e8e4de;
   border-radius: 12px;
   padding: 1rem;
+}
+
+.cancelInput {
+  width: 100%;
+  margin-top: 8px;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #ddd6cc;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  min-width: 0;
+}
+
+/* Staff permission checkboxes — tidy responsive grid of chips */
+.permGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.permChip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid #e8e4de;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--staff-text);
 }
 
 .form input,

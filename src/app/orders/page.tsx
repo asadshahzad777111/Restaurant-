@@ -103,6 +103,11 @@ export default function OrdersPage() {
       <PrintSuccess kind={printKind} onDone={dismissPrint} />
       <div className={styles.page}>
         {msg && <p className={styles.muted}>{msg}</p>}
+        {(tenant?.orders ?? []).length === 0 && (
+          <p className={styles.muted} style={{ padding: "1rem 0" }}>
+            No orders yet — take one on POS or wait for a guest order.
+          </p>
+        )}
         <ul className={styles.mobileCards}>
           {(tenant?.orders ?? []).map((o) => (
             <li
@@ -325,7 +330,7 @@ export default function OrdersPage() {
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Reason e.g. customer left / kitchen error"
-              style={{ width: "100%", marginTop: 8, padding: 8 }}
+              className={styles.cancelInput}
             />
             <div className={styles.row}>
               <button type="button" className={styles.btn} onClick={() => void cancelOrder()}>

@@ -101,10 +101,17 @@ export async function saveTables(tables: unknown[]): Promise<Tenant> {
 export async function placeOrder(input: {
   serviceType: "counter";
   paymentMethod: string;
-  lines: Array<{ itemId: string; name: string; qty: number; unitPrice: number; modifiers?: unknown[] }>;
+  lines: Array<{
+    itemId: string;
+    name: string;
+    qty: number;
+    unitPrice: number;
+    modifiers?: { groupId: string; optionId: string }[];
+  }>;
   note?: string;
   customerName?: string;
   customerPhone?: string;
+  discount?: number;
 }): Promise<Order> {
   const res = await authFetch("/orders", {
     method: "POST",

@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { getTenant } from "../api";
 import type { Tenant } from "../types";
@@ -8,15 +8,18 @@ import { theme, radius } from "../theme";
 export function DashboardScreen({ navigation }: any) {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [err, setErr] = useState("");
-  const [today, setToday] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    setLoading(true);
+    setErr("");
     try {
       const d = await getTenant();
       setTenant(d.tenant);
-      setToday(Date.now());
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Load error");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -43,35 +46,50 @@ export function DashboardScreen({ navigation }: any) {
   // @ts-ignore React Navigation nested tab navigation
   const goto = (tab: string) => navigation.navigate(tab);
 
+  const cur = tenant?.shop.currency || "PKR";
+
   return (
     <ScrollView style={s.root} contentContainerStyle={s.content}>
-      {err ? <Text style={s.err}>{err}</Text> : null}
-      <View style={s.grid}>
-        <View style={[s.stat, s.statMain]}>
-          <Text style={s.statLabel}>Today revenue</Text>
-          <Text style={s.statValue}>
-            {tenant?.shop.currency} {revenue.toLocaleString()}
-          </Text>
-        </View>
-        <View style={s.stat}>
-          <Text style={s.statLabel}>Open</Text>
-          <Text style={s.statValue}>{open}</Text>
-        </View>
-        <View style={s.stat}>
-          <Text style={s.statLabel}>Completed</Text>
-          <Text style={s.statValue}>{completed}</Text>
-        </View>
-      </View>
-
-      <Text style={s.section}>Quick actions</Text>
-      <View style={s.actions}>
-        {act.map((a) => (
-          <TouchableOpacity key={a.tab} style={s.tile} onPress={() => goto(a.tab)}>
-            <Text style={s.tileIcon}>{a.icon}</Text>
-            <Text style={s.tileLabel}>{a.label}</Text>
+      {err ? (
+        <View style={s.errBox}>
+          <Text style={s.err}>{err}</Text>
+          <TouchableOpacity style={s.retry} onPress={() => void load()}>
+            <Text style={s.retryText}>Retry</Text>
           </TouchableOpacity>
-        ))}
-      </View>
+        </View>
+      ) : null}
+      {loading ? (
+        <ActivityIndicator color={theme.accent} style={{ marginVertical: 32 }} />
+      ) : (
+        <>
+          <View style={s.grid}>
+            <View style={[s.stat, s.statMain]}>
+              <Text style={s.statLabel}>Today revenue</Text>
+              <Text style={s.statValue}>
+                {cur} {revenue.toLocaleString()}
+              </Text>
+            </View>
+            <View style={s.stat}>
+              <Text style={s.statLabel}>Open</Text>
+              <Text style={s.statValue}>{open}</Text>
+            </View>
+            <View style={s.stat}>
+              <Text style={s.statLabel}>Completed</Text>
+              <Text style={s.statValue}>{completed}</Text>
+            </View>
+          </View>
+
+          <Text style={s.section}>Quick actions</Text>
+          <View style={s.actions}>
+            {act.map((a) => (
+              <TouchableOpacity key={a.tab} style={s.tile} onPress={() => goto(a.tab)}>
+                <Text style={s.tileIcon}>{a.icon}</Text>
+                <Text style={s.tileLabel}>{a.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )}
     </ScrollView>
   );
 }
@@ -79,7 +97,10 @@ export function DashboardScreen({ navigation }: any) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: theme.bg },
   content: { padding: 16, gap: 16 },
+  errBox: { gap: 10 },
   err: { color: theme.danger, fontWeight: "600" },
+  retry: { alignSelf: "flex-start", backgroundColor: theme.accent, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
+  retryText: { color: "#fff", fontWeight: "800" },
   grid: { flexDirection: "row", gap: 10 },
   stat: { flex: 1, backgroundColor: theme.surface, borderRadius: radius.md, padding: 14, gap: 6, borderWidth: 1, borderColor: theme.line },
   statMain: { borderColor: theme.accent },

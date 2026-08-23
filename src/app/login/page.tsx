@@ -105,7 +105,7 @@ export default function LoginPage() {
       body: JSON.stringify(
         mode === "super"
           ? { mode: "super", username, password }
-          : { mode: "tenant", code, username, password },
+          : { mode: "tenant", code: code.trim().toUpperCase(), username, password },
       ),
     });
     const data = await res.json();
@@ -262,6 +262,7 @@ export default function LoginPage() {
             className={styles.input}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            autoComplete="username"
             required
           />
         </label>
@@ -272,6 +273,7 @@ export default function LoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
             required
           />
         </label>

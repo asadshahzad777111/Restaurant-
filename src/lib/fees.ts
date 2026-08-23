@@ -13,16 +13,21 @@ export function computeFees(
   shop: TenantShop,
   serviceType: ServiceType,
   lines: OrderLine[],
-): OrderFees & { total: number } {
+  /** Flat amount off the bill, applied BEFORE service charge & tax (standard POS). */
+  discount = 0,
+): OrderFees & { discount: number; total: number } {
   const subtotal = linesSubtotal(lines);
   const deliveryFee = serviceType === "delivery" ? shop.deliveryFee || 0 : 0;
   const packingFee =
     serviceType === "pickup" || serviceType === "delivery" ? shop.packingFee || 0 : 0;
-  const serviceCharge = Math.round((subtotal * (shop.serviceChargePercent || 0)) / 100);
-  const taxable = subtotal + deliveryFee + packingFee + serviceCharge;
+  // Discount cannot exceed the pre-fee base.
+  const d = Math.max(0, Math.min(Math.round(discount), subtotal + deliveryFee + packingFee));
+  const base = subtotal + deliveryFee + packingFee - d;
+  const serviceCharge = Math.round((base * (shop.serviceChargePercent || 0)) / 100);
+  const taxable = base + serviceCharge;
   const tax = Math.round((taxable * (shop.taxRate || 0)) / 100);
   const total = taxable + tax;
-  return { subtotal, deliveryFee, packingFee, serviceCharge, tax, total };
+  return { subtotal, deliveryFee, packingFee, serviceCharge, tax, discount: d, total };
 }
 
 export function money(currency: string, n: number) {

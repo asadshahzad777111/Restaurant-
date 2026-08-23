@@ -152,16 +152,20 @@ export default function SettingsPage() {
     if (format === "csv") {
       const blob = await res.blob();
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
+      a.href = url;
       a.download = `${tenant?.code}-${type}.csv`;
       a.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } else {
       const json = await res.json();
       const blob = new Blob([JSON.stringify(json, null, 2)], { type: "application/json" });
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
+      a.href = url;
       a.download = `${tenant?.code}-${type}.json`;
       a.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
     setMsg(`Exported ${type} (${format})`);
   }
@@ -309,12 +313,14 @@ export default function SettingsPage() {
           <h3 style={{ margin: 0 }}>Change password</h3>
           <input
             type="password"
+            autoComplete="current-password"
             placeholder="Current password"
             value={pw.current}
             onChange={(e) => setPw({ ...pw, current: e.target.value })}
           />
           <input
             type="password"
+            autoComplete="new-password"
             placeholder="New password (min 6)"
             value={pw.next}
             onChange={(e) => setPw({ ...pw, next: e.target.value })}

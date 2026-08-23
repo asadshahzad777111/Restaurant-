@@ -163,9 +163,9 @@ export default function StaffPage() {
               value={draft.roleLabel}
               onChange={(e) => setDraft({ ...draft, roleLabel: e.target.value })}
             />
-            <div className={styles.row} style={{ marginTop: 0 }}>
+            <div className={styles.permGrid}>
               {PERMS.map((p) => (
-                <label key={p.id} className={styles.muted}>
+                <label key={p.id} className={styles.permChip}>
                   <input
                     type="checkbox"
                     checked={draft.permissions.includes(p.id)}

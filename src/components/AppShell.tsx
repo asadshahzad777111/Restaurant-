@@ -19,6 +19,7 @@ const TITLE_KEYS: Record<string, DictKey> = {
   Staff: "staff",
   "Day close": "dayClose",
   "Sales & Profit": "sales",
+  Printer: "printer",
   Settings: "settings",
 };
 

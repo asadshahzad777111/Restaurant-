@@ -68,21 +68,22 @@ export default function HomePage() {
   }, []);
 
   const orders = tenant?.orders ?? [];
+  // Stable "today" baseline — resolve the calendar day once, not on every render.
+  const day = useMemo(() => new Date().toDateString(), []);
   const today = useMemo(
     () =>
       orders.filter((o) => {
         const d = new Date(o.createdAt);
-        const n = new Date();
-        return d.toDateString() === n.toDateString();
+        return d.toDateString() === day;
       }),
-    [orders],
+    [orders, day],
   );
   const revenue = today.filter((o) => o.status !== "cancelled").reduce((s, o) => s + o.total, 0);
   const completed = today.filter((o) => o.status === "completed").length;
   const open = today.filter((o) => !["completed", "cancelled"].includes(o.status)).length;
   const cancelled = today.filter((o) => o.status === "cancelled").length;
   const lowStock = (tenant?.stock ?? []).filter((s) => s.quantity <= s.lowThreshold);
-  const zeroStock = lowStock.some((s) => s.quantity <= 0);
+  const zeroStockCount = lowStock.filter((s) => s.quantity <= 0).length;
   const cur = tenant?.shop.currency || "PKR";
   const revenueShown = useCountUp(revenue);
   const openShown = useCountUp(open);
@@ -118,7 +119,7 @@ export default function HomePage() {
         {user?.mustChangePassword && (
           <motion.div
             className={styles.card}
-            style={{ marginBottom: "1rem", borderColor: "#f5c542" }}
+            style={{ marginBottom: "1rem", borderColor: "var(--staff-warning)" }}
             initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
           >
@@ -199,13 +200,15 @@ export default function HomePage() {
 
         {lowStock.length > 0 && (
           <motion.div
-            className={`${styles.card} ${zeroStock ? styles.stockCritical : ""}`}
-            style={{ marginTop: "1rem", borderColor: zeroStock ? "#c94a3c" : "#ffb020" }}
+            className={`${styles.card} ${zeroStockCount > 0 ? styles.stockCritical : ""}`}
+            style={{ marginTop: "1rem", borderColor: zeroStockCount > 0 ? "var(--staff-danger)" : "var(--staff-warning)" }}
             initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
           >
             <strong>
-              {zeroStock ? "⚠ Stock empty — items 86" : "⚠ Low stock (warning only — app still works)"}
+              {zeroStockCount > 0
+                ? `⚠ ${zeroStockCount} item${zeroStockCount > 1 ? "s" : ""} are 86 (out of stock)`
+                : "⚠ Low stock — warning only, app still works"}
             </strong>
             <p className={styles.muted}>
               {lowStock.map((s) => `${s.name} (${s.quantity}${s.unit})`).join(" · ")}
