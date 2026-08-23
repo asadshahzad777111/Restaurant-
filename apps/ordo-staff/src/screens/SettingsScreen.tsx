@@ -15,6 +15,8 @@ export function SettingsScreen({ navigation }: any) {
   const [err, setErr] = useState("");
   const [printerName, setPrinterName] = useState("");
   const [printerMac, setPrinterMac] = useState("");
+  const [printerIp, setPrinterIp] = useState("");
+  const [printerPort, setPrinterPort] = useState("9100");
   const loaded = tenant !== null;
 
   const load = useCallback(async () => {
@@ -25,6 +27,8 @@ export function SettingsScreen({ navigation }: any) {
       if (p) {
         setPrinterName(p.name);
         setPrinterMac(p.mac);
+        setPrinterIp(p.ip || "");
+        setPrinterPort(String(p.port || 9100));
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Load error");
@@ -96,11 +100,13 @@ export function SettingsScreen({ navigation }: any) {
 
       <Text style={s.title}>🖨️ Printer (58mm)</Text>
       <View style={s.card}>
-        <Text style={s.muted}>Pair your Bluetooth thermal printer, then Save. The receipt Prints to it.</Text>
+        <Text style={s.muted}>Set your Bluetooth MAC (paired) OR a network IP — the receipt prints automatically to it.</Text>
         <TextInput style={s.input} value={printerName} onChangeText={setPrinterName} placeholder="Printer name" placeholderTextColor={theme.muted} autoCorrect={false} />
         <TextInput style={s.input} value={printerMac} onChangeText={setPrinterMac} placeholder="MAC / address (e.g. A0:BC:11:22:33)" placeholderTextColor={theme.muted} autoCapitalize="characters" autoCorrect={false} />
+        <TextInput style={s.input} value={printerIp} onChangeText={setPrinterIp} placeholder="Network IP (e.g. 192.168.1.50)" placeholderTextColor={theme.muted} autoCapitalize="none" autoCorrect={false} />
+        <TextInput style={s.input} value={printerPort} onChangeText={setPrinterPort} placeholder="Port (9100)" placeholderTextColor={theme.muted} keyboardType="number-pad" />
         <View style={s.rowBtns}>
-          <TouchableOpacity style={s.smallBtn} onPress={async () => { if (!printerName.trim()) { setErr("Printer name is required"); return; } await savePrinter({ name: printerName, mac: printerMac }); setMsg("Printer saved"); setErr(""); }}>
+          <TouchableOpacity style={s.smallBtn} onPress={async () => { if (!printerName.trim()) { setErr("Printer name is required"); return; } await savePrinter({ name: printerName, mac: printerMac, ip: printerIp.trim() || undefined, port: Number(printerPort) || 9100 }); setMsg("Printer saved"); setErr(""); }}>
             <Text style={s.smallBtnText}>Save printer</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.smallGhost} onPress={async () => { setPrinterName(""); setPrinterMac(""); await clearPrinter(); setMsg("Printer cleared"); }}>

@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const KEY = "ordo_printer_v1";
-export interface PrinterConfig { name: string; mac: string }
+export interface PrinterConfig { name: string; mac: string; ip?: string; port?: number }
 
 export async function getPrinter(): Promise<PrinterConfig | null> {
   try {

@@ -1,26 +1,36 @@
 import { buildReceiptEscPos, receiptRows } from "./escpos";
-import { getPrinter } from "./printerStorage";
+import { getPrinter, type PrinterConfig } from "./printerStorage";
 import type { Order } from "./types";
 
-/**
- * Native 58mm print transport. In Expo Go / web there is no BLE printer, so
- * this resolves false and the UI falls back gracefully. In a development build
- * wire the bottom of sendBytes() to your ESC/POS Bluetooth plugin (e.g.
- * react-native-thermal-printer, or the AsFix Capacitor bridge in the Staff APK).
- */
-async function sendBytes(bytes: Uint8Array, printer?: { name: string; mac: string }): Promise<boolean> {
+/** Send ESC/POS bytes to a network (IP) printer over raw TCP (port 9100). */
+async function sendNetwork(bytes: Uint8Array, ip: string, port: number): Promise<boolean> {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const TcpSocket = require("react-native-tcp-socket") as any;
+  if (!TcpSocket?.createConnection) return false;
+  return new Promise<boolean>((resolve) => {
+    const sock = TcpSocket.createConnection({ host: ip, port }, () => {
+      sock.write(bytes as any);
+      setTimeout(() => resolve(true), 150);
+      sock.end();
+    });
+    sock.on("error", () => {
+      resolve(false);
+    });
+    setTimeout(() => resolve(false), 8000);
+  });
+}
+
+async function sendBytes(bytes: Uint8Array, printer?: PrinterConfig): Promise<boolean> {
+  // Network IP print (no Bluetooth) — set once, auto-prints every order.
+  if (printer?.ip) {
+    return sendNetwork(bytes, printer.ip, printer.port || 9100);
+  }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const RN = (globalThis as any);
   /* React Native BLE thermal printer — use printer?.mac to connect */
   // if (RN?.ThermalPrinter?.printRaw) { await RN.ThermalPrinter.printRaw(bytes, printer?.mac); return true; }
-  /* Capacitor AsFix bridge (Staff APK) */
-  // if (window?.Capacitor?.Plugins?.AsfixThermalPrint?.printEscPos) {
-  //   const { printEscPos } = window.Capacitor.Plugins.AsfixThermalPrint;
-  //   const r = await printEscPos({ dataBase64: btoa(String.fromCharCode(...bytes)) });
-  //   if (r?.ok) return true;
-  // }
   // eslint-disable-next-line no-console
-  console.log("ESC/POS bytes built (", bytes.length, ") — no native printer transport in this run", printer?.name || "");
+  console.log("ESC/POS bytes built (", bytes.length, ") — set a printer IP/MAC in Settings to print", printer?.name || "");
   return false;
 }
 
