@@ -96,3 +96,21 @@ export async function saveTables(tables: unknown[]): Promise<Tenant> {
   if (!res.ok) throw new Error(data.error || "Update failed");
   return data.tenant;
 }
+
+/** Place a counter (POS) order. */
+export async function placeOrder(input: {
+  serviceType: "counter";
+  paymentMethod: string;
+  lines: Array<{ itemId: string; name: string; qty: number; unitPrice: number; modifiers?: unknown[] }>;
+  note?: string;
+  customerName?: string;
+  customerPhone?: string;
+}): Promise<Order> {
+  const res = await authFetch("/orders", {
+    method: "POST",
+    body: JSON.stringify({ channel: "pos", ...input }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to place order");
+  return data.order;
+}

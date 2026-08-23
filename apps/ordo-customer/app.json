@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "ORDO Order",
+    "slug": "ordo-customer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "ordo-customer",
+    "splash": { "backgroundColor": "#ff8500", "resizeMode": "cover" },
+    "ios": { "supportsTablet": false, "bundleIdentifier": "com.ordo.customer" },
+    "android": { "package": "com.ordo.customer", "adaptiveIcon": { "backgroundColor": "#ff8500" }, "edgeToEdgeEnabled": true },
+    "plugins": []
+  }
+}
