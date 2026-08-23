@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { placeGuestOrder } from "../api";
 import type { PublicMenu, MenuItem } from "../types";
 import { theme } from "../theme";
 
-export function CheckoutScreen({ route, navigation }: any) {
+export function CheckoutScreen({ route }: any) {
+  const navigation = useNavigation<any>();
   const { menu, cart, total, code } = route.params as {
     menu: PublicMenu;
     cart: { item: MenuItem; qty: number }[];

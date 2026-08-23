@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { getTrack } from "../api";
 import { theme } from "../theme";
 
 const STEPS = ["placed", "accepted", "preparing", "ready", "out_for_delivery", "completed"];
 
-export function TrackScreen({ route, navigation }: any) {
+export function TrackScreen({ route }: any) {
+  const navigation = useNavigation<any>();
   const { code, token } = route.params as { code: string; token: string };
   const [status, setStatus] = useState("placed");
   const [lines, setLines] = useState<{ name: string; qty: number }[]>([]);
