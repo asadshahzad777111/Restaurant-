@@ -14,6 +14,7 @@ import type {
 } from "./tenant-types";
 import { ensureBootstrap } from "./bootstrap";
 import { normalizeSpecialOffer, normalizeTenantPayments } from "./payments";
+import { printableShopPhone } from "./receipt-layout";
 
 const DATA_ROOT = path.join(process.cwd(), ".data");
 /** One JSON file per tenantId — never read another kitchen's folder. */
@@ -45,10 +46,12 @@ function normalizeTenant(raw: TenantState): TenantState {
     ...raw,
     shop: {
       ...raw.shop,
+      phone: printableShopPhone(raw.shop?.phone),
       deliveryFee: raw.shop?.deliveryFee ?? 0,
       packingFee: raw.shop?.packingFee ?? 0,
       serviceChargePercent: raw.shop?.serviceChargePercent ?? 0,
       taxRate: raw.shop?.taxRate ?? 0,
+      printGstOnBill: raw.shop?.printGstOnBill === true,
     },
     payments: normalizeTenantPayments(raw.payments),
     specialOffer: normalizeSpecialOffer(raw.specialOffer),

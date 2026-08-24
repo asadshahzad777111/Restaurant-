@@ -83,6 +83,7 @@ export interface Tenant {
   shop: {
     currency: string;
     taxRate?: number;
+    printGstOnBill?: boolean;
     serviceChargePercent?: number;
     deliveryFee?: number;
     packingFee?: number;

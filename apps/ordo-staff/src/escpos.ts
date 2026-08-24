@@ -88,6 +88,65 @@ export function buildReceiptEscPos(
   return concat(parts);
 }
 
+/** GS ( k QR — compact 58mm; printer firmware draws the code. */
+export function escPosQr(url: string, moduleSize = 4): number[] {
+  const data = utf8(url);
+  const storeLen = data.length + 3;
+  return [
+    0x1b,
+    0x61,
+    1,
+    0x1d,
+    0x28,
+    0x6b,
+    0x04,
+    0x00,
+    0x31,
+    0x41,
+    0x32,
+    0x00,
+    0x1d,
+    0x28,
+    0x6b,
+    0x03,
+    0x00,
+    0x31,
+    0x43,
+    Math.max(3, Math.min(8, moduleSize)),
+    0x1d,
+    0x28,
+    0x6b,
+    0x03,
+    0x00,
+    0x31,
+    0x45,
+    0x31,
+    0x1d,
+    0x28,
+    0x6b,
+    storeLen & 0xff,
+    (storeLen >> 8) & 0xff,
+    0x31,
+    0x50,
+    0x30,
+    ...data,
+    0x1d,
+    0x28,
+    0x6b,
+    0x03,
+    0x00,
+    0x31,
+    0x51,
+    0x30,
+    0x0a,
+    ...utf8("Scan to order"),
+    0x0a,
+    0x1b,
+    0x61,
+    0,
+  ];
+}
+
 /** Convenience: a typical ORDO 58mm bill as ESC/POS rows. */
 export function receiptRows(opts: {
   shop: string;

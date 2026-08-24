@@ -122,7 +122,7 @@ export function POSScreen() {
   const discount = Math.max(0, Math.round(Number(discountStr) || 0));
   // Standard POS: discount before service charge & tax.
   const scPercent = tenant?.shop.serviceChargePercent || 0;
-  const taxRate = tenant?.shop.taxRate || 0;
+  const taxRate = tenant?.shop.printGstOnBill ? tenant?.shop.taxRate || 0 : 0;
   const discountedBase = Math.max(0, subtotal - discount);
   const serviceCharge = Math.round((discountedBase * scPercent) / 100);
   const tax = Math.round(((discountedBase + serviceCharge) * taxRate) / 100);
@@ -605,6 +605,8 @@ export function POSScreen() {
         visible={!!lastOrder}
         order={lastOrder}
         currency={tenant?.shop.currency || "PKR"}
+        tenantCode={tenant?.code}
+        printGst={Boolean(tenant?.shop.printGstOnBill)}
         onClose={() => setLastOrder(null)}
       />
     </View>

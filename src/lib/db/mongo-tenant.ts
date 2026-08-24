@@ -14,6 +14,7 @@ import type { Permission } from "../types";
 import { getDb } from "../mongo";
 import { ensureMongoBootstrap } from "./mongo-platform";
 import { normalizeSpecialOffer, normalizeTenantPayments } from "../payments";
+import { printableShopPhone } from "../receipt-layout";
 
 type TenantDoc = TenantState & { _id: string };
 
@@ -26,10 +27,12 @@ function normalize(raw: TenantState): TenantState {
     ...raw,
     shop: {
       ...raw.shop,
+      phone: printableShopPhone(raw.shop?.phone),
       deliveryFee: raw.shop?.deliveryFee ?? 0,
       packingFee: raw.shop?.packingFee ?? 0,
       serviceChargePercent: raw.shop?.serviceChargePercent ?? 0,
       taxRate: raw.shop?.taxRate ?? 0,
+      printGstOnBill: raw.shop?.printGstOnBill === true,
     },
     payments: normalizeTenantPayments(raw.payments),
     specialOffer: normalizeSpecialOffer(raw.specialOffer),
@@ -161,7 +164,7 @@ export async function createEmptyTenantMongo(input: {
     branding: {
       name: input.name,
       logoUrl: "",
-      receiptFooter: `Thank you for dining with ${input.name}`,
+      receiptFooter: "",
     },
     shop: {
       address: "",
@@ -169,6 +172,7 @@ export async function createEmptyTenantMongo(input: {
       whatsapp: "",
       currency: "PKR",
       taxRate: 0,
+      printGstOnBill: false,
       openHours: "",
       deliveryFee: 0,
       packingFee: 0,

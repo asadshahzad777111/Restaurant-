@@ -1,5 +1,7 @@
 /** Capacitor AsfixThermalPrint bridge — Bluetooth SPP ESC/POS from Staff APK. */
 
+import { buildSlipEscPos, bytesToBase64 } from "../escpos-receipt";
+
 export type ThermalPrinterDevice = {
   name: string;
   address: string;
@@ -147,7 +149,7 @@ export async function connectPrinter(address: string) {
 
 export async function nativePrintText(
   text: string,
-  opts?: { address?: string },
+  opts?: { address?: string; qrUrl?: string | null },
 ): Promise<NativePrintResult> {
   if (!isNativeStaffApp()) return { ok: false, reason: "not_native" };
   const plugin = getPlugin();
@@ -155,20 +157,37 @@ export async function nativePrintText(
   const saved = await getSavedPrinter();
   const address = opts?.address || saved?.address;
   if (!address) return { ok: false, reason: "no_printer", message: "Tap Printer, then Use this" };
+  const qrUrl = opts?.qrUrl?.trim();
   try {
     await requestThermalPrintPermissions();
     await plugin.connect({ address });
+    if (qrUrl && plugin.printEscPos) {
+      const bytes = buildSlipEscPos(text, qrUrl);
+      await plugin.printEscPos({ dataBase64: bytesToBase64(bytes), address });
+      return { ok: true };
+    }
     await plugin.printText({ text, address });
     return { ok: true };
   } catch (err) {
+    if (qrUrl && plugin.printEscPos) {
+      try {
+        await plugin.printText({ text, address });
+        return { ok: true };
+      } catch (err2) {
+        return { ok: false, reason: "print_failed", message: errMsg(err2, "Bluetooth print failed") };
+      }
+    }
     return { ok: false, reason: "print_failed", message: errMsg(err, "Bluetooth print failed") };
   }
 }
 
 /** Prefer native Bluetooth when in Staff APK + saved printer; else caller falls back to HTML print. */
-export async function tryNativeThermalPrint(receiptText: string): Promise<NativePrintResult> {
+export async function tryNativeThermalPrint(
+  receiptText: string,
+  opts?: { qrUrl?: string | null },
+): Promise<NativePrintResult> {
   if (!isNativeStaffApp()) return { ok: false, reason: "not_native" };
   const saved = await getSavedPrinter();
   if (!saved?.address) return { ok: false, reason: "no_printer" };
-  return nativePrintText(receiptText, { address: saved.address });
+  return nativePrintText(receiptText, { address: saved.address, qrUrl: opts?.qrUrl });
 }

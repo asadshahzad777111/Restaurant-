@@ -36,7 +36,7 @@ export function usePrintBridge() {
           continue;
         }
         try {
-          const out = await nativePrintText(job.text, { address: printer.address });
+          const out = await nativePrintText(job.text, { address: printer.address, qrUrl: job.kind === "bill" ? job.qrUrl : null });
           await printApi.ack(job.id, {
             status: out.ok ? "done" : "failed",
             error: out.ok ? undefined : out.message,

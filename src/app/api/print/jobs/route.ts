@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
       kind,
       text: typeof body.text === "string" ? body.text : "",
       html: typeof body.html === "string" ? body.html : undefined,
+      qrUrl: typeof body.qrUrl === "string" ? body.qrUrl : undefined,
       orderId: typeof body.orderId === "string" ? body.orderId : typeof body.order_id === "string" ? body.order_id : null,
       orderRef: typeof body.orderRef === "string" ? body.orderRef : typeof body.order_ref === "string" ? body.order_ref : null,
     });

@@ -9,11 +9,15 @@ export function ReceiptView({
   visible,
   order,
   currency,
+  tenantCode,
+  printGst,
   onClose,
 }: {
   visible: boolean;
   order: Order | null;
   currency: string;
+  tenantCode?: string;
+  printGst?: boolean;
   onClose: () => void;
 }) {
   const [status, setStatus] = useState<"" | "ok" | "no">("");
@@ -58,7 +62,7 @@ export function ReceiptView({
                     <Text style={s.lineR}>{order.fees.serviceCharge}</Text>
                   </View>
                 ) : null}
-                {order.fees?.tax ? (
+                {printGst && order.fees?.tax ? (
                   <View style={s.lineRow}>
                     <Text style={s.totalL}>Tax</Text>
                     <Text style={s.lineR}>{order.fees.tax}</Text>
@@ -83,7 +87,7 @@ export function ReceiptView({
           <TouchableOpacity
             style={s.printBtn}
             onPress={async () => {
-              const ok = await printOrder(order!, currency);
+              const ok = await printOrder(order!, currency, { tenantCode, printGst });
               setStatus(ok ? "ok" : "no");
             }}
           >

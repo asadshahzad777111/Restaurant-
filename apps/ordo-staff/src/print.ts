@@ -1,4 +1,4 @@
-import { buildReceiptEscPos, receiptRows } from "./escpos";
+import { buildReceiptEscPos, receiptRows, escPosQr } from "./escpos";
 import { getPrinter, type PrinterConfig } from "./printerStorage";
 import type { Order } from "./types";
 
@@ -112,10 +112,18 @@ async function sendBytes(bytes: Uint8Array, printer?: PrinterConfig): Promise<bo
   return false;
 }
 
-export async function printOrder(order: Order, currency: string): Promise<boolean> {
+export async function printOrder(
+  order: Order,
+  currency: string,
+  opts?: { tenantCode?: string; printGst?: boolean },
+): Promise<boolean> {
   const printer = await getPrinter();
-  const shop = order.serviceType.toUpperCase();
-  const date = new Date(order.createdAt).toLocaleString();
+  const d = new Date(order.createdAt);
+  const stamp = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const pay = (order.paymentMethod || "cash").toLowerCase().replace(/[_-]+/g, " ");
+  const payLabel = !pay || pay === "cash" || pay === "cash sale" ? "Cash" : pay;
+  const svc = (order.serviceType || "counter").replace(/[_-]+/g, " ");
+  const svcLabel = svc.charAt(0).toUpperCase() + svc.slice(1);
   const lines = order.lines.flatMap((l) => {
     const base = { name: l.name, qty: l.qty, amount: `${currency} ${l.unitPrice * l.qty}` };
     const mods = (l.modifiers || []).map((m) => ({
@@ -125,21 +133,34 @@ export async function printOrder(order: Order, currency: string): Promise<boolea
     }));
     return [base, ...mods];
   });
+  const showGst = opts?.printGst === true;
+  const tax = showGst ? order.fees?.tax || 0 : 0;
+  const printedTotal = showGst ? order.total : Math.max(0, order.total - (order.fees?.tax || 0));
   const feeLines = [
     order.fees?.serviceCharge ? `Service: ${currency} ${order.fees.serviceCharge}` : "",
-    order.fees?.tax ? `Tax: ${currency} ${order.fees.tax}` : "",
+    tax ? `GST/Tax: ${currency} ${tax}` : "",
     order.discount ? `Discount: -${currency} ${order.discount}` : "",
   ].filter(Boolean);
+  const guest = order.customerName ? `Guest: ${order.customerName}` : "";
   const rows = receiptRows({
-    shop,
-    billNo: `#${order.number}`,
-    date,
+    shop: svcLabel.toUpperCase(),
+    billNo: `Bill #${order.number}`,
+    date: stamp,
     lines,
-    total: `${currency} ${order.total}`,
-    footer: [...feeLines, printer ? `Printer: ${printer.name}` : "Thank you"].join(" | "),
+    total: `${currency} ${printedTotal}`,
+    footer: [payLabel, svcLabel, guest, ...feeLines].filter(Boolean).join(" · "),
   });
-  const bytes = buildReceiptEscPos(rows, { cut: true });
-  return sendBytes(bytes, printer ?? undefined);
+  let bytes = buildReceiptEscPos(rows, { cut: false });
+  const tail: number[] = [];
+  const code = (opts?.tenantCode || "").trim().toUpperCase();
+  if (code) {
+    tail.push(...escPosQr(`https://ordo.asfins.com/order?tenant=${encodeURIComponent(code)}`, 4));
+  }
+  tail.push(0x0a, 0x0a, 0x1d, 0x56, 0x00);
+  const out = new Uint8Array(bytes.length + tail.length);
+  out.set(bytes);
+  out.set(tail, bytes.length);
+  return sendBytes(out, printer ?? undefined);
 }
 
 /** Test print — a quick slip to verify the Bluetooth/IP printer works. */

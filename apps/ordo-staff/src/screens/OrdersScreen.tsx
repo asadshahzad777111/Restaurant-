@@ -123,7 +123,14 @@ export function OrdersScreen() {
         )}
       />
       <OrderAlert newOrders={newOrders} onDismiss={dismiss} />
-      <ReceiptView visible={!!selected} order={selected} currency={currency} onClose={() => setSelected(null)} />
+      <ReceiptView
+        visible={!!selected}
+        order={selected}
+        currency={currency}
+        tenantCode={tenant?.code}
+        printGst={Boolean(tenant?.shop.printGstOnBill)}
+        onClose={() => setSelected(null)}
+      />
     </View>
   );
 }

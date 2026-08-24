@@ -25,7 +25,8 @@ export function computeFees(
   const base = subtotal + deliveryFee + packingFee - d;
   const serviceCharge = Math.round((base * (shop.serviceChargePercent || 0)) / 100);
   const taxable = base + serviceCharge;
-  const tax = Math.round((taxable * (shop.taxRate || 0)) / 100);
+  const tax =
+    shop.printGstOnBill === true ? Math.round((taxable * (shop.taxRate || 0)) / 100) : 0;
   const total = taxable + tax;
   return { subtotal, deliveryFee, packingFee, serviceCharge, tax, discount: d, total };
 }

@@ -1,6 +1,17 @@
 import type { Order, TenantState } from "./tenant-types";
 import { tryNativeThermalPrint } from "./thermal/nativePosPrint";
-import { apkAppHost } from "./apk-urls";
+import { qrSvgMarkup } from "./qr-byte";
+import {
+  billKindLine,
+  billStamp,
+  customReceiptFooter,
+  guestOrderPageUrl,
+  kitchenServiceLine,
+  printableShopAddress,
+  printableShopPhone,
+  printedGrandTotal,
+  shouldPrintGst,
+} from "./receipt-layout";
 
 const SLIP_MM = 58;
 
@@ -14,27 +25,6 @@ function escapeHtml(value: unknown) {
 
 function amount(n: number) {
   return Math.round(Number(n) || 0).toLocaleString("en-PK");
-}
-
-function payLabel(method: string) {
-  return method.split("_").join(" ");
-}
-
-function when(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return { date: "—", time: "—" };
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mi = String(d.getMinutes()).padStart(2, "0");
-  return { date: `${dd}/${mm}`, time: `${hh}:${mi}` };
-}
-
-function serviceLine(order: Order) {
-  const bits: string[] = [(order.serviceType || "counter").toUpperCase()];
-  if (order.tableNumber) bits.push(`T${order.tableNumber}`);
-  if (order.channel === "pos") bits.push("POS");
-  return bits.join(" · ");
 }
 
 /** ORDO compact 58mm thermal slip — Courier, dashed rules, qty × rate. */
@@ -74,6 +64,8 @@ html, body {
 .rule { border: 0; border-top: 1px dashed #111; margin: 3px 0; }
 .meta { display: grid; gap: 1px; margin: 3px 0; font-size: 9.5px; }
 .cols { display: flex; justify-content: space-between; gap: 8px; font-size: 9.5px; font-weight: 700; }
+.qr { text-align: center; margin: 4px 0 0; }
+.qr svg { width: 22mm; height: 22mm; display: block; margin: 0 auto; }
 .item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -101,8 +93,6 @@ html, body {
 .center { text-align: center; margin: 4px 0 0; font-size: 9px; }
 .thanks { text-align: center; margin: 5px 0 1px; font-size: 11px; font-weight: 700; }
 .visit { text-align: center; margin: 2px 0 1px; font-size: 11px; }
-.qr { text-align: center; margin-top: 8px; }
-.qr img { width: 120px; height: 120px; display: block; margin: 0 auto; }
 .k-item { margin: 6px 0; font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
 `.trim();
 
@@ -136,17 +126,20 @@ function itemRows(order: Order, withPrices: boolean) {
 
 export function customerReceiptHtml(tenant: TenantState, order: Order) {
   const printLogo = tenant.shop.printLogoOnBill !== false;
-  // Brand mark on every bill — tenant logo if set, else the ORDO mark.
   const logoSrc = tenant.branding.logoUrl || "/ordo-icon.svg";
   const logo = printLogo ? `<img class="logo" src="${escapeHtml(logoSrc)}" alt="" />` : "";
-  const stamp = when(order.createdAt);
+  const stamp = billStamp(order.createdAt);
   const f = order.fees;
-  const paid = order.paymentStatus === "paid" || order.paymentStatus === "verified";
+  const phone = printableShopPhone(tenant.shop.phone);
+  const address = printableShopAddress(tenant.shop.address);
+  const printGst = shouldPrintGst(tenant.shop);
+  const extraFooter = customReceiptFooter(tenant.branding.receiptFooter);
+  const qrUrl = guestOrderPageUrl(tenant.code);
   const extras = [
     f.packingFee ? `<span>Packing</span><strong>${amount(f.packingFee)}</strong>` : "",
     f.deliveryFee ? `<span>Delivery</span><strong>${amount(f.deliveryFee)}</strong>` : "",
     f.serviceCharge ? `<span>Service</span><strong>${amount(f.serviceCharge)}</strong>` : "",
-    f.tax ? `<span>GST/Tax</span><strong>${amount(f.tax)}</strong>` : "",
+    printGst && f.tax ? `<span>GST/Tax</span><strong>${amount(f.tax)}</strong>` : "",
     order.discount ? `<span>Discount</span><strong>-${amount(order.discount)}</strong>` : "",
   ]
     .filter(Boolean)
@@ -160,14 +153,13 @@ export function customerReceiptHtml(tenant: TenantState, order: Order) {
   <div class="shop">
     ${logo}
     <strong class="name">${escapeHtml(tenant.branding.name)}</strong>
-    ${tenant.shop.address ? `<p>${escapeHtml(tenant.shop.address)}</p>` : ""}
-    ${tenant.shop.phone ? `<p>${escapeHtml(tenant.shop.phone)}</p>` : ""}
+    ${address ? `<p>${escapeHtml(address)}</p>` : ""}
+    ${phone ? `<p>${escapeHtml(phone)}</p>` : ""}
   </div>
   <hr class="rule"/>
   <div class="meta">
-    <span>${escapeHtml(tenant.branding.name)} · #${order.number}</span>
-    <span>${escapeHtml(stamp.date)} · ${escapeHtml(stamp.time)}</span>
-    <span>${escapeHtml(serviceLine(order))}${paid ? "  \u2713 PAID" : ""}</span>
+    <div class="cols"><span>Bill #${order.number}</span><span>${escapeHtml(stamp.line)}</span></div>
+    <span>${escapeHtml(billKindLine(order))}</span>
     ${order.customerName ? `<span>Guest: ${escapeHtml(order.customerName)}</span>` : ""}
     ${order.customerPhone ? `<span>Ph: ${escapeHtml(order.customerPhone)}</span>` : ""}
     ${order.deliveryAddress ? `<span>Loc: ${escapeHtml(order.deliveryAddress)}</span>` : ""}
@@ -180,29 +172,19 @@ export function customerReceiptHtml(tenant: TenantState, order: Order) {
     <span>Subtotal</span><strong>${amount(f.subtotal)}</strong>
     ${extras}
   </div>
-  <div class="grand"><span>TOTAL</span><b>${escapeHtml(tenant.shop.currency)} ${amount(order.total)}</b></div>
+  <div class="grand"><span>TOTAL</span><b>${escapeHtml(tenant.shop.currency)} ${amount(printedGrandTotal(order, printGst))}</b></div>
   ${order.note ? `<p class="center">NOTE: ${escapeHtml(order.note)}</p>` : ""}
   <hr class="rule"/>
   <p class="thanks">Thank you</p>
   <p class="visit">Visit again</p>
-  ${tenant.branding.receiptFooter ? `<p class="center">${escapeHtml(tenant.branding.receiptFooter)}</p>` : ""}
-  ${tenant.shop.phone ? `<p class="center">${escapeHtml(tenant.shop.phone)}</p>` : ""}
-  ${
-    tenant.branding.allowApk
-      ? `<div class="qr">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(
-            apkAppHost() + "/apk/install/" + tenant.code + "/customer",
-          )}" alt="Get the app" />
-          <span class="center">Scan for this kitchen's app</span>
-        </div>`
-      : ""
-  }
+  ${extraFooter ? `<p class="center">${escapeHtml(extraFooter)}</p>` : ""}
+  <div class="qr">${qrSvgMarkup(qrUrl, 22)}<p class="center">Scan to order</p></div>
 </main>
 </body></html>`;
 }
 
 export function kitchenTicketHtml(tenant: TenantState, order: Order) {
-  const stamp = when(order.createdAt);
+  const stamp = billStamp(order.createdAt);
   return `<!doctype html><html><head><meta charset="utf-8"/>
 <title>Kitchen #${order.number}</title>
 <style>${slipCss}</style></head><body>
@@ -215,7 +197,7 @@ export function kitchenTicketHtml(tenant: TenantState, order: Order) {
   <div class="meta">
     <span>Ticket: #${order.number}</span>
     <span>Time: ${escapeHtml(stamp.time)}</span>
-    <span>Type: ${escapeHtml(serviceLine(order))}</span>
+    <span>Type: ${escapeHtml(kitchenServiceLine(order))}</span>
     ${order.customerName ? `<span>Guest: ${escapeHtml(order.customerName)}</span>` : ""}
     ${order.customerPhone ? `<span>Phone: ${escapeHtml(order.customerPhone)}</span>` : ""}
     ${order.deliveryAddress ? `<span>Loc: ${escapeHtml(order.deliveryAddress)}</span>` : ""}
@@ -237,8 +219,12 @@ export function customerReceiptText(tenant: TenantState, order: Order) {
     return `${left}${" ".repeat(gap)}${right}`;
   };
   const rule = "-".repeat(col);
-  const stamp = when(order.createdAt);
+  const stamp = billStamp(order.createdAt);
   const f = order.fees;
+  const phone = printableShopPhone(tenant.shop.phone);
+  const address = printableShopAddress(tenant.shop.address);
+  const printGst = shouldPrintGst(tenant.shop);
+  const extraFooter = customReceiptFooter(tenant.branding.receiptFooter);
   const items = (order.lines || []).flatMap((l) => {
     const rows = [l.name.slice(0, col), line(`${l.qty} x ${amount(l.unitPrice)}`, amount(l.unitPrice * l.qty))];
     for (const m of l.modifiers || []) rows.push(` + ${m.optionName}`.slice(0, col));
@@ -249,35 +235,30 @@ export function customerReceiptText(tenant: TenantState, order: Order) {
     f.packingFee ? line("Packing", amount(f.packingFee)) : "",
     f.deliveryFee ? line("Delivery", amount(f.deliveryFee)) : "",
     f.serviceCharge ? line("Service", amount(f.serviceCharge)) : "",
-    f.tax ? line("GST/Tax", amount(f.tax)) : "",
+    printGst && f.tax ? line("GST/Tax", amount(f.tax)) : "",
     order.discount ? line("Discount", `-${amount(order.discount)}`) : "",
   ].filter(Boolean);
-  const paid = order.paymentStatus === "paid" || order.paymentStatus === "verified";
   return [
     tenant.branding.name.toUpperCase(),
-    tenant.shop.address,
-    tenant.shop.phone,
+    address,
+    phone,
     rule,
-    line("Bill", `#${order.number}`),
-    line(stamp.date, stamp.time),
-    serviceLine(order),
-    payLabel(order.paymentMethod),
+    line(`Bill #${order.number}`, stamp.line),
+    billKindLine(order),
     ...(order.customerName ? [`Guest: ${order.customerName}`] : []),
-    ...(order.customerPhone ? [`Phone: ${order.customerPhone}`] : []),
+    ...(order.customerPhone ? [`Ph: ${order.customerPhone}`] : []),
     ...(order.deliveryAddress ? [`Loc: ${order.deliveryAddress}`] : []),
     rule,
     ...items,
     rule,
     line("Subtotal", amount(f.subtotal)),
     ...extras,
-    line("TOTAL", `${tenant.shop.currency} ${amount(order.total)}`),
-    ...(paid ? ["\u2713 PAID"] : []),
+    line("TOTAL", `${tenant.shop.currency} ${amount(printedGrandTotal(order, printGst))}`),
     ...(order.note ? [`NOTE: ${order.note}`] : []),
     rule,
     "Thank you",
     "Visit again",
-    tenant.branding.receiptFooter,
-    tenant.shop.phone,
+    extraFooter,
   ]
     .filter((row) => row && String(row).trim())
     .join("\n");
@@ -287,7 +268,7 @@ export function customerReceiptText(tenant: TenantState, order: Order) {
 export function kitchenTicketText(tenant: TenantState, order: Order) {
   const col = 32;
   const rule = "=".repeat(col);
-  const stamp = when(order.createdAt);
+  const stamp = billStamp(order.createdAt);
   const items = (order.lines || []).flatMap((l) => {
     const rows = [`${l.qty} x ${l.name}`.slice(0, col)];
     for (const m of l.modifiers || []) rows.push(`  + ${m.optionName}`.slice(0, col));
@@ -299,7 +280,7 @@ export function kitchenTicketText(tenant: TenantState, order: Order) {
     tenant.branding.name.toUpperCase(),
     rule,
     `#${order.number}  ${stamp.time}`,
-    serviceLine(order),
+    kitchenServiceLine(order),
     ...(order.customerName ? [`Guest: ${order.customerName}`] : []),
     ...(order.customerPhone ? [`Phone: ${order.customerPhone}`] : []),
     ...(order.deliveryAddress ? [`Loc: ${order.deliveryAddress}`] : []),
@@ -427,7 +408,7 @@ export async function printCustomerReceipt(tenant: TenantState, order: Order) {
     /* ignore */
   }
   const text = customerReceiptText(tenant, order);
-  const native = await tryNativeThermalPrint(text);
+  const native = await tryNativeThermalPrint(text, { qrUrl: guestOrderPageUrl(tenant.code) });
   if (native.ok) return true;
   const bridged = await tryOptInBridge(text);
   if (bridged) return true;

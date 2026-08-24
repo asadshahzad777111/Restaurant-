@@ -18,6 +18,7 @@ import { useMongo } from "./env";
 import { getDb } from "./mongo";
 import { customerReceiptText, kitchenTicketText } from "./print";
 import type { Order, TenantState } from "./tenant-types";
+import { guestOrderPageUrl, sanitizeGuestOrderQrUrl } from "./receipt-layout";
 
 export type PrintJobKind = "bill" | "kitchen";
 export type PrintJobStatus = "queued" | "printing" | "done" | "failed";
@@ -28,6 +29,8 @@ export type PrintJob = {
   kind: PrintJobKind;
   text: string;
   html?: string;
+  /** Guest order URL for this kitchen — Staff APK prints a compact QR under the bill. */
+  qrUrl?: string | null;
   orderId?: string | null;
   orderRef?: string | null;
   createdAt: string;
@@ -209,6 +212,7 @@ export async function createPrintJob(
     kind?: PrintJobKind;
     text?: string;
     html?: string;
+    qrUrl?: string | null;
     orderId?: string | null;
     orderRef?: string | null;
   },
@@ -221,6 +225,7 @@ export async function createPrintJob(
     kind,
     text: typeof input.text === "string" ? input.text : "",
     html: typeof input.html === "string" ? input.html : undefined,
+    qrUrl: sanitizeGuestOrderQrUrl(typeof input.qrUrl === "string" ? input.qrUrl : null),
     orderId: input.orderId ?? null,
     orderRef: input.orderRef ?? null,
     createdAt: new Date().toISOString(),
@@ -277,6 +282,7 @@ export async function listQueuedPrintJobs(tenantId: string): Promise<PrintJob[]>
       kind: d.kind === "kitchen" ? "kitchen" : "bill",
       text: String(d.text || ""),
       html: typeof d.html === "string" ? d.html : undefined,
+      qrUrl: typeof d.qrUrl === "string" ? d.qrUrl : null,
       orderId: (d.orderId as string) ?? null,
       orderRef: (d.orderRef as string) ?? null,
       createdAt: String(d.createdAt),
@@ -325,6 +331,7 @@ export async function updatePrintJob(
       kind: d.kind === "kitchen" ? "kitchen" : "bill",
       text: String(d.text || ""),
       html: d.html,
+      qrUrl: d.qrUrl ?? null,
       orderId: d.orderId ?? null,
       orderRef: d.orderRef ?? null,
       createdAt: String(d.createdAt),
@@ -359,6 +366,7 @@ export async function enqueueOrderSlip(
   return createPrintJob(tenantId, {
     kind,
     text,
+    qrUrl: kind === "bill" ? guestOrderPageUrl(tenant.code) : null,
     orderId: order.id,
     orderRef: `#${order.number}`,
   });

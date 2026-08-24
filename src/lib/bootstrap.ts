@@ -30,14 +30,15 @@ function demoTenant(): TenantState {
     branding: {
       name: "Demo Restaurant",
       logoUrl: "",
-      receiptFooter: "Thank you for dining with Demo Restaurant",
+      receiptFooter: "",
     },
     shop: {
       address: "12 MM Alam Road, Lahore",
-      phone: "+92 300 0000000",
-      whatsapp: "+923000000000",
+      phone: "",
+      whatsapp: "",
       currency: "PKR",
-      taxRate: 5,
+      taxRate: 0,
+      printGstOnBill: false,
       openHours: "11:00 – 23:00",
       deliveryFee: 150,
       packingFee: 40,
@@ -255,7 +256,7 @@ export function createEmptyTenant(input: {
     branding: {
       name: input.name,
       logoUrl: "",
-      receiptFooter: `Thank you for dining with ${input.name}`,
+      receiptFooter: "",
     },
     shop: {
       address: "",
@@ -263,6 +264,7 @@ export function createEmptyTenant(input: {
       whatsapp: "",
       currency: "PKR",
       taxRate: 0,
+      printGstOnBill: false,
       openHours: "",
       deliveryFee: 0,
       packingFee: 0,

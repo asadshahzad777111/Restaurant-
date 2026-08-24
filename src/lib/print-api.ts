@@ -59,6 +59,7 @@ export type BridgePrintJob = {
   kind: "bill" | "kitchen";
   text: string;
   html?: string;
+  qrUrl?: string | null;
   orderId?: string | null;
   orderRef?: string | null;
   status: string;
@@ -69,6 +70,7 @@ export const printApi = {
     kind?: "bill" | "kitchen";
     text?: string;
     html?: string;
+    qrUrl?: string | null;
     orderId?: string;
     orderRef?: string;
     target?: string;

@@ -29,6 +29,7 @@ export default function SettingsPage() {
     taxRate: 0,
   });
   const [printLogoOnBill, setPrintLogoOnBill] = useState(true);
+  const [printGstOnBill, setPrintGstOnBill] = useState(false);
   const [fbrEnabled, setFbrEnabled] = useState(false);
   const [pw, setPw] = useState({ current: "", next: "" });
   const [emailDraft, setEmailDraft] = useState("");
@@ -50,6 +51,7 @@ export default function SettingsPage() {
       taxRate: tenant.shop.taxRate || 0,
     });
     setPrintLogoOnBill(tenant.shop.printLogoOnBill !== false);
+    setPrintGstOnBill(tenant.shop.printGstOnBill === true);
     setFbrEnabled(Boolean(tenant.shop.fbrEnabled));
     setEmailDraft(user?.email || "");
   }, [tenant, user]);
@@ -86,7 +88,7 @@ export default function SettingsPage() {
       method: "PUT",
       body: JSON.stringify({
         action: "fees",
-        shop: { ...fees, printLogoOnBill },
+        shop: { ...fees, printLogoOnBill, printGstOnBill },
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -245,7 +247,7 @@ export default function SettingsPage() {
           <input
             value={branding.phone}
             onChange={(e) => setBranding({ ...branding, phone: e.target.value })}
-            placeholder="Shop phone (prints on 58mm footer)"
+            placeholder="Shop phone (prints on 58mm header if filled — not a placeholder)"
           />
           <button type="submit" className={styles.btn}>
             Save branding
@@ -269,7 +271,7 @@ export default function SettingsPage() {
               <a className={styles.btn} href={`/apk/install/${tenant.code}/staff`} download>🧑‍🍳 Staff APK</a>
               <a className={styles.btn} href={`/apk/install/${tenant.code}/customer`} download>🍽️ Customer APK</a>
               <span className={styles.muted}>
-                QR on the receipt installs the Customer app for this kitchen. Only when enabled.
+                Staff + Customer APKs for this kitchen only — Super HQ is never included.
               </span>
             </div>
           )}
@@ -304,6 +306,17 @@ export default function SettingsPage() {
             value={fees.taxRate}
             onChange={(e) => setFees({ ...fees, taxRate: Number(e.target.value) })}
           />
+          <label className={styles.rowCheck}>
+            <input
+              type="checkbox"
+              checked={printGstOnBill}
+              onChange={(e) => setPrintGstOnBill(e.target.checked)}
+            />
+            Print GST on bill
+          </label>
+          <p className={styles.muted} style={{ margin: 0 }}>
+            Off by default. GST/Tax is not printed (and not added) until this is ticked.
+          </p>
           <label className={styles.muted}>
             <input
               type="checkbox"
@@ -396,7 +409,9 @@ export default function SettingsPage() {
 
         <div className={styles.card}>
           <h3 style={{ marginTop: 0 }}>QR / guest links</h3>
-          <p className={styles.muted}>Print these on table tents — each restaurant uses its own code.</p>
+          <p className={styles.muted}>
+            Table tents and every 58mm bill QR open this kitchen only:
+          </p>
           <code>
             {origin}/guest
           </code>

@@ -34,6 +34,8 @@ export interface TenantShop {
   fbrEnabled?: boolean;
   /** Print branding logo on 58mm customer bill (AsFix tick-on-print). Default true when logo set. */
   printLogoOnBill?: boolean;
+  /** Print GST/Tax on the 58mm bill. Off by default — tax is not invented or printed until ticked. */
+  printGstOnBill?: boolean;
 }
 
 export interface TenantUser {
