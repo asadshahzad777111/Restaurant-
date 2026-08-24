@@ -88,3 +88,7 @@ apps/ordo-customer/android/
 # Gradle build logs
 apps/**/gradle-*.log
 
+
+# Capacitor plugin build output
+mobile/ordo-pos/plugins/*/android/build/
+
