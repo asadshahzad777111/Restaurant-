@@ -21,6 +21,10 @@
       },
       "edgeToEdgeEnabled": false
     },
-    "plugins": ["expo-notifications", "expo-system-ui"]
+    "plugins": [
+      "expo-notifications",
+      "expo-system-ui",
+      ["@config-plugins/react-native-ble-plx", { "bluetoothAlwaysPermission": "ORDO connects to your 58mm thermal printer over Bluetooth." }]
+    ]
   }
 }

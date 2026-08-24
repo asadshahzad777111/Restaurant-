@@ -2,23 +2,54 @@ import { buildReceiptEscPos, receiptRows } from "./escpos";
 import { getPrinter, type PrinterConfig } from "./printerStorage";
 import type { Order } from "./types";
 
-/** Send ESC/POS bytes to a paired Bluetooth printer over SPP (MAC). */
-async function sendBluetooth(bytes: Uint8Array, mac: string): Promise<boolean> {
+function toBase64(bytes: Uint8Array): string {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+/** Send ESC/POS bytes to a Bluetooth Low-Energy thermal printer (write char). */
+async function sendBle(bytes: Uint8Array, mac: string): Promise<boolean> {
   try {
-    const BluetoothClassic = require("react-native-bluetooth-classic") as any;
-    if (!BluetoothClassic?.connect) return false;
-    const conn = await BluetoothClassic.connect(mac);
-    if (!conn) return false;
-    // Write the raw bytes as an ArrayBuffer (the lib expects ArrayBuffer | string).
-    await conn.write(new Uint8Array(bytes).buffer as any);
-    // Wait for the printer to flush the line before cutting the connection.
-    await new Promise((r) => setTimeout(r, 900));
+    const { BleManager } = require("react-native-ble-plx") as any;
+    if (!BleManager) return false;
+    const manager = new BleManager();
     try {
-      await conn.disconnect();
-    } catch {
-      /* ignore */
+      const device = await manager.connectToDevice(mac, { timeout: 15000 });
+      await device.stopBondTransaction?.().catch?.(() => {});
+      await device.discoverAllServicesAndCharacteristics();
+      const services = await device.services();
+      let wrote = false;
+      for (const service of services) {
+        const chars = await service.characteristics();
+        for (const c of chars) {
+          if (c.isWritableWithoutResponse) {
+            await c.writeWithoutResponse(toBase64(bytes));
+            wrote = true;
+            break;
+          }
+          if (c.isWritableWithResponse) {
+            await c.writeWithResponse(toBase64(bytes));
+            wrote = true;
+            break;
+          }
+        }
+        if (wrote) break;
+      }
+      try {
+        await device.cancelConnection();
+      } catch {
+        /* ignore */
+      }
+      return wrote;
+    } catch (err) {
+      try {
+        await manager.cancelDeviceConnection(mac);
+      } catch {
+        /* ignore */
+      }
+      return false;
     }
-    return true;
   } catch {
     return false;
   }
@@ -43,9 +74,9 @@ async function sendNetwork(bytes: Uint8Array, ip: string, port: number): Promise
 }
 
 async function sendBytes(bytes: Uint8Array, printer?: PrinterConfig): Promise<boolean> {
-  // Bluetooth (MAC) — paired printer via SPP.
+  // BLE printer (MAC) — most common 58mm BT thermal printers.
   if (printer?.mac) {
-    const ok = await sendBluetooth(bytes, printer.mac);
+    const ok = await sendBle(bytes, printer.mac);
     if (ok) return true;
   }
   // IP network print.

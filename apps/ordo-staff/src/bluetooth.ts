@@ -5,18 +5,44 @@ export interface BtDevice {
   name: string | null;
 }
 
-/**
- * Read the phone's paired Bluetooth devices (thermal printer MAC).
- * Uses react-native-bluetooth-classic when available and falls back to
- * gracefully returning [] so the app never crashes without it.
- */
+/** Check the runtime Bluetooth permission (Android 12+). */
+export async function hasBlePermission(): Promise<boolean> {
+  if (Platform.OS !== "android") return false;
+  try {
+    const { PermissionsAndroid } = require("react-native") as any;
+    const status = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+    );
+    return status === PermissionsAndroid.RESULTS.GRANTED;
+  } catch {
+    return false;
+  }
+}
+
+/** Scan for nearby BLE printers (react-native-ble-plx). */
 export async function getBondedDevices(): Promise<BtDevice[]> {
   if (Platform.OS !== "android") return [];
   try {
-    const BluetoothClassic = require("react-native-bluetooth-classic") as any;
-    if (!BluetoothClassic?.getBondedDevices) return [];
-    const list = await BluetoothClassic.getBondedDevices();
-    return (list || []).map((d: any) => ({ address: d.address, name: d.name || null }));
+    const { BleManager } = require("react-native-ble-plx") as any;
+    if (!BleManager) return [];
+    const manager = new BleManager();
+    const found: BtDevice[] = [];
+    await new Promise<void>((resolve) => {
+      manager.startDeviceScan(null, null, (_err: any, device: any) => {
+        if (device && !found.some((d) => d.address === device.id)) {
+          found.push({ address: device.id, name: device.name || null });
+        }
+      });
+      setTimeout(() => {
+        try {
+          manager.stopDeviceScan();
+        } catch {
+          /* ignore */
+        }
+        resolve();
+      }, 6000);
+    });
+    return found;
   } catch {
     return [];
   }
@@ -29,12 +55,8 @@ export function pickPrinter(devices: BtDevice[]): BtDevice | null {
   return devices.find(isPrinter) || devices[0];
 }
 
-/**
- * One-tap "Connect printer": read the phone's paired Bluetooth devices, pick the
- * thermal printer (name or first device), and return it. The caller saves the
- * MAC so the app auto-prints thereafter — no MAC to type.
- */
+/** One-tap "Connect printer": scan BLE, pick the thermal printer. */
 export async function connectPrinter(): Promise<BtDevice | null> {
-  const bonded = await getBondedDevices();
-  return pickPrinter(bonded);
+  const found = await getBondedDevices();
+  return pickPrinter(found);
 }
