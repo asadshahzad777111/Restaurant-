@@ -35,8 +35,9 @@ export function AppShell({
     useStore();
   const { lang, toggle, t } = useLang();
   const [navOpen, setNavOpen] = useState(false);
+  const [slow, setSlow] = useState(false);
   const router = useRouter();
-  const { online: bridgeOnline } = usePrintBridge();
+  usePrintBridge();
 
   useEffect(() => {
     if (loading) return;
@@ -55,8 +56,33 @@ export function AppShell({
     void refresh();
   }, [loading, token, role, tenant, user, refresh]);
 
+  useEffect(() => {
+    if (tenant && user) {
+      setSlow(false);
+      return;
+    }
+    const id = window.setTimeout(() => setSlow(true), 8000);
+    return () => window.clearTimeout(id);
+  }, [tenant, user]);
+
   if (!tenant || !user) {
-    return <div className={styles.loading}>{t("loading")}</div>;
+    return (
+      <div className={styles.loading}>
+        <div style={{ textAlign: "center", padding: "1.5rem" }}>
+          <p>{t("loading")}</p>
+          {slow ? (
+            <p style={{ marginTop: "0.75rem" }}>
+              <button type="button" className={styles.logout} onClick={() => void refresh({ force: true })}>
+                Retry
+              </button>{" "}
+              <a href="/home" className={styles.logout} style={{ display: "inline-block", textDecoration: "none" }}>
+                Home
+              </a>
+            </p>
+          ) : null}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -111,7 +137,9 @@ export function AppShell({
             )}
             <div>
               <p className={styles.brand}>{tenant.branding.name}</p>
-              <h1 className={styles.title}>{title ? (TITLE_KEYS[title] ? t(TITLE_KEYS[title]) : title) : undefined}</h1>
+                  <h1 className={styles.title}>
+                    {title ? (TITLE_KEYS[title] ? t(TITLE_KEYS[title]) : title) : undefined}
+                  </h1>
             </div>
           </div>
           <div className={styles.meta}>

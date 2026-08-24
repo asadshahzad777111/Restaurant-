@@ -14,8 +14,12 @@ export function usePrefersReducedMotion(): boolean {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     const sync = () => setReduced(mq.matches);
     sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", sync);
+      return () => mq.removeEventListener("change", sync);
+    }
+    mq.addListener(sync);
+    return () => mq.removeListener(sync);
   }, []);
   return reduced;
 }
@@ -26,8 +30,12 @@ export function useIsCoarsePointer(): boolean {
     const mq = window.matchMedia("(pointer: coarse)");
     const sync = () => setCoarse(mq.matches);
     sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", sync);
+      return () => mq.removeEventListener("change", sync);
+    }
+    mq.addListener(sync);
+    return () => mq.removeListener(sync);
   }, []);
   return coarse;
 }

@@ -124,18 +124,10 @@ function emptyAuth(): Omit<AuthState, "loading"> {
 }
 
 function clientBootState(): AuthState {
-  if (typeof window === "undefined") {
-    return { ...emptyAuth(), loading: true };
-  }
-  const token = localStorage.getItem(TOKEN_KEY);
-  const cached = readMemory(token);
-  if (cached) {
-    return { ...cached, loading: false };
-  }
-  if (!token || isPublicPath(window.location.pathname)) {
-    return { ...emptyAuth(), token, loading: false };
-  }
-  return { ...emptyAuth(), token, loading: true };
+  // Always match SSR. Reading localStorage here hydrates a different tree than
+  // the server (token / loading flags) and iPhone Safari kills the tab —
+  // native “This page couldn’t load”. Session is restored in useEffect.
+  return { ...emptyAuth(), loading: true };
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -263,41 +255,45 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
 
     setTokenState(t);
-    const res = await fetch("/api/state", {
-      headers: { Authorization: `Bearer ${t}` },
-    });
-    if (!res.ok) {
-      // Do not destroy a parked Super token just because restaurant state failed.
-      const owner = localStorage.getItem(OWNER_TOKEN_KEY);
-      if (owner && owner !== t) {
+    try {
+      const res = await fetch("/api/state", {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      if (!res.ok) {
+        // Do not destroy a parked Super token just because restaurant state failed.
+        const owner = localStorage.getItem(OWNER_TOKEN_KEY);
+        if (owner && owner !== t) {
+          setLoading(false);
+          return;
+        }
+        localStorage.removeItem(TOKEN_KEY);
+        writeMemory(null);
+        setTokenState(null);
+        setRole(null);
+        setTenant(null);
+        setPlatformFeatures(null);
+        setBillingPastDue(false);
+        setTenantStatus(null);
+        setUser(null);
+        setImpersonating(false);
         setLoading(false);
         return;
       }
-      localStorage.removeItem(TOKEN_KEY);
-      writeMemory(null);
-      setTokenState(null);
-      setRole(null);
-      setTenant(null);
-      setPlatformFeatures(null);
-      setBillingPastDue(false);
-      setTenantStatus(null);
-      setUser(null);
-      setImpersonating(false);
+      const data = await res.json();
+      applySession({
+        token: t,
+        role: data.session?.role ?? null,
+        tenantId: data.session?.tenantId ?? null,
+        impersonating: !!data.session?.impersonating,
+        user: data.user ?? null,
+        tenant: data.tenant ?? null,
+        platformFeatures: data.features ?? null,
+        billingPastDue: Boolean(data.billingPastDue || data.meta?.status === "past_due"),
+        tenantStatus: data.meta?.status ?? null,
+      });
+    } catch {
       setLoading(false);
-      return;
     }
-    const data = await res.json();
-    applySession({
-      token: t,
-      role: data.session?.role ?? null,
-      tenantId: data.session?.tenantId ?? null,
-      impersonating: !!data.session?.impersonating,
-      user: data.user ?? null,
-      tenant: data.tenant ?? null,
-      platformFeatures: data.features ?? null,
-      billingPastDue: Boolean(data.billingPastDue || data.meta?.status === "past_due"),
-      tenantStatus: data.meta?.status ?? null,
-    });
   }, [applySession]);
 
   const enterHelp = useCallback(

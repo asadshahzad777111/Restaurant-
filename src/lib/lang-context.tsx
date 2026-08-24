@@ -26,7 +26,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
   }, []);
   const toggle = useCallback(() => setLang(lang === "en" ? "ur" : "en"), [lang, setLang]);
-  const t = useCallback((k: DictKey) => dict[k][lang], [lang]);
+  const t = useCallback((k: DictKey) => dict[k]?.[lang] ?? String(k), [lang]);
   return <Ctx.Provider value={{ lang, setLang, toggle, t }}>{children}</Ctx.Provider>;
 }
 

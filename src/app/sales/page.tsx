@@ -50,7 +50,7 @@ export default function SalesPage() {
     const max = Math.max(1, ...entries.map(([, v]) => v));
     return entries
       .map(([key, value]) => ({
-        key: key.replaceAll("_", " "),
+        key: String(key).split("_").join(" "),
         value,
         pct: Math.round((value / max) * 100),
       }))
@@ -58,15 +58,19 @@ export default function SalesPage() {
   }, [data]);
 
   const load = useCallback(async () => {
-    const days = Number(range);
-    const res = await api(`/api/sales?from=${encodeURIComponent(daysAgoIso(days))}`);
-    const json = await res.json();
-    if (!res.ok) {
-      setError(json.error || "Could not load sales");
-      return;
+    try {
+      const days = Number(range);
+      const res = await api(`/api/sales?from=${encodeURIComponent(daysAgoIso(days))}`);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError((json as { error?: string }).error || "Could not load sales");
+        return;
+      }
+      setError("");
+      setData(json as SalesPayload);
+    } catch {
+      setError("Could not load sales — check the connection and retry.");
     }
-    setError("");
-    setData(json as SalesPayload);
   }, [api, range]);
 
   useEffect(() => {
@@ -162,7 +166,7 @@ export default function SalesPage() {
                     ["orders", String(data.summary.orderCount)],
                     [],
                     ["item", "qty", "revenue", "cost", "margin"],
-                    ...data.topItems.map((i) => [
+                    ...(data.topItems || []).map((i) => [
                       i.name,
                       String(i.qty),
                       String(i.revenue),
@@ -239,7 +243,7 @@ export default function SalesPage() {
                 <div className={styles.card}>
                   <h3 style={{ marginTop: 0 }}>By channel</h3>
                   <ul className={styles.reportList}>
-                    {Object.entries(data.byChannel).map(([k, v]) => (
+                    {Object.entries(data.byChannel || {}).map(([k, v]) => (
                       <li key={k}>
                         <span>{k}</span>
                         <strong>{money(cur, v)}</strong>
@@ -248,7 +252,7 @@ export default function SalesPage() {
                   </ul>
                   <h3>By service</h3>
                   <ul className={styles.reportList}>
-                    {Object.entries(data.byService).map(([k, v]) => (
+                    {Object.entries(data.byService || {}).map(([k, v]) => (
                       <li key={k}>
                         <span>{k}</span>
                         <strong>{money(cur, v)}</strong>
@@ -271,7 +275,7 @@ export default function SalesPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {data.topItems.map((i) => (
+                      {(data.topItems || []).map((i) => (
                         <tr key={i.name}>
                           <td>{i.name}</td>
                           <td>{i.qty}</td>
@@ -279,7 +283,7 @@ export default function SalesPage() {
                           <td>{money(cur, i.margin)}</td>
                         </tr>
                       ))}
-                      {!data.topItems.length && (
+                      {!(data.topItems || []).length && (
                         <tr>
                           <td colSpan={4} className={styles.muted}>
                             No lines yet

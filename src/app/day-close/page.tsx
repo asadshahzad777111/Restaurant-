@@ -25,11 +25,15 @@ export default function DayClosePage() {
   const [msg, setMsg] = useState("");
 
   const load = useCallback(async () => {
-    const res = await api("/api/day-close");
-    const data = await res.json();
-    if (res.ok) {
-      setPreview(data.preview);
-      setHistory((data.history || []) as DayCloseSummary[]);
+    try {
+      const res = await api("/api/day-close");
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setPreview(data.preview);
+        setHistory((data.history || []) as DayCloseSummary[]);
+      }
+    } catch {
+      setMsg("Could not load day close — retry from Home.");
     }
   }, [api]);
 
@@ -81,9 +85,9 @@ export default function DayClosePage() {
               </div>
               <h4>Payment mix</h4>
               <ul className={styles.reportList}>
-                {Object.entries(preview.byPayment).map(([k, v]) => (
+                {Object.entries(preview.byPayment || {}).map(([k, v]) => (
                   <li key={k}>
-                    <span>{k.replaceAll("_", " ")}</span>
+                    <span>{k.split("_").join(" ")}</span>
                     <strong>{money(cur, v)}</strong>
                   </li>
                 ))}
@@ -120,8 +124,8 @@ export default function DayClosePage() {
                 <tbody>
                   {history.slice(0, 20).map((h) => (
                     <tr key={h.id}>
-                      <td>{new Date(h.closedAt).toLocaleString()}</td>
-                      <td>
+                      <td suppressHydrationWarning>{new Date(h.closedAt).toLocaleString()}</td>
+                      <td suppressHydrationWarning>
                         {new Date(h.from).toLocaleDateString()} → {new Date(h.to).toLocaleDateString()}
                       </td>
                       <td>{h.orderCount}</td>

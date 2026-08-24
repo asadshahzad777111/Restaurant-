@@ -17,7 +17,7 @@ function amount(n: number) {
 }
 
 function payLabel(method: string) {
-  return method.replaceAll("_", " ");
+  return method.split("_").join(" ");
 }
 
 function when(iso: string) {
