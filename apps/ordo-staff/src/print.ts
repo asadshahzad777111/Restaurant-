@@ -97,12 +97,12 @@ async function sendClassic(bytes: Uint8Array, mac: string): Promise<boolean> {
 
 async function sendBytes(bytes: Uint8Array, printer?: PrinterConfig): Promise<boolean> {
   const mac = printer?.mac;
-  // Try Classic SPP first (most 58mm printers), then BLE, then IP — whichever prints.
+  // BLE first (this printer is a BLE 58mm — service 000018f0), then Classic, then IP.
   if (mac) {
-    const classic = await sendClassic(bytes, mac);
-    if (classic) return true;
     const ble = await sendBle(bytes, mac);
     if (ble) return true;
+    const classic = await sendClassic(bytes, mac);
+    if (classic) return true;
   }
   if (printer?.ip) {
     return sendNetwork(bytes, printer.ip, printer.port || 9100);
