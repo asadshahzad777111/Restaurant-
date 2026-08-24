@@ -5,7 +5,8 @@ import { AppShell } from "@/components/AppShell";
 import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
 import { PrintTargetChooser } from "@/components/PrintTargetChooser";
-import { decidePrintPath, enqueueSlip, executeLocalPrint } from "@/lib/print-target";
+import { PrintBridgeBar } from "@/components/PrintBridgeBar";
+import { enqueueSlip, executeLocalPrint, fetchBridgeStatus, shouldOpenPrintChooser } from "@/lib/print-target";
 import type { OrderStatus } from "@/lib/types";
 import type { Order } from "@/lib/tenant-types";
 import styles from "../staff.module.css";
@@ -44,6 +45,7 @@ export default function KitchenPage() {
   const { tenant, api, applyOrder } = useStore();
   const [printKind, setPrintKind] = useState<"bill" | "kitchen" | null>(null);
   const [printTarget, setPrintTarget] = useState<Order | null>(null);
+  const [androidOnline, setAndroidOnline] = useState(false);
   const [bridgeNote, setBridgeNote] = useState("");
   const [countdowns, setCountdowns] = useState<Record<string, number>>({}); // orderId -> end ms
   const [, forceTick] = useState(0);
@@ -95,10 +97,12 @@ export default function KitchenPage() {
 
   async function printTicket(o: Order) {
     if (!tenant) return;
-    const path = await decidePrintPath();
-    if (path === "android") {
+    const chooser = await shouldOpenPrintChooser();
+    const bridge = await fetchBridgeStatus();
+    setAndroidOnline(bridge.connected);
+    if (chooser) {
       setPrintTarget(o);
-      setBridgeNote("");
+      setBridgeNote(bridge.connected ? "" : "Android printer not connected — open Staff APK");
       return;
     }
     const ok = await executeLocalPrint(tenant, o, "kitchen");
@@ -107,6 +111,12 @@ export default function KitchenPage() {
 
   async function sendKitchenToAndroid() {
     if (!printTarget || !tenant) return;
+    const bridge = await fetchBridgeStatus();
+    setAndroidOnline(bridge.connected);
+    if (!bridge.connected) {
+      setBridgeNote("Android printer not connected — open Staff APK");
+      return;
+    }
     try {
       await enqueueSlip(tenant, printTarget, "kitchen");
       setPrintKind("kitchen");
@@ -192,7 +202,7 @@ export default function KitchenPage() {
         <PrintTargetChooser
           order={printTarget}
           kind="kitchen"
-          androidOnline
+          androidOnline={androidOnline}
           note={bridgeNote}
           onAndroid={() => void sendKitchenToAndroid()}
           onBrowser={() => {
@@ -207,6 +217,7 @@ export default function KitchenPage() {
           onClose={() => setPrintTarget(null)}
         />
       )}
+      <PrintBridgeBar />
       {tickets.length === 0 ? (
         <p className={styles.muted}>No open kitchen tickets</p>
       ) : (

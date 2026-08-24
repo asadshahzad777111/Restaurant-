@@ -6,7 +6,8 @@ import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
 import { money } from "@/lib/fees";
 import { PrintTargetChooser } from "@/components/PrintTargetChooser";
-import { decidePrintPath, enqueueSlip, executeLocalPrint } from "@/lib/print-target";
+import { PrintBridgeBar } from "@/components/PrintBridgeBar";
+import { enqueueSlip, executeLocalPrint, fetchBridgeStatus, shouldOpenPrintChooser } from "@/lib/print-target";
 import { copyText, statusMessage, whatsappShareUrl } from "@/lib/status-messages";
 import type { Order } from "@/lib/tenant-types";
 import type { OrderStatus } from "@/lib/types";
@@ -71,6 +72,7 @@ export default function OrdersPage() {
   const [printKind, setPrintKind] = useState<"bill" | "kitchen" | null>(null);
   const [openMore, setOpenMore] = useState<string | null>(null);
   const [printTarget, setPrintTarget] = useState<{ order: Order; kind: "bill" | "kitchen" } | null>(null);
+  const [androidOnline, setAndroidOnline] = useState(false);
   const [bridgeNote, setBridgeNote] = useState("");
 
   const orders = tenant?.orders ?? [];
@@ -151,10 +153,12 @@ export default function OrdersPage() {
     const order = tenant.orders.find((o) => o.id === orderId);
     if (!order) return;
     setOpenMore(null);
-    const path = await decidePrintPath();
-    if (path === "android") {
+    const chooser = await shouldOpenPrintChooser();
+    const bridge = await fetchBridgeStatus();
+    setAndroidOnline(bridge.connected);
+    if (chooser) {
       setPrintTarget({ order, kind });
-      setBridgeNote("");
+      setBridgeNote(bridge.connected ? "" : "Android printer not connected — open Staff APK");
       return;
     }
     const printed = await executeLocalPrint(tenant, order, kind);
@@ -171,9 +175,15 @@ export default function OrdersPage() {
 
   async function sendPrintToAndroid() {
     if (!printTarget || !tenant) return;
+    const bridge = await fetchBridgeStatus();
+    setAndroidOnline(bridge.connected);
+    if (!bridge.connected) {
+      setBridgeNote("Android printer not connected — open Staff APK");
+      return;
+    }
     try {
       await enqueueSlip(tenant, printTarget.order, printTarget.kind);
-      setBridgeNote(`#${printTarget.order.number} sent to the Android printer`);
+      setBridgeNote(`#${printTarget.order.number} sent to Android`);
       setPrintKind(printTarget.kind);
       setPrintTarget(null);
     } catch {
@@ -273,7 +283,7 @@ export default function OrdersPage() {
         <PrintTargetChooser
           order={printTarget.order}
           kind={printTarget.kind}
-          androidOnline
+          androidOnline={androidOnline}
           note={bridgeNote}
           onAndroid={() => void sendPrintToAndroid()}
           onBrowser={() => void printHereFromChooser()}
@@ -281,6 +291,7 @@ export default function OrdersPage() {
         />
       )}
       <div className={styles.page} onClick={() => setOpenMore(null)}>
+        <PrintBridgeBar />
         <div className={styles.toolbar}>
           <h2 className={styles.toolbarTitle}>Orders</h2>
           <div className={styles.seg} onClick={(e) => e.stopPropagation()}>

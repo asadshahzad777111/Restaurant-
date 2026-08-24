@@ -41,7 +41,11 @@ function cap() {
 export function isNativeStaffApp() {
   try {
     const c = cap();
-    if (c?.isNativePlatform?.() === true) return true;
+    if (!c) return false;
+    if (c.isNativePlatform?.() === true) return true;
+    const platform = (c as { getPlatform?: () => string }).getPlatform?.();
+    if (platform === "android" || platform === "ios") return true;
+    if (c.Plugins?.AsfixThermalPrint) return true;
     return false;
   } catch {
     return false;

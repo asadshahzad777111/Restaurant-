@@ -2,23 +2,22 @@
 
 import { isNativeStaffApp, getSavedPrinter } from "@/lib/thermal/nativePosPrint";
 import { printCustomerReceipt, printKitchenTicket } from "@/lib/print";
-import { printApi } from "@/lib/print-api";
+import { printApi, type PrintBridgeStatus } from "@/lib/print-api";
 import type { Order, TenantState } from "@/lib/tenant-types";
 
-export type PrintPath = "native" | "android" | "browser";
+/** Website / iPhone Safari always get the Print-to-Android chooser. Staff APK with a saved printer prints Bluetooth locally. */
+export async function shouldOpenPrintChooser(): Promise<boolean> {
+  if (!isNativeStaffApp()) return true;
+  const saved = await getSavedPrinter();
+  return !saved?.address;
+}
 
-export async function decidePrintPath(): Promise<PrintPath> {
-  if (isNativeStaffApp()) {
-    const saved = await getSavedPrinter();
-    if (saved?.address) return "native";
-  }
+export async function fetchBridgeStatus(): Promise<PrintBridgeStatus> {
   try {
-    const st = await printApi.getBridge();
-    if (st.connected) return "android";
+    return await printApi.getBridge();
   } catch {
-    /* browser fallback */
+    return { connected: false, lastSeen: null, printerName: null };
   }
-  return "browser";
 }
 
 export async function enqueueSlip(tenant: TenantState, order: Order, kind: "bill" | "kitchen") {

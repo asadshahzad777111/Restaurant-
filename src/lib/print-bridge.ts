@@ -45,7 +45,7 @@ export type PrintBridgePresence = {
 const SAFE_TENANT_ID = /^[A-Za-z0-9_-]{1,80}$/;
 const JOB_TTL_MS = 30 * 60 * 1000;
 const DONE_KEEP_MS = 2 * 60 * 60 * 1000;
-const ONLINE_MS = 20_000;
+const ONLINE_MS = 90_000;
 const MAX_QUEUED = 40;
 const DATA_ROOT = path.join(process.cwd(), ".data");
 

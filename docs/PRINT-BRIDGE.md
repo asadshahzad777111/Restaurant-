@@ -40,9 +40,15 @@ Legacy `/api/print-jobs/*` aliases the same store (auth required).
 4. **Printer** → list → **Use this**. Header shows **Printer linked**.
 5. Keep the APK signed in (screen off / pocket is fine). It heartbeats and prints queued jobs.
 
-## Web / iPhone Print on Android
+## Web / iPhone Print to Android
 
-If Staff lastSeen is recent (~20s), POS Charge, Orders Print, and Kitchen Print offer **Print on Android** (enqueue) plus **Print here (browser)**. Native Staff APK still prints Bluetooth directly and does not enqueue.
+On **laptop website and iPhone Safari**, POS / Orders / Kitchen / Printer always show an **Android printer: connected** or **not connected — open Staff APK** bar.
+
+Charge or Print **always** opens a chooser (not a silent browser print):
+- **Print to Android** — enqueues the 58mm bill when the Staff APK has heartbeated in the last ~90s. Phone can stay in the pocket.
+- **Print here (browser)** — fallback.
+
+Native Staff APK with a saved printer still prints Bluetooth directly (no chooser). Super HQ never opens in the Staff APK.
 
 ## Auto-print
 

@@ -3,6 +3,7 @@
 import styles from "@/app/staff.module.css";
 import type { Order } from "@/lib/tenant-types";
 
+/** Website print picker — always shows Print to Android + browser fallback. */
 export function PrintTargetChooser({
   order,
   kind,
@@ -22,21 +23,30 @@ export function PrintTargetChooser({
 }) {
   const label = kind === "kitchen" ? "kitchen ticket" : "receipt";
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div className={styles.modalOverlay} onClick={onClose} role="dialog" aria-labelledby="print-bridge-title">
       <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ margin: "0 0 0.25rem" }}>
+        <h3 id="print-bridge-title" style={{ margin: "0 0 0.25rem" }}>
           Print {label} #{order.number}
         </h3>
-        <p className={styles.muted}>
-          {androidOnline
-            ? "Staff Android is linked to the 58mm printer — send it there, or print in this browser."
-            : "No Android printer linked. Pair Staff APK + printer, or print here."}
+        <p className={styles.muted} style={{ margin: 0 }}>
+          {androidOnline ? (
+            <>
+              <span className={styles.bridgeDot} aria-hidden /> Android printer: <strong style={{ fontSize: "inherit" }}>connected</strong>
+            </>
+          ) : (
+            <>
+              <span className={`${styles.bridgeDot} ${styles.bridgeDotOff}`} aria-hidden /> Android printer not connected — open Staff APK
+            </>
+          )}
         </p>
-        {androidOnline ? (
-          <button type="button" className={styles.btn} onClick={onAndroid}>
-            Send to Android
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className={`${styles.btn} ${styles.bridgeAndroidBtn}`}
+          onClick={onAndroid}
+          aria-label="Print to Android"
+        >
+          <span aria-hidden>📱</span> Print to Android
+        </button>
         <button type="button" className={styles.btnGhost} onClick={onBrowser}>
           Print here (browser)
         </button>

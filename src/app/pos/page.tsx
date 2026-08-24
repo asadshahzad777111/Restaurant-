@@ -6,8 +6,9 @@ import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
 import { computeFees, lineUnitPrice, money } from "@/lib/fees";
 import { PrintTargetChooser } from "@/components/PrintTargetChooser";
+import { PrintBridgeBar } from "@/components/PrintBridgeBar";
 import { PosPrinterPanel } from "@/components/PosPrinterPanel";
-import { decidePrintPath, enqueueSlip, executeLocalPrint } from "@/lib/print-target";
+import { enqueueSlip, executeLocalPrint, fetchBridgeStatus, shouldOpenPrintChooser } from "@/lib/print-target";
 import type { LineModifier, MenuItem, ModifierGroup, Order } from "@/lib/tenant-types";
 import type { PaymentMethod } from "@/lib/types";
 import styles from "../staff.module.css";
@@ -220,11 +221,13 @@ export default function PosPage() {
       setNote("");
       setDiscountStr("");
       setCashGiven("");
-      const path = await decidePrintPath();
-      if (path === "android") {
-        setAndroidOnline(true);
+      const chooser = await shouldOpenPrintChooser();
+      const bridge = await fetchBridgeStatus();
+      setAndroidOnline(bridge.connected);
+      if (chooser) {
         setPendingOrder(order);
         setPrintChooser(true);
+        setBridgeNote(bridge.connected ? "" : "Android printer not connected — open Staff APK");
       } else {
         const printed = await executeLocalPrint(tenant, order, "bill");
         if (printed) setPrintKind("bill");
@@ -239,9 +242,15 @@ export default function PosPage() {
   async function sendToAndroidPrinter() {
     const order = pendingOrder;
     if (!order || !tenant) return;
+    const bridge = await fetchBridgeStatus();
+    setAndroidOnline(bridge.connected);
+    if (!bridge.connected) {
+      setBridgeNote("Android printer not connected — open Staff APK");
+      return;
+    }
     try {
       await enqueueSlip(tenant, order, "bill");
-      setBridgeNote(`Order #${order.number} sent to the Android printer`);
+      setBridgeNote(`Order #${order.number} sent to Android`);
       setPrintChooser(false);
       setPendingOrder(null);
       setPrintKind("bill");
@@ -276,6 +285,7 @@ export default function PosPage() {
         />
       )}
       <div className={styles.page}>
+        <PrintBridgeBar />
         <PosPrinterPanel compact />
         {lowStock.length > 0 && (
           <div className={styles.card} style={{ marginBottom: "0.75rem", borderColor: "#ffb020" }}>
@@ -549,9 +559,8 @@ export default function PosPage() {
               </button>
             </div>
             <p className={styles.muted}>
-              Staff APK: Printer → Use this, then Charge prints on the 58mm. Laptop / iPhone: Charge
-              offers <strong>Send to Android</strong> when that phone is linked; browser print stays as
-              fallback.
+              Laptop / iPhone: Charge opens <b>Print to Android</b> (connected vs not connected). Staff APK
+              with a printer selected prints 58mm from the pocket.
             </p>
             {msg && <p className={styles.muted}>{msg}</p>}
           </div>

@@ -43,6 +43,52 @@
   margin-top: 0.35rem;
 }
 
+.bridgeBar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+  border-color: #b7e0c0;
+  background: #f1faf3;
+}
+
+.bridgeBarOff {
+  border-color: #f0c8be;
+  background: #fdf6f4;
+}
+
+.bridgeBar strong,
+.bridgeBarOff strong {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.98rem !important;
+  margin-top: 0 !important;
+  font-weight: 800;
+}
+
+.bridgeDot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: #1a9d48;
+  flex-shrink: 0;
+}
+
+.bridgeDotOff {
+  background: #c0392b;
+}
+
+.bridgeAndroidBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 800;
+}
+
 /* Stat card values own their size — don't inherit the 1.6rem card heading. */
 .statCard strong {
   display: block;

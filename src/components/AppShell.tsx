@@ -169,7 +169,9 @@ export function AppShell({
               <span className={styles.badge}>{t("printerLinked")}</span>
             ) : androidConnected ? (
               <span className={styles.badge}>{t("androidPrinter")}</span>
-            ) : null}
+            ) : (
+              <span className={styles.badgeMuted}>{t("androidPrinterOff")}</span>
+            )}
             <span className={styles.user}>
               {user.roleLabel} · {user.username}
               {user.email ? ` · ${user.email}` : ""}
