@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { getTenant, pauseOrdering, clearToken } from "../api";
 import { getPrinter, savePrinter, clearPrinter } from "../printerStorage";
 import { enableNotifications } from "../notify";
+import { getBondedDevices, pickPrinter, type BtDevice } from "../bluetooth";
 import type { Tenant } from "../types";
 import { theme, radius } from "../theme";
 
@@ -18,7 +19,25 @@ export function SettingsScreen({ navigation }: any) {
   const [printerMac, setPrinterMac] = useState("");
   const [printerIp, setPrinterIp] = useState("");
   const [printerPort, setPrinterPort] = useState("9100");
+  const [scanning, setScanning] = useState(false);
+  const [devices, setDevices] = useState<BtDevice[]>([]);
   const loaded = tenant !== null;
+
+  async function scanPrinter() {
+    if (scanning) return;
+    setScanning(true);
+    const bonded = await getBondedDevices();
+    setScanning(false);
+    setDevices(bonded);
+    const pick = pickPrinter(bonded);
+    if (pick) {
+      setPrinterMac(pick.address);
+      if (!printerName.trim()) setPrinterName(pick.name || "Printer");
+      setMsg("Found printer — select or save");
+    } else {
+      setErr("No paired Bluetooth printer found. Pair it in Settings → Bluetooth first.");
+    }
+  }
 
   const load = useCallback(async () => {
     try {
@@ -104,6 +123,19 @@ export function SettingsScreen({ navigation }: any) {
         <Text style={s.muted}>Set your Bluetooth MAC (paired) OR a network IP — the receipt prints automatically to it.</Text>
         <TextInput style={s.input} value={printerName} onChangeText={setPrinterName} placeholder="Printer name" placeholderTextColor={theme.muted} autoCorrect={false} />
         <TextInput style={s.input} value={printerMac} onChangeText={setPrinterMac} placeholder="MAC / address (e.g. A0:BC:11:22:33)" placeholderTextColor={theme.muted} autoCapitalize="characters" autoCorrect={false} />
+        <TouchableOpacity style={s.smallGhost} onPress={() => void scanPrinter()}>
+          <Text style={s.smallGhostText}>{scanning ? "Scanning…" : "📡 Scan printer"}</Text>
+        </TouchableOpacity>
+        {devices.length > 0 && (
+          <View style={s.devList}>
+            {devices.map((d) => (
+              <TouchableOpacity key={d.address} style={s.devRow} onPress={() => { setPrinterMac(d.address); setPrinterName(d.name || "Printer"); setDevices([]); }}>
+                <Text style={s.devName}>{d.name || "Device"}</Text>
+                <Text style={s.devMac}>{d.address}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
         <TextInput style={s.input} value={printerIp} onChangeText={setPrinterIp} placeholder="Network IP (e.g. 192.168.1.50)" placeholderTextColor={theme.muted} autoCapitalize="none" autoCorrect={false} />
         <TextInput style={s.input} value={printerPort} onChangeText={setPrinterPort} placeholder="Port (9100)" placeholderTextColor={theme.muted} keyboardType="number-pad" />
         <View style={s.rowBtns}>
@@ -158,4 +190,8 @@ const s = StyleSheet.create({
   smallBtnText: { color: "#fff", fontWeight: "800" },
   smallGhost: { borderWidth: 1, borderColor: theme.line, paddingHorizontal: 14, paddingVertical: 10, borderRadius: radius.sm },
   smallGhostText: { color: theme.muted, fontWeight: "700" },
+  devList: { gap: 6, marginTop: 6 },
+  devRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: theme.line, borderRadius: radius.sm, padding: 10 },
+  devName: { color: theme.ink, fontWeight: "700", fontSize: 14 },
+  devMac: { color: theme.muted, fontSize: 12, fontWeight: "600" },
 });

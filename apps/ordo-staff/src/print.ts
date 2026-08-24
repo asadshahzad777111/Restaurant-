@@ -2,6 +2,21 @@ import { buildReceiptEscPos, receiptRows } from "./escpos";
 import { getPrinter, type PrinterConfig } from "./printerStorage";
 import type { Order } from "./types";
 
+/** Send ESC/POS bytes to a paired Bluetooth printer over SPP (MAC). */
+async function sendBluetooth(bytes: Uint8Array, mac: string): Promise<boolean> {
+  try {
+    const BluetoothClassic = require("react-native-bluetooth-classic") as any;
+    if (!BluetoothClassic?.connect) return false;
+    const conn = await BluetoothClassic.connect(mac);
+    if (!conn) return false;
+    await conn.write(bytes as any);
+    await conn.disconnect();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Send ESC/POS bytes to a network (IP) printer over raw TCP (port 9100). */
 async function sendNetwork(bytes: Uint8Array, ip: string, port: number): Promise<boolean> {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -21,16 +36,17 @@ async function sendNetwork(bytes: Uint8Array, ip: string, port: number): Promise
 }
 
 async function sendBytes(bytes: Uint8Array, printer?: PrinterConfig): Promise<boolean> {
-  // Network IP print (no Bluetooth) — set once, auto-prints every order.
+  // Bluetooth (MAC) — paired printer via SPP.
+  if (printer?.mac) {
+    const ok = await sendBluetooth(bytes, printer.mac);
+    if (ok) return true;
+  }
+  // IP network print.
   if (printer?.ip) {
     return sendNetwork(bytes, printer.ip, printer.port || 9100);
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const RN = (globalThis as any);
-  /* React Native BLE thermal printer — use printer?.mac to connect */
-  // if (RN?.ThermalPrinter?.printRaw) { await RN.ThermalPrinter.printRaw(bytes, printer?.mac); return true; }
   // eslint-disable-next-line no-console
-  console.log("ESC/POS bytes built (", bytes.length, ") — set a printer IP/MAC in Settings to print", printer?.name || "");
+  console.log("ESC/POS bytes built (", bytes.length, ") — set a printer MAC/IP in Settings to print", printer?.name || "");
   return false;
 }
 
