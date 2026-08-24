@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
       byChannel[o.channel] = (byChannel[o.channel] || 0) + o.total;
       byService[o.serviceType] = (byService[o.serviceType] || 0) + o.total;
 
-      for (const line of o.lines) {
+      for (const line of o.lines || []) {
         const unitCost = costById.get(line.itemId) || 0;
         const lineCost = unitCost * line.qty;
         const lineRev = line.unitPrice * line.qty;

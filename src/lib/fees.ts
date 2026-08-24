@@ -31,6 +31,8 @@ export function computeFees(
 }
 
 export function money(currency: string, n: number) {
-  if (currency === "PKR") return `Rs ${n.toLocaleString()}`;
-  return `${currency} ${n.toLocaleString()}`;
+  const v = Number(n);
+  const safe = Number.isFinite(v) ? v : 0;
+  if (currency === "PKR") return `Rs ${safe.toLocaleString()}`;
+  return `${currency || "PKR"} ${safe.toLocaleString()}`;
 }

@@ -21,7 +21,11 @@ export function statusMessage(tenant: TenantState, order: Order, kind: string) {
 }
 
 export async function copyText(text: string) {
-  await navigator.clipboard.writeText(text);
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    /* iOS Safari often blocks clipboard without a user gesture / https */
+  }
 }
 
 export function whatsappShareUrl(phone: string | undefined, text: string) {

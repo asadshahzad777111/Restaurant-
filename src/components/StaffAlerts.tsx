@@ -42,7 +42,7 @@ function orderAlertCopy(o: Order): { title: string; body: string } {
   const detail = bits.length ? ` · ${bits.join(" · ")}` : "";
   return {
     title: `New ${type} order #${o.number}`,
-    body: `${type}${detail} · ${o.lines.length} item${o.lines.length === 1 ? "" : "s"}`,
+    body: `${type}${detail} · ${(o.lines || []).length} item${(o.lines || []).length === 1 ? "" : "s"}`,
   };
 }
 
@@ -64,15 +64,15 @@ export function StaffAlerts() {
 
   const canHearOrders =
     user?.role === "admin" ||
-    user?.permissions.includes("orders") ||
-    user?.permissions.includes("kitchen") ||
-    user?.permissions.includes("pos");
+    Boolean(user?.permissions?.includes("orders")) ||
+    Boolean(user?.permissions?.includes("kitchen")) ||
+    Boolean(user?.permissions?.includes("pos"));
 
   const canHearStock =
     user?.role === "admin" ||
-    user?.permissions.includes("stock") ||
-    user?.permissions.includes("pos") ||
-    user?.permissions.includes("settings");
+    Boolean(user?.permissions?.includes("stock")) ||
+    Boolean(user?.permissions?.includes("pos")) ||
+    Boolean(user?.permissions?.includes("settings"));
 
   useEffect(() => {
     setSoundOk(readSoundPref());
