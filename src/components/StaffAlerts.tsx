@@ -42,7 +42,7 @@ function orderAlertCopy(o: Order): { title: string; body: string } {
   const detail = bits.length ? ` · ${bits.join(" · ")}` : "";
   return {
     title: `New ${type} order #${o.number}`,
-    body: `${type}${detail} · ${o.lines.length} item${o.lines.length === 1 ? "" : "s"}`,
+    body: `${type}${detail} · ${(o.lines || []).length} item${(o.lines || []).length === 1 ? "" : "s"}`,
   };
 }
 

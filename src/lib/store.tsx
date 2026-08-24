@@ -79,12 +79,18 @@ type MemorySession = {
 /** Survives StoreProvider remounts during client navigation (React state does not). */
 let memorySession: MemorySession | null = null;
 
-/** Skip restaurant /api/state on marketing, login, and Super HQ — HQ is not Admin. */
-function isPublicPath(path: string) {
+/**
+ * Guest / marketing routes that must not boot restaurant Admin session.
+ * Do not use startsWith("/order") — that also matches Admin /orders and
+ * skips session hydrate, which crashes the Orders page on iPhone (Safari
+ * then shows “This page couldn’t load”).
+ */
+export function isPublicPath(path: string) {
   return (
     path === "/" ||
     path.startsWith("/guest") ||
-    path.startsWith("/order") ||
+    path === "/order" ||
+    path.startsWith("/order/") ||
     path.startsWith("/scan") ||
     path.startsWith("/track") ||
     path.startsWith("/login") ||

@@ -121,7 +121,7 @@ export default function KitchenPage() {
           {o.customerName ? ` · ${o.customerName}` : ""}
         </p>
         <ul className={styles.ticketLines}>
-          {o.lines.map((l, i) => (
+          {(o.lines || []).map((l, i) => (
             <li key={i}>
               <strong>
                 {l.qty}× {l.name}

@@ -31,7 +31,7 @@ function when(iso: string) {
 }
 
 function serviceLine(order: Order) {
-  const bits: string[] = [order.serviceType.toUpperCase()];
+  const bits: string[] = [(order.serviceType || "counter").toUpperCase()];
   if (order.tableNumber) bits.push(`T${order.tableNumber}`);
   if (order.channel === "pos") bits.push("POS");
   return bits.join(" · ");
@@ -107,7 +107,7 @@ html, body {
 `.trim();
 
 function itemRows(order: Order, withPrices: boolean) {
-  return order.lines
+  return (order.lines || [])
     .map((l) => {
       const mods = (l.modifiers || [])
         .map((m) => {
@@ -237,7 +237,7 @@ export function customerReceiptText(tenant: TenantState, order: Order) {
   const rule = "-".repeat(col);
   const stamp = when(order.createdAt);
   const f = order.fees;
-  const items = order.lines.flatMap((l) => {
+  const items = (order.lines || []).flatMap((l) => {
     const rows = [l.name.slice(0, col), line(`${l.qty} x ${amount(l.unitPrice)}`, amount(l.unitPrice * l.qty))];
     for (const m of l.modifiers || []) rows.push(` + ${m.optionName}`.slice(0, col));
     if (l.lineNote) rows.push(` ${l.lineNote}`.slice(0, col));
@@ -285,7 +285,7 @@ export function kitchenTicketText(tenant: TenantState, order: Order) {
   const col = 32;
   const rule = "=".repeat(col);
   const stamp = when(order.createdAt);
-  const items = order.lines.flatMap((l) => {
+  const items = (order.lines || []).flatMap((l) => {
     const rows = [`${l.qty} x ${l.name}`.slice(0, col)];
     for (const m of l.modifiers || []) rows.push(`  + ${m.optionName}`.slice(0, col));
     if (l.lineNote) rows.push(`  ${l.lineNote}`.slice(0, col));
