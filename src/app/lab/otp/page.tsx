@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { OtpInput } from "@/components/OtpInput";
+import { useRef, useState } from "react";
+import { OtpInput, type OtpInputHandle } from "@/components/OtpInput";
 import styles from "./otp.module.css";
 
-/** Demo: try code 1234 to see success, anything else triggers error + shake. */
+/**
+ * Demo — try code 1234 to see success, anything else triggers error + shake.
+ * Reset button exercises the imperative ref (useful for PIN-lock retry screens).
+ */
 function VerifyCard({
   length,
   label,
@@ -14,7 +17,9 @@ function VerifyCard({
   label: string;
   onResend?: () => Promise<void>;
 }) {
+  const ref = useRef<OtpInputHandle>(null);
   const [result, setResult] = useState<string>("");
+  const [lastState, setLastState] = useState<string>("");
 
   return (
     <div className={styles.card}>
@@ -23,24 +28,36 @@ function VerifyCard({
         <div>
           <p className={styles.cardTitle}>{label}</p>
           <p className={styles.cardSub}>
-            Verify as soon as the last box fills — no submit button. Paste a code to fill all at once.
-            Success code: <code>1234</code>.
+            Verifies the instant the last box fills — no submit button. Paste a full code to fill all
+            boxes at once. Success code: <code>1234</code>.
           </p>
         </div>
       </div>
+
       <OtpInput
+        ref={ref}
         length={length}
         resendCooldown={30}
         onResend={onResend}
         title={`${length}-digit code`}
-        onChange={(c) => setResult(c.length ? `Typing: ${c}` : "")}
+        helperText="Typing forwards focus · Backspace goes back"
+        onChange={(c) => {
+          setResult(c.length ? `Typing: ${c}` : "");
+          setLastState("");
+        }}
         onComplete={async (code) => {
           // Simulated verification — swap for a real API call.
           await new Promise((r) => setTimeout(r, 900));
-          return code === "1234";
+          const ok = code === "1234";
+          setLastState(ok ? "success" : "error");
+          return ok;
         }}
       />
-      <p className={styles.result}>{result}</p>
+      <p className={styles.result} data-state={lastState || undefined}>{result}</p>
+
+      <button type="button" className={styles.resetBtn} onClick={() => ref.current?.reset()}>
+        Reset code
+      </button>
     </div>
   );
 }
@@ -56,7 +73,8 @@ export default function OtpLabPage() {
         <p className={styles.sub}>
           Reusable auto-verifying code component. Individual boxes, auto-focus forward, backspace-to-prev,
           full paste, digits-only, auto-verify on complete, loading + success + error-shake, and a resend
-          countdown. Fully typed and responsive.
+          countdown. Strictly typed and responsive — drop it into email / phone verification or PIN-lock
+          screens.
         </p>
       </header>
 

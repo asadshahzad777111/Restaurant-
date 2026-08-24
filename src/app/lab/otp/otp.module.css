@@ -102,6 +102,35 @@
   font-variant-numeric: tabular-nums;
 }
 
+.result[data-state="success"] {
+  color: #2f9e6b;
+  font-weight: 700;
+}
+
+.result[data-state="error"] {
+  color: #c94a3c;
+  font-weight: 700;
+}
+
+.resetBtn {
+  display: block;
+  margin: 0.9rem auto 0;
+  background: none;
+  border: 1px solid #e8e4de;
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
+  color: #71675e;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.16s ease, color 0.16s ease;
+}
+
+.resetBtn:hover {
+  border-color: #ff8500;
+  color: #ff8500;
+}
+
 .lastResend {
   margin: 1.25rem auto 0;
   max-width: 50rem;
