@@ -1,6 +1,1 @@
-[
-  {
-    "pkg": "@asfixgear/asfix-thermal-print",
-    "classpath": "com.asfixgear.pos.thermal.AsfixThermalPrintPlugin"
-  }
-]
+﻿[{"pkg":"@asfixgear/asfix-thermal-print","classpath":"com.asfixgear.pos.thermal.AsfixThermalPrintPlugin"}]
