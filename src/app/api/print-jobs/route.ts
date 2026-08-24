@@ -1,29 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
-import { printJobs, printStations, touchPrintStation } from "@/lib/print-jobs-service";
+import { AuthError, hasAnyPermission, requireTenantSession } from "@/lib/session";
+import { ensureStore } from "@/lib/db";
+import { createPrintJob, listQueuedPrintJobs, printBridgePublic, readPrintBridge, touchPrintBridge } from "@/lib/print-bridge";
 
 export const runtime = "nodejs";
 
-/** POST /api/print-jobs = create a job; GET ?station=android = list pending + stations. */
+/** Legacy alias of GET/POST /api/print/jobs — same tenant-scoped store. */
 export async function POST(req: NextRequest) {
-  let body: Record<string, unknown> = {};
   try {
-    body = await req.json();
-  } catch {
-    /* ignore */
+    await ensureStore();
+    const session = await requireTenantSession(req);
+    if (!(await hasAnyPermission(session, ["pos", "orders", "kitchen"]))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+    const job = await createPrintJob(session.tenantId!, {
+      kind: body.kind === "kitchen" ? "kitchen" : "bill",
+      text: typeof body.text === "string" ? body.text : "",
+      orderId: (body.orderId as string) ?? (body.order_id as string) ?? null,
+      orderRef: (body.orderRef as string) ?? (body.order_ref as string) ?? null,
+    });
+    return NextResponse.json({ job }, { status: 201 });
+  } catch (e) {
+    if (e instanceof AuthError) {
+      return NextResponse.json({ error: e.message }, { status: e.status });
+    }
+    const message = e instanceof Error ? e.message : "Failed";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
-  const job = printJobs.createPrintJob({
-    text: typeof body.text === "string" ? body.text : "",
-    dataBase64: typeof body.data_base64 === "string" ? body.data_base64 : "",
-    target: typeof body.target === "string" ? body.target : "any",
-    orderId: (body.orderId as string) ?? (body.order_id as string) ?? null,
-    orderRef: (body.orderRef as string) ?? (body.order_ref as string) ?? null,
-  });
-  return NextResponse.json({ job }, { status: 201 });
 }
 
 export async function GET(req: NextRequest) {
-  const station = req.nextUrl.searchParams.get("station") || undefined;
-  if (station) touchPrintStation(station);
-  const jobs = printJobs.listPendingPrintJobs(station);
-  return NextResponse.json({ jobs, stations: printStations() });
+  try {
+    await ensureStore();
+    const session = await requireTenantSession(req);
+    if (!(await hasAnyPermission(session, ["pos", "orders", "kitchen"]))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    const tenantId = session.tenantId!;
+    if (req.nextUrl.searchParams.get("station") === "android") {
+      await touchPrintBridge(tenantId);
+    }
+    const [jobs, presence] = await Promise.all([listQueuedPrintJobs(tenantId), readPrintBridge(tenantId)]);
+    const bridge = printBridgePublic(presence);
+    return NextResponse.json({
+      jobs,
+      stations: { android: { station: "android", online: bridge.connected, lastSeen: bridge.lastSeen, name: bridge.printerName } },
+    });
+  } catch (e) {
+    if (e instanceof AuthError) {
+      return NextResponse.json({ error: e.message }, { status: e.status });
+    }
+    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  }
 }

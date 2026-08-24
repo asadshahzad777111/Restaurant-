@@ -5,6 +5,8 @@ import { AppShell } from "@/components/AppShell";
 import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
 import { printKitchenTicket } from "@/lib/print";
+import { PrintTargetChooser } from "@/components/PrintTargetChooser";
+import { decidePrintPath, enqueueSlip, executeLocalPrint } from "@/lib/print-target";
 import type { OrderStatus } from "@/lib/types";
 import type { Order } from "@/lib/tenant-types";
 import styles from "../staff.module.css";
@@ -42,6 +44,8 @@ function ticketClass(status: string) {
 export default function KitchenPage() {
   const { tenant, api, applyOrder } = useStore();
   const [printKind, setPrintKind] = useState<"bill" | "kitchen" | null>(null);
+  const [printTarget, setPrintTarget] = useState<Order | null>(null);
+  const [bridgeNote, setBridgeNote] = useState("");
   const [countdowns, setCountdowns] = useState<Record<string, number>>({}); // orderId -> end ms
   const [, forceTick] = useState(0);
   const tickets = (tenant?.orders ?? []).filter(
@@ -90,7 +94,28 @@ export default function KitchenPage() {
     if (res.ok && data.order) applyOrder(data.order, { tables: data.tables });
   }
 
-  const dismissPrint = useCallback(() => setPrintKind(null), []);
+  async function printTicket(o: Order) {
+    if (!tenant) return;
+    const path = await decidePrintPath();
+    if (path === "android") {
+      setPrintTarget(o);
+      setBridgeNote("");
+      return;
+    }
+    const ok = await executeLocalPrint(tenant, o, "kitchen");
+    if (ok) setPrintKind("kitchen");
+  }
+
+  async function sendKitchenToAndroid() {
+    if (!printTarget || !tenant) return;
+    try {
+      await enqueueSlip(tenant, printTarget, "kitchen");
+      setPrintKind("kitchen");
+      setPrintTarget(null);
+    } catch {
+      setBridgeNote("Could not reach the Android printer — print here or check Staff APK.");
+    }
+  }
 
   function remain(endsAt?: number) {
     if (!endsAt) return "";
@@ -146,11 +171,7 @@ export default function KitchenPage() {
             <button
               type="button"
               className={styles.btnGhost}
-              onClick={() =>
-                void printKitchenTicket(tenant, o).then((ok) => {
-                  if (ok) setPrintKind("kitchen");
-                })
-              }
+              onClick={() => void printTicket(o)}
             >
               Print ticket
             </button>
@@ -166,6 +187,25 @@ export default function KitchenPage() {
   return (
     <AppShell title="Kitchen">
       <PrintSuccess kind={printKind} onDone={dismissPrint} />
+      {printTarget && (
+        <PrintTargetChooser
+          order={printTarget}
+          kind="kitchen"
+          androidOnline
+          note={bridgeNote}
+          onAndroid={() => void sendKitchenToAndroid()}
+          onBrowser={() => {
+            const o = printTarget;
+            setPrintTarget(null);
+            if (tenant && o) {
+              void executeLocalPrint(tenant, o, "kitchen").then((ok) => {
+                if (ok) setPrintKind("kitchen");
+              });
+            }
+          }}
+          onClose={() => setPrintTarget(null)}
+        />
+      )}
       {tickets.length === 0 ? (
         <p className={styles.muted}>No open kitchen tickets</p>
       ) : (

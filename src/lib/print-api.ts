@@ -1,5 +1,4 @@
-/** Client for the cross-device print bridge: laptop/admin enqueues a job, the
- * mobile Capacitor station polls + prints it. */
+/** Client for the AsFix-style print bridge. Token = staff bearer; jobs never cross tenants. */
 
 export interface PrintApiConfig {
   baseUrl: string;
@@ -7,9 +6,20 @@ export interface PrintApiConfig {
   fetchImpl?: typeof fetch;
 }
 
+const TOKEN_KEY = "restaurant_pos_token_v2";
+
+function defaultToken() {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
 let config: PrintApiConfig = {
   baseUrl: "/api",
-  getToken: () => null,
+  getToken: defaultToken,
   fetchImpl: typeof fetch !== "undefined" ? fetch.bind(globalThis) : undefined,
 };
 
@@ -18,7 +28,7 @@ export function configurePrintApi(next: Partial<PrintApiConfig>) {
 }
 
 function authHeaders(): Record<string, string> {
-  const t = config.getToken?.();
+  const t = config.getToken?.() || defaultToken();
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
@@ -38,16 +48,52 @@ async function request<T = unknown>(path: string, options: RequestInit = {}): Pr
   return data as T;
 }
 
+export type PrintBridgeStatus = {
+  connected: boolean;
+  lastSeen: number | null;
+  printerName: string | null;
+};
+
+export type BridgePrintJob = {
+  id: string;
+  kind: "bill" | "kitchen";
+  text: string;
+  html?: string;
+  orderId?: string | null;
+  orderRef?: string | null;
+  status: string;
+};
+
 export const printApi = {
-  createPrintJob: (b: { text?: string; data_base64?: string; target?: string; orderId?: string }) =>
-    request("/print-jobs", { method: "POST", body: JSON.stringify(b) }),
-  getPending: (station?: string) =>
-    request(`/print-jobs${station ? `?station=${station}` : ""}`),
-  getStations: () => request("/print-jobs/stations"),
-  heartbeat: (b: { station: string; name?: string }) =>
-    request("/print-jobs/heartbeat", { method: "POST", body: JSON.stringify(b) }),
-  claim: (id: string, b: { station: string; name?: string }) =>
-    request(`/print-jobs/${encodeURIComponent(id)}/claim`, { method: "POST", body: JSON.stringify(b) }),
-  complete: (id: string, b: { station: string; status?: string; error?: string }) =>
-    request(`/print-jobs/${encodeURIComponent(id)}/complete`, { method: "POST", body: JSON.stringify(b) }),
+  createPrintJob: (b: {
+    kind?: "bill" | "kitchen";
+    text?: string;
+    html?: string;
+    orderId?: string;
+    orderRef?: string;
+    target?: string;
+  }) => request<{ job: BridgePrintJob }>("/print/jobs", { method: "POST", body: JSON.stringify(b) }),
+  getPending: () => request<{ jobs: BridgePrintJob[]; bridge?: PrintBridgeStatus }>("/print/jobs"),
+  getBridge: () => request<PrintBridgeStatus>("/print/bridge"),
+  heartbeat: (b: { lastSeen?: number; printerName?: string; name?: string; station?: string }) =>
+    request<PrintBridgeStatus>("/print/bridge", {
+      method: "POST",
+      body: JSON.stringify({
+        lastSeen: b.lastSeen ?? Date.now(),
+        printerName: b.printerName || b.name,
+      }),
+    }),
+  ack: (id: string, b: { status: "printing" | "done" | "failed"; error?: string; station?: string }) =>
+    request(`/print/jobs/${encodeURIComponent(id)}`, { method: "POST", body: JSON.stringify(b) }),
+  /** @deprecated use getBridge */
+  getStations: async () => {
+    const b = await printApi.getBridge();
+    return { stations: { android: { online: b.connected, lastSeen: b.lastSeen, name: b.printerName } } };
+  },
+  /** @deprecated use ack */
+  claim: (id: string, b: { station?: string; name?: string }) =>
+    printApi.ack(id, { status: "printing", station: b.station }),
+  /** @deprecated use ack */
+  complete: (id: string, b: { station?: string; status?: string; error?: string }) =>
+    printApi.ack(id, { status: b.status === "failed" ? "failed" : "done", error: b.error, station: b.station }),
 };

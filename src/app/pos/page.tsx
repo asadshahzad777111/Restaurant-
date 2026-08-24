@@ -5,9 +5,9 @@ import { AppShell } from "@/components/AppShell";
 import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
 import { computeFees, lineUnitPrice, money } from "@/lib/fees";
-import { printCustomerReceipt } from "@/lib/print";
-import { printApi } from "@/lib/print-api";
+import { PrintTargetChooser } from "@/components/PrintTargetChooser";
 import { PosPrinterPanel } from "@/components/PosPrinterPanel";
+import { decidePrintPath, enqueueSlip, executeLocalPrint } from "@/lib/print-target";
 import type { LineModifier, MenuItem, ModifierGroup, Order } from "@/lib/tenant-types";
 import type { PaymentMethod } from "@/lib/types";
 import styles from "../staff.module.css";
@@ -220,21 +220,14 @@ export default function PosPage() {
       setNote("");
       setDiscountStr("");
       setCashGiven("");
-      const printed = await printCustomerReceipt(tenant, order);
-      if (printed) {
-        setPrintKind("bill");
+      const path = await decidePrintPath();
+      if (path === "android") {
+        setAndroidOnline(true);
+        setPendingOrder(order);
+        setPrintChooser(true);
       } else {
-        // Not in the native APK (laptop/admin): offer to send to a mobile printer station.
-        try {
-          const st = await printApi.getStations();
-          const stn = (st as { stations: { android?: { online: boolean } } }).stations?.android;
-          setAndroidOnline(Boolean(stn?.online));
-          setPendingOrder(order);
-          setPrintChooser(true);
-        } catch {
-          /* fallback to browser print handled below */
-          setPrintKind("bill");
-        }
+        const printed = await executeLocalPrint(tenant, order, "bill");
+        if (printed) setPrintKind("bill");
       }
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Failed");
@@ -245,26 +238,25 @@ export default function PosPage() {
 
   async function sendToAndroidPrinter() {
     const order = pendingOrder;
-    if (!order || !tenant || typeof window === "undefined") return;
+    if (!order || !tenant) return;
     try {
-      const { customerReceiptText } = await import("@/lib/print");
-      await printApi.createPrintJob({
-        text: customerReceiptText(tenant, order),
-        target: "android",
-        orderId: order.id,
-      });
+      await enqueueSlip(tenant, order, "bill");
       setBridgeNote(`Order #${order.number} sent to the Android printer`);
       setPrintChooser(false);
       setPendingOrder(null);
+      setPrintKind("bill");
     } catch {
-      setBridgeNote("Could not reach the mobile printer station");
+      setBridgeNote("Could not reach the Android printer — print here or check Staff APK.");
     }
   }
 
-  function printHere() {
+  async function printHere() {
+    const order = pendingOrder;
     setPrintChooser(false);
     setPendingOrder(null);
-    setPrintKind("bill");
+    if (!order || !tenant) return;
+    const printed = await executeLocalPrint(tenant, order, "bill");
+    if (printed) setPrintKind("bill");
   }
 
   const dismissPrint = useCallback(() => setPrintKind(null), []);
@@ -273,28 +265,15 @@ export default function PosPage() {
     <AppShell title="POS">
       <PrintSuccess kind={printKind} onDone={dismissPrint} />
       {printChooser && pendingOrder && (
-        <div className={styles.modalOverlay} onClick={() => setPrintChooser(false)}>
-          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ margin: "0 0 0.25rem" }}>Print receipt #{pendingOrder.number}</h3>
-            <p className={styles.muted}>
-              {androidOnline
-                ? "An Android printer station is online — send it there, or print here."
-                : "No Android printer station is online. Connect the phone (APK + printer), or print here."}
-            </p>
-            {androidOnline && (
-              <button type="button" className={styles.btn} onClick={() => void sendToAndroidPrinter()}>
-                📲 Send to Android printer
-              </button>
-            )}
-            <button type="button" className={styles.btnGhost} onClick={printHere}>
-              🖨️ Print here (browser)
-            </button>
-            <button type="button" className={styles.btnGhost} onClick={() => setPrintChooser(false)}>
-              Close
-            </button>
-            {bridgeNote ? <p className={styles.muted}>{bridgeNote}</p> : null}
-          </div>
-        </div>
+        <PrintTargetChooser
+          order={pendingOrder}
+          kind="bill"
+          androidOnline={androidOnline}
+          note={bridgeNote}
+          onAndroid={() => void sendToAndroidPrinter()}
+          onBrowser={() => void printHere()}
+          onClose={() => setPrintChooser(false)}
+        />
       )}
       <div className={styles.page}>
         <PosPrinterPanel compact />

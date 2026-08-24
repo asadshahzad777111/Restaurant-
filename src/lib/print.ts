@@ -170,6 +170,7 @@ export function customerReceiptHtml(tenant: TenantState, order: Order) {
     <span>${escapeHtml(serviceLine(order))}${paid ? "  \u2713 PAID" : ""}</span>
     ${order.customerName ? `<span>Guest: ${escapeHtml(order.customerName)}</span>` : ""}
     ${order.customerPhone ? `<span>Ph: ${escapeHtml(order.customerPhone)}</span>` : ""}
+    ${order.deliveryAddress ? `<span>Loc: ${escapeHtml(order.deliveryAddress)}</span>` : ""}
   </div>
   <hr class="rule"/>
   <div class="cols"><span>Item</span><span>Total</span></div>
@@ -217,6 +218,7 @@ export function kitchenTicketHtml(tenant: TenantState, order: Order) {
     <span>Type: ${escapeHtml(serviceLine(order))}</span>
     ${order.customerName ? `<span>Guest: ${escapeHtml(order.customerName)}</span>` : ""}
     ${order.customerPhone ? `<span>Phone: ${escapeHtml(order.customerPhone)}</span>` : ""}
+    ${order.deliveryAddress ? `<span>Loc: ${escapeHtml(order.deliveryAddress)}</span>` : ""}
   </div>
   <hr class="rule"/>
   ${itemRows(order, false)}
@@ -262,6 +264,7 @@ export function customerReceiptText(tenant: TenantState, order: Order) {
     payLabel(order.paymentMethod),
     ...(order.customerName ? [`Guest: ${order.customerName}`] : []),
     ...(order.customerPhone ? [`Phone: ${order.customerPhone}`] : []),
+    ...(order.deliveryAddress ? [`Loc: ${order.deliveryAddress}`] : []),
     rule,
     ...items,
     rule,
@@ -297,6 +300,9 @@ export function kitchenTicketText(tenant: TenantState, order: Order) {
     rule,
     `#${order.number}  ${stamp.time}`,
     serviceLine(order),
+    ...(order.customerName ? [`Guest: ${order.customerName}`] : []),
+    ...(order.customerPhone ? [`Phone: ${order.customerPhone}`] : []),
+    ...(order.deliveryAddress ? [`Loc: ${order.deliveryAddress}`] : []),
     rule,
     ...items,
     rule,

@@ -5,7 +5,8 @@ import { AppShell } from "@/components/AppShell";
 import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
 import { money } from "@/lib/fees";
-import { printCustomerReceipt, printKitchenTicket } from "@/lib/print";
+import { PrintTargetChooser } from "@/components/PrintTargetChooser";
+import { decidePrintPath, enqueueSlip, executeLocalPrint } from "@/lib/print-target";
 import { copyText, statusMessage, whatsappShareUrl } from "@/lib/status-messages";
 import type { Order } from "@/lib/tenant-types";
 import type { OrderStatus } from "@/lib/types";
@@ -69,6 +70,8 @@ export default function OrdersPage() {
   const [msg, setMsg] = useState("");
   const [printKind, setPrintKind] = useState<"bill" | "kitchen" | null>(null);
   const [openMore, setOpenMore] = useState<string | null>(null);
+  const [printTarget, setPrintTarget] = useState<{ order: Order; kind: "bill" | "kitchen" } | null>(null);
+  const [bridgeNote, setBridgeNote] = useState("");
 
   const orders = tenant?.orders ?? [];
 
@@ -143,20 +146,47 @@ export default function OrdersPage() {
     window.open(whatsappShareUrl(order.customerPhone || tenant.shop.whatsapp, text), "_blank");
   }
 
-  async function printBill(orderId: string) {
+  async function requestPrint(orderId: string, kind: "bill" | "kitchen") {
     if (!tenant) return;
     const order = tenant.orders.find((o) => o.id === orderId);
     if (!order) return;
-    const printed = await printCustomerReceipt(tenant, order);
-    if (printed) setPrintKind("bill");
+    setOpenMore(null);
+    const path = await decidePrintPath();
+    if (path === "android") {
+      setPrintTarget({ order, kind });
+      setBridgeNote("");
+      return;
+    }
+    const printed = await executeLocalPrint(tenant, order, kind);
+    if (printed) setPrintKind(kind);
+  }
+
+  async function printBill(orderId: string) {
+    await requestPrint(orderId, "bill");
   }
 
   async function printKitchen(orderId: string) {
-    if (!tenant) return;
-    const order = tenant.orders.find((o) => o.id === orderId);
-    if (!order) return;
-    const printed = await printKitchenTicket(tenant, order);
-    if (printed) setPrintKind("kitchen");
+    await requestPrint(orderId, "kitchen");
+  }
+
+  async function sendPrintToAndroid() {
+    if (!printTarget || !tenant) return;
+    try {
+      await enqueueSlip(tenant, printTarget.order, printTarget.kind);
+      setBridgeNote(`#${printTarget.order.number} sent to the Android printer`);
+      setPrintKind(printTarget.kind);
+      setPrintTarget(null);
+    } catch {
+      setBridgeNote("Could not reach the Android printer — print here or check Staff APK.");
+    }
+  }
+
+  async function printHereFromChooser() {
+    if (!printTarget || !tenant) return;
+    const { order, kind } = printTarget;
+    setPrintTarget(null);
+    const printed = await executeLocalPrint(tenant, order, kind);
+    if (printed) setPrintKind(kind);
   }
 
   const dismissPrint = useCallback(() => setPrintKind(null), []);
@@ -239,6 +269,17 @@ export default function OrdersPage() {
   return (
     <AppShell title="Orders">
       <PrintSuccess kind={printKind} onDone={dismissPrint} />
+      {printTarget && (
+        <PrintTargetChooser
+          order={printTarget.order}
+          kind={printTarget.kind}
+          androidOnline
+          note={bridgeNote}
+          onAndroid={() => void sendPrintToAndroid()}
+          onBrowser={() => void printHereFromChooser()}
+          onClose={() => setPrintTarget(null)}
+        />
+      )}
       <div className={styles.page} onClick={() => setOpenMore(null)}>
         <div className={styles.toolbar}>
           <h2 className={styles.toolbarTitle}>Orders</h2>
