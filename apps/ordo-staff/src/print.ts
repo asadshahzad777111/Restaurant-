@@ -86,3 +86,18 @@ export async function printOrder(order: Order, currency: string): Promise<boolea
   const bytes = buildReceiptEscPos(rows, { cut: true });
   return sendBytes(bytes, printer ?? undefined);
 }
+
+/** Test print — a quick slip to verify the Bluetooth/IP printer works. */
+export async function printTestSlip(): Promise<boolean> {
+  const printer = await getPrinter();
+  const rows = receiptRows({
+    shop: "ORDO PRINT TEST",
+    billNo: "#TEST",
+    date: new Date().toLocaleString(),
+    lines: [{ name: "Test slip", qty: 1, amount: "OK" }],
+    total: "0",
+    footer: printer ? `Printer: ${printer.name} ${printer.mac ? printer.mac : printer.ip || ""}` : "Ready",
+  });
+  const bytes = buildReceiptEscPos(rows, { cut: true });
+  return sendBytes(bytes, printer ?? undefined);
+}

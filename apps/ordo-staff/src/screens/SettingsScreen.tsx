@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { getTenant, pauseOrdering, clearToken } from "../api";
 import { getPrinter, savePrinter, clearPrinter } from "../printerStorage";
 import { enableNotifications } from "../notify";
+import { printTestSlip } from "../print";
 import { getBondedDevices, connectPrinter, type BtDevice } from "../bluetooth";
 import type { Tenant } from "../types";
 import { theme, radius } from "../theme";
@@ -138,6 +139,11 @@ export function SettingsScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
         {printerMac ? <Text style={s.connStatus}>Connected ✓ {printerName || printerMac}</Text> : null}
+        <View style={s.rowBtns}>
+          <TouchableOpacity style={s.smallBtn} onPress={async () => { const ok = await printTestSlip(); setMsg(ok ? "Test print sent ✓" : "No printer connected"); }}>
+            <Text style={s.smallBtnText}>Test print</Text>
+          </TouchableOpacity>
+        </View>
         {devices.length > 0 && (
           <View style={s.devList}>
             {devices.map((d) => (
