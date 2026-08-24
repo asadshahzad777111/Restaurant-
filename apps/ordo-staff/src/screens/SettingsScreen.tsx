@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { getTenant, pauseOrdering, clearToken } from "../api";
 import { getPrinter, savePrinter, clearPrinter } from "../printerStorage";
 import { enableNotifications } from "../notify";
-import { getBondedDevices, pickPrinter, type BtDevice } from "../bluetooth";
+import { getBondedDevices, connectPrinter, type BtDevice } from "../bluetooth";
 import type { Tenant } from "../types";
 import { theme, radius } from "../theme";
 
@@ -26,17 +26,25 @@ export function SettingsScreen({ navigation }: any) {
   async function scanPrinter() {
     if (scanning) return;
     setScanning(true);
-    const bonded = await getBondedDevices();
-    setScanning(false);
-    setDevices(bonded);
-    const pick = pickPrinter(bonded);
+    setErr("");
+    const pick = await connectPrinter();
     if (pick) {
       setPrinterMac(pick.address);
-      if (!printerName.trim()) setPrinterName(pick.name || "Printer");
-      setMsg("Found printer — select or save");
+      setPrinterName(pick.name || "Printer");
+      await savePrinter({
+        name: pick.name || "Printer",
+        mac: pick.address,
+        ip: printerIp.trim() || undefined,
+        port: Number(printerPort) || 9100,
+      });
+      setDevices([]);
+      setMsg(`Connected ✓ ${pick.name || pick.address}`);
     } else {
-      setErr("No paired Bluetooth printer found. Pair it in Settings → Bluetooth first.");
+      const bonded = await getBondedDevices();
+      setDevices(bonded);
+      setErr("No printer found. Pair it in Settings → Bluetooth, then try again; or pick below.");
     }
+    setScanning(false);
   }
 
   const load = useCallback(async () => {
@@ -120,12 +128,16 @@ export function SettingsScreen({ navigation }: any) {
 
       <Text style={s.title}>🖨️ Printer (58mm)</Text>
       <View style={s.card}>
-        <Text style={s.muted}>Set your Bluetooth MAC (paired) OR a network IP — the receipt prints automatically to it.</Text>
-        <TextInput style={s.input} value={printerName} onChangeText={setPrinterName} placeholder="Printer name" placeholderTextColor={theme.muted} autoCorrect={false} />
-        <TextInput style={s.input} value={printerMac} onChangeText={setPrinterMac} placeholder="MAC / address (e.g. A0:BC:11:22:33)" placeholderTextColor={theme.muted} autoCapitalize="characters" autoCorrect={false} />
-        <TouchableOpacity style={s.smallGhost} onPress={() => void scanPrinter()}>
-          <Text style={s.smallGhostText}>{scanning ? "Scanning…" : "📡 Scan printer"}</Text>
-        </TouchableOpacity>
+        <Text style={s.muted}>Tap "Connect printer" — it finds your Bluetooth thermal printer automatically and prints every order. No MAC to type.</Text>
+        <View style={s.rowBtns}>
+          <TouchableOpacity style={s.connectBtn} onPress={() => void scanPrinter()}>
+            <Text style={s.connectBtnText}>{scanning ? "Connecting…" : "🔗 Connect printer"}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.smallGhost} onPress={async () => { setPrinterName(""); setPrinterMac(""); await clearPrinter(); setMsg("Printer cleared"); }}>
+            <Text style={s.smallGhostText}>Clear</Text>
+          </TouchableOpacity>
+        </View>
+        {printerMac ? <Text style={s.connStatus}>Connected ✓ {printerName || printerMac}</Text> : null}
         {devices.length > 0 && (
           <View style={s.devList}>
             {devices.map((d) => (
@@ -136,14 +148,13 @@ export function SettingsScreen({ navigation }: any) {
             ))}
           </View>
         )}
-        <TextInput style={s.input} value={printerIp} onChangeText={setPrinterIp} placeholder="Network IP (e.g. 192.168.1.50)" placeholderTextColor={theme.muted} autoCapitalize="none" autoCorrect={false} />
+        <TextInput style={s.input} value={printerName} onChangeText={setPrinterName} placeholder="Printer name (optional)" placeholderTextColor={theme.muted} autoCorrect={false} />
+        <TextInput style={s.input} value={printerMac} onChangeText={setPrinterMac} placeholder="MAC (auto-filled by Connect)" placeholderTextColor={theme.muted} autoCapitalize="characters" autoCorrect={false} />
+        <TextInput style={s.input} value={printerIp} onChangeText={setPrinterIp} placeholder="Network IP (optional, e.g. 192.168.1.50)" placeholderTextColor={theme.muted} autoCapitalize="none" autoCorrect={false} />
         <TextInput style={s.input} value={printerPort} onChangeText={setPrinterPort} placeholder="Port (9100)" placeholderTextColor={theme.muted} keyboardType="number-pad" />
         <View style={s.rowBtns}>
-          <TouchableOpacity style={s.smallBtn} onPress={async () => { if (!printerName.trim()) { setErr("Printer name is required"); return; } await savePrinter({ name: printerName, mac: printerMac, ip: printerIp.trim() || undefined, port: Number(printerPort) || 9100 }); setMsg("Printer saved"); setErr(""); }}>
+          <TouchableOpacity style={s.smallBtn} onPress={async () => { if (!printerName.trim() && !printerMac.trim()) { setErr("Tap Connect printer or enter a MAC."); return; } await savePrinter({ name: printerName, mac: printerMac, ip: printerIp.trim() || undefined, port: Number(printerPort) || 9100 }); setMsg("Printer saved"); setErr(""); }}>
             <Text style={s.smallBtnText}>Save printer</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={s.smallGhost} onPress={async () => { setPrinterName(""); setPrinterMac(""); await clearPrinter(); setMsg("Printer cleared"); }}>
-            <Text style={s.smallGhostText}>Clear</Text>
           </TouchableOpacity>
         </View>
         <Text style={s.footInline}>Printing needs a development build with the native printer bridge.</Text>
@@ -190,6 +201,9 @@ const s = StyleSheet.create({
   smallBtnText: { color: "#fff", fontWeight: "800" },
   smallGhost: { borderWidth: 1, borderColor: theme.line, paddingHorizontal: 14, paddingVertical: 10, borderRadius: radius.sm },
   smallGhostText: { color: theme.muted, fontWeight: "700" },
+  connectBtn: { backgroundColor: theme.success, borderRadius: radius.md, padding: 14, flex: 1, alignItems: "center" },
+  connectBtnText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  connStatus: { color: theme.success, fontWeight: "700", marginTop: 4 },
   devList: { gap: 6, marginTop: 6 },
   devRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: theme.line, borderRadius: radius.sm, padding: 10 },
   devName: { color: theme.ink, fontWeight: "700", fontSize: 14 },
