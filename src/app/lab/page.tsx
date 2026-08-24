@@ -19,6 +19,7 @@ const LINKS = [
   { href: "/menu", label: "Menu admin", note: "Deals + items" },
   { href: "/day-close", label: "Day close", note: "Shift summary" },
   { href: "/settings", label: "Settings", note: "Logo · staff · stock · QR" },
+  { href: "/lab/otp", label: "OTP / PIN input", note: "Auto-verify · paste · resend · animation" },
 ];
 
 export default function LabPage() {
