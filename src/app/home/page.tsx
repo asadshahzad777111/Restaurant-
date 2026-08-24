@@ -31,7 +31,7 @@ function StatCard({
       transition={{ type: "spring", stiffness: 320, damping: 24 }}
     >
       <span className={styles.muted}>{label}</span>
-      <strong className={styles.statValue}>{value}</strong>
+      <strong className={styles.statValue} suppressHydrationWarning>{value}</strong>
       {hint && <span className={styles.statHint}>{hint}</span>}
     </motion.div>
   );

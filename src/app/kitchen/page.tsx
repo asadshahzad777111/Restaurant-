@@ -108,7 +108,7 @@ export default function KitchenPage() {
       <article key={o.id} className={ticketClass(o.status)}>
         <h3>
           #{o.number}
-          <span className={styles.ticketTime}>{ago(o.createdAt)}</span>
+          <span className={styles.ticketTime} suppressHydrationWarning>{ago(o.createdAt)}</span>
         </h3>
         {cd !== undefined && (
           <div className={`${styles.timerBadge} ${expired ? styles.timerBadgeExpired : ""}`}>

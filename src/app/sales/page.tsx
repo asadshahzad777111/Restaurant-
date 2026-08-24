@@ -191,16 +191,16 @@ export default function SalesPage() {
               <div className={styles.statGrid}>
                 <article className={styles.statCard}>
                   <span>Gross sales</span>
-                  <strong className={styles.statValue}>{money(cur, grossShown)}</strong>
+                  <strong className={styles.statValue} suppressHydrationWarning>{money(cur, grossShown)}</strong>
                 </article>
                 <article className={styles.statCard}>
                   <span>Est. profit</span>
-                  <strong className={styles.statValue}>{money(cur, profitShown)}</strong>
+                  <strong className={styles.statValue} suppressHydrationWarning>{money(cur, profitShown)}</strong>
                   <em>{data.summary.marginPct}% margin</em>
                 </article>
                 <article className={styles.statCard}>
                   <span>Orders</span>
-                  <strong className={styles.statValue}>{ordersShown}</strong>
+                  <strong className={styles.statValue} suppressHydrationWarning>{ordersShown}</strong>
                   <em>
                     {data.summary.completedCount} done · {data.summary.openCount} open ·{" "}
                     {data.summary.cancelledCount} void
@@ -208,7 +208,7 @@ export default function SalesPage() {
                 </article>
                 <article className={styles.statCard}>
                   <span>Est. COGS</span>
-                  <strong className={styles.statValue}>{money(cur, cogsShown)}</strong>
+                  <strong className={styles.statValue} suppressHydrationWarning>{money(cur, cogsShown)}</strong>
                   {!data.summary.costsConfigured && (
                     <em>Set cost prices on Menu for real margins</em>
                   )}
