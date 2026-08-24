@@ -19,18 +19,30 @@ export async function hasBlePermission(): Promise<boolean> {
   }
 }
 
-/** Scan for nearby BLE printers (react-native-ble-plx). */
+/** Read paired Classic (SPP) devices, then fall back to a BLE scan. */
 export async function getBondedDevices(): Promise<BtDevice[]> {
   if (Platform.OS !== "android") return [];
+  const out: BtDevice[] = [];
+  // Classic paired devices first (most 58mm printers).
+  try {
+    const BluetoothClassic = require("react-native-bluetooth-classic") as any;
+    if (BluetoothClassic?.getBondedDevices) {
+      const list = await BluetoothClassic.getBondedDevices();
+      for (const d of list || []) out.push({ address: d.address, name: d.name || null });
+    }
+  } catch {
+    /* ignore */
+  }
+  if (out.length) return out;
+  // BLE scan fallback.
   try {
     const { BleManager } = require("react-native-ble-plx") as any;
-    if (!BleManager) return [];
+    if (!BleManager) return out;
     const manager = new BleManager();
-    const found: BtDevice[] = [];
     await new Promise<void>((resolve) => {
-      manager.startDeviceScan(null, null, (_err: any, device: any) => {
-        if (device && !found.some((d) => d.address === device.id)) {
-          found.push({ address: device.id, name: device.name || null });
+      manager.startDeviceScan(null, null, (_e: any, device: any) => {
+        if (device && !out.some((d) => d.address === device.id)) {
+          out.push({ address: device.id, name: device.name || null });
         }
       });
       setTimeout(() => {
@@ -42,10 +54,10 @@ export async function getBondedDevices(): Promise<BtDevice[]> {
         resolve();
       }, 6000);
     });
-    return found;
   } catch {
-    return [];
+    /* ignore */
   }
+  return out;
 }
 
 /** Prefer devices that look like a printer. */

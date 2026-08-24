@@ -73,13 +73,37 @@ async function sendNetwork(bytes: Uint8Array, ip: string, port: number): Promise
   });
 }
 
-async function sendBytes(bytes: Uint8Array, printer?: PrinterConfig): Promise<boolean> {
-  // BLE printer (MAC) — most common 58mm BT thermal printers.
-  if (printer?.mac) {
-    const ok = await sendBle(bytes, printer.mac);
-    if (ok) return true;
+/** Send ESC/POS bytes to a paired Classic (SPP) Bluetooth printer. */
+async function sendClassic(bytes: Uint8Array, mac: string): Promise<boolean> {
+  try {
+    const BluetoothClassic = require("react-native-bluetooth-classic") as any;
+    if (!BluetoothClassic?.connect) return false;
+    const conn = await BluetoothClassic.connect(mac, { Channel: 1 });
+    if (!conn) return false;
+    // Write the raw bytes (ArrayBuffer), then close the SPP output stream.
+    await conn.write(new Uint8Array(bytes).buffer as any);
+    await conn.write(new Uint8Array([0x0a]).buffer as any); // trailing LF
+    await new Promise((r) => setTimeout(r, 1200));
+    try {
+      await conn.disconnect();
+    } catch {
+      /* ignore */
+    }
+    return true;
+  } catch {
+    return false;
   }
-  // IP network print.
+}
+
+async function sendBytes(bytes: Uint8Array, printer?: PrinterConfig): Promise<boolean> {
+  const mac = printer?.mac;
+  // Try Classic SPP first (most 58mm printers), then BLE, then IP — whichever prints.
+  if (mac) {
+    const classic = await sendClassic(bytes, mac);
+    if (classic) return true;
+    const ble = await sendBle(bytes, mac);
+    if (ble) return true;
+  }
   if (printer?.ip) {
     return sendNetwork(bytes, printer.ip, printer.port || 9100);
   }
