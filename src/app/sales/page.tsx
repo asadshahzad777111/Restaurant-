@@ -73,6 +73,48 @@ export default function SalesPage() {
     void load();
   }, [load]);
 
+  function exportOrdersCsv() {
+    const days = Number(range);
+    const from = Date.now() - days * 24 * 60 * 60 * 1000;
+    const orders = (tenant?.orders || []).filter(
+      (o) => new Date(o.createdAt).getTime() >= from,
+    );
+    const header = [
+      "Order ID",
+      "Customer Name",
+      "Phone",
+      "Items Summary",
+      "Subtotal",
+      "Tax",
+      "Grand Total",
+      "Payment Mode",
+      "Timestamp",
+    ];
+    const esc = (v: unknown) => {
+      const s = String(v ?? "");
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const rows = orders.map((o) => [
+      o.number ?? o.id,
+      o.customerName ?? "",
+      o.customerPhone ?? "",
+      (o.lines || []).map((l: { qty: number; name: string }) => `${l.qty}x ${l.name}`).join(" | "),
+      o.subtotal ?? "",
+      o.fees?.tax ?? "",
+      o.total ?? "",
+      o.paymentStatus ?? o.paymentMethod ?? "",
+      new Date(o.createdAt).toLocaleString(),
+    ]);
+    const csv = [header, ...rows].map((r) => r.map(esc).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ordo-sales-${range}days.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <AppShell title="Sales & Profit">
       <PlanGate need="sales">
@@ -101,6 +143,9 @@ export default function SalesPage() {
             ))}
             <button type="button" className={styles.btnGhost} onClick={() => void load()}>
               Refresh
+            </button>
+            <button type="button" className={styles.btn} onClick={exportOrdersCsv}>
+              Export orders CSV
             </button>
             {data && (
               <button
