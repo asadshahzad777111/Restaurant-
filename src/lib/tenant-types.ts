@@ -11,6 +11,8 @@ export interface TenantBranding {
   name: string;
   logoUrl: string;
   receiptFooter: string;
+  /** Whether this kitchen may distribute its own APK (admin downloads + receipt QR). */
+  allowApk?: boolean;
 }
 
 export interface TenantShop {

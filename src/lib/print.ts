@@ -1,5 +1,6 @@
 import type { Order, TenantState } from "./tenant-types";
 import { tryNativeThermalPrint } from "./thermal/nativePosPrint";
+import { apkAppHost } from "./apk-urls";
 
 const SLIP_MM = 58;
 
@@ -100,6 +101,8 @@ html, body {
 .center { text-align: center; margin: 4px 0 0; font-size: 9px; }
 .thanks { text-align: center; margin: 5px 0 1px; font-size: 11px; font-weight: 700; }
 .visit { text-align: center; margin: 2px 0 1px; font-size: 11px; }
+.qr { text-align: center; margin-top: 8px; }
+.qr img { width: 120px; height: 120px; display: block; margin: 0 auto; }
 .k-item { margin: 6px 0; font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
 `.trim();
 
@@ -183,6 +186,16 @@ export function customerReceiptHtml(tenant: TenantState, order: Order) {
   <p class="visit">Visit again</p>
   ${tenant.branding.receiptFooter ? `<p class="center">${escapeHtml(tenant.branding.receiptFooter)}</p>` : ""}
   ${tenant.shop.phone ? `<p class="center">${escapeHtml(tenant.shop.phone)}</p>` : ""}
+  ${
+    tenant.branding.allowApk
+      ? `<div class="qr">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(
+            apkAppHost() + "/apk/install/" + tenant.code + "/customer",
+          )}" alt="Get the app" />
+          <span class="center">Scan for this kitchen's app</span>
+        </div>`
+      : ""
+  }
 </main>
 </body></html>`;
 }

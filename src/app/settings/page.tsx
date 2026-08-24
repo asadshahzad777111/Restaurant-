@@ -20,6 +20,7 @@ export default function SettingsPage() {
     receiptFooter: "",
     address: "",
     phone: "",
+    allowApk: false,
   });
   const [fees, setFees] = useState({
     deliveryFee: 0,
@@ -40,6 +41,7 @@ export default function SettingsPage() {
       receiptFooter: tenant.branding.receiptFooter,
       address: tenant.shop.address || "",
       phone: tenant.shop.phone || "",
+      allowApk: Boolean(tenant.branding.allowApk),
     });
     setFees({
       deliveryFee: tenant.shop.deliveryFee || 0,
@@ -66,6 +68,7 @@ export default function SettingsPage() {
           name: branding.name,
           logoUrl: branding.logoUrl,
           receiptFooter: branding.receiptFooter,
+          allowApk: Boolean(branding.allowApk),
         },
         shop: { address: branding.address, phone: branding.phone },
       }),
@@ -246,6 +249,32 @@ export default function SettingsPage() {
           />
           <button type="submit" className={styles.btn}>
             Save branding
+          </button>
+        </form>
+
+        <form className={styles.form} onSubmit={saveBranding}>
+          <h3 style={{ margin: 0 }}>📱 Mobile App (per restaurant)</h3>
+          <label className={styles.rowCheck}>
+            <input
+              type="checkbox"
+              checked={branding.allowApk}
+              onChange={(e) => {
+                setBranding({ ...branding, allowApk: e.target.checked });
+              }}
+            />
+            Allow this kitchen's own APK download (Staff + Customer)
+          </label>
+          {branding.allowApk && tenant && (
+            <div className={styles.apkLinks}>
+              <a className={styles.btn} href={`/apk/install/${tenant.code}/staff`} download>🧑‍🍳 Staff APK</a>
+              <a className={styles.btn} href={`/apk/install/${tenant.code}/customer`} download>🍽️ Customer APK</a>
+              <span className={styles.muted}>
+                QR on the receipt installs the Customer app for this kitchen. Only when enabled.
+              </span>
+            </div>
+          )}
+          <button type="submit" className={styles.btn}>
+            Save
           </button>
         </form>
 

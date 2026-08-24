@@ -36,6 +36,24 @@
   overflow-wrap: anywhere;
 }
 
+.rowCheck {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.apkLinks {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.apkLinks .btn {
+  text-decoration: none;
+}
+
 .row {
   display: flex;
   gap: 0.5rem;
