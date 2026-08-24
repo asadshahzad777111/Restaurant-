@@ -47,6 +47,7 @@ export default function PosPage() {
   const [modSel, setModSel] = useState<Record<string, string[]>>({});
   const [printKind, setPrintKind] = useState<"bill" | "kitchen" | null>(null);
   const [cat, setCat] = useState("All");
+  const [posSearch, setPosSearch] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [note, setNote] = useState("");
@@ -61,10 +62,17 @@ export default function PosPage() {
   }, [tenant?.menu]);
   const visibleMenu = useMemo(() => {
     const all = tenant?.menu ?? [];
-    if (cat === "All") return all;
-    if (cat === "Deals") return all.filter((m) => m.isDeal || m.category === "Deals");
-    return all.filter((m) => !m.isDeal && m.category === cat);
-  }, [tenant?.menu, cat]);
+    let list = all;
+    const q = posSearch.trim().toLowerCase();
+    if (q) {
+      list = all.filter(
+        (m) => m.name.toLowerCase().includes(q) || (m.category || "").toLowerCase().includes(q),
+      );
+    } else if (cat === "All") list = all;
+    else if (cat === "Deals") list = all.filter((m) => m.isDeal || m.category === "Deals");
+    else list = all.filter((m) => !m.isDeal && m.category === cat);
+    return list;
+  }, [tenant?.menu, cat, posSearch]);
   const lines = useMemo(
     () =>
       cart.map((c) => ({
@@ -236,6 +244,15 @@ export default function PosPage() {
         )}
         <div className={styles.posLayout}>
           <div>
+            <div className={styles.posSearchWrap}>
+              <input
+                className={styles.posSearch}
+                value={posSearch}
+                onChange={(e) => setPosSearch(e.target.value)}
+                placeholder="🔍 Search items…"
+                autoComplete="off"
+              />
+            </div>
             <div className={styles.catRow}>
               {categories.map((c) => (
                 <button

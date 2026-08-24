@@ -202,6 +202,19 @@
   margin-bottom: 0.75rem;
 }
 
+.posSearchWrap {
+  margin-bottom: 0.7rem;
+}
+
+.posSearch {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid #e8e4de;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
 .kitchen {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
