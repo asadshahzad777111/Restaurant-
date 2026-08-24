@@ -288,7 +288,8 @@ export function POSScreen() {
         showsHorizontalScrollIndicator={false}
         data={cats}
         keyExtractor={(c) => c}
-        contentContainerStyle={{ paddingHorizontal: 12, gap: 8, paddingVertical: 10 }}
+        style={s.catList}
+        contentContainerStyle={{ paddingHorizontal: 12, gap: 8, paddingVertical: 8 }}
         renderItem={({ item }) => (
           <TouchableOpacity style={[s.chip, cat === item && s.chipOn]} onPress={() => setCat(item)}>
             <Text style={[s.chipText, cat === item && s.chipTextOn]}>{item}</Text>
@@ -621,10 +622,12 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.line,
     backgroundColor: theme.surface,
+    justifyContent: "center",
   },
   chipOn: { backgroundColor: theme.accent, borderColor: theme.accent },
   chipText: { color: theme.ink, fontWeight: "600" },
   chipTextOn: { color: "#fff", fontWeight: "800" },
+  catList: { flexGrow: 0, maxHeight: 44 },
   body: { flex: 1, flexDirection: "row" },
   bodyStack: { flexDirection: "column" },
   gridList: { flex: 1 },
