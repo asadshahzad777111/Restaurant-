@@ -55,6 +55,10 @@ export default function PosPage() {
   const [discountStr, setDiscountStr] = useState("");
   const [cashGiven, setCashGiven] = useState("");
   const [charging, setCharging] = useState(false);
+  const [printChooser, setPrintChooser] = useState(false);
+  const [pendingOrder, setPendingOrder] = useState<Order | null>(null);
+  const [androidOnline, setAndroidOnline] = useState(false);
+  const [bridgeNote, setBridgeNote] = useState("");
 
   const lowStock = (tenant?.stock ?? []).filter((s) => s.quantity <= s.lowThreshold);
   const categories = useMemo(() => {
@@ -220,21 +224,16 @@ export default function PosPage() {
       if (printed) {
         setPrintKind("bill");
       } else {
-        // Not in the native APK (laptop/admin): send to a mobile printer station.
+        // Not in the native APK (laptop/admin): offer to send to a mobile printer station.
         try {
           const st = await printApi.getStations();
           const stn = (st as { stations: { android?: { online: boolean } } }).stations?.android;
-          if (stn?.online && typeof window !== "undefined") {
-            const { customerReceiptText } = await import("@/lib/print");
-            await printApi.createPrintJob({
-              text: customerReceiptText(tenant, order),
-              target: "android",
-              orderId: order.id,
-            });
-            setMsg(`Order #${order.number} sent to mobile printer`);
-          }
+          setAndroidOnline(Boolean(stn?.online));
+          setPendingOrder(order);
+          setPrintChooser(true);
         } catch {
-          /* fallback already handled */
+          /* fallback to browser print handled below */
+          setPrintKind("bill");
         }
       }
     } catch (e) {
@@ -244,11 +243,59 @@ export default function PosPage() {
     }
   }
 
+  async function sendToAndroidPrinter() {
+    const order = pendingOrder;
+    if (!order || !tenant || typeof window === "undefined") return;
+    try {
+      const { customerReceiptText } = await import("@/lib/print");
+      await printApi.createPrintJob({
+        text: customerReceiptText(tenant, order),
+        target: "android",
+        orderId: order.id,
+      });
+      setBridgeNote(`Order #${order.number} sent to the Android printer`);
+      setPrintChooser(false);
+      setPendingOrder(null);
+    } catch {
+      setBridgeNote("Could not reach the mobile printer station");
+    }
+  }
+
+  function printHere() {
+    setPrintChooser(false);
+    setPendingOrder(null);
+    setPrintKind("bill");
+  }
+
   const dismissPrint = useCallback(() => setPrintKind(null), []);
 
   return (
     <AppShell title="POS">
       <PrintSuccess kind={printKind} onDone={dismissPrint} />
+      {printChooser && pendingOrder && (
+        <div className={styles.modalOverlay} onClick={() => setPrintChooser(false)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ margin: "0 0 0.25rem" }}>Print receipt #{pendingOrder.number}</h3>
+            <p className={styles.muted}>
+              {androidOnline
+                ? "An Android printer station is online — send it there, or print here."
+                : "No Android printer station is online. Connect the phone (APK + printer), or print here."}
+            </p>
+            {androidOnline && (
+              <button type="button" className={styles.btn} onClick={() => void sendToAndroidPrinter()}>
+                📲 Send to Android printer
+              </button>
+            )}
+            <button type="button" className={styles.btnGhost} onClick={printHere}>
+              🖨️ Print here (browser)
+            </button>
+            <button type="button" className={styles.btnGhost} onClick={() => setPrintChooser(false)}>
+              Close
+            </button>
+            {bridgeNote ? <p className={styles.muted}>{bridgeNote}</p> : null}
+          </div>
+        </div>
+      )}
       <div className={styles.page}>
         <PosPrinterPanel compact />
         {lowStock.length > 0 && (
