@@ -5,10 +5,10 @@ import { AppShell } from "@/components/AppShell";
 import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
 import { computeFees, lineUnitPrice, money } from "@/lib/fees";
-import { PrintTargetChooser } from "@/components/PrintTargetChooser";
+import { PrintTargetChooser, PrintBridgeLamp } from "@/components/PrintTargetChooser";
 import { PrintBridgeBar } from "@/components/PrintBridgeBar";
 import { PosPrinterPanel } from "@/components/PosPrinterPanel";
-import { enqueueSlip, executeLocalPrint, fetchBridgeStatus, shouldOpenPrintChooser } from "@/lib/print-target";
+import { enqueueSlip, executeLocalPrint, shouldOpenPrintChooser } from "@/lib/print-target";
 import type { LineModifier, MenuItem, ModifierGroup, Order } from "@/lib/tenant-types";
 import type { PaymentMethod } from "@/lib/types";
 import styles from "../staff.module.css";
@@ -58,8 +58,9 @@ export default function PosPage() {
   const [charging, setCharging] = useState(false);
   const [printChooser, setPrintChooser] = useState(false);
   const [pendingOrder, setPendingOrder] = useState<Order | null>(null);
-  const [androidOnline, setAndroidOnline] = useState(false);
   const [bridgeNote, setBridgeNote] = useState("");
+  const [pausedCart, setPausedCart] = useState<CartLine[] | null>(null);
+  const [pausedMeta, setPausedMeta] = useState<{ name: string; phone: string; discount: string } | null>(null);
 
   const lowStock = (tenant?.stock ?? []).filter((s) => s.quantity <= s.lowThreshold);
   const categories = useMemo(() => {
@@ -222,12 +223,10 @@ export default function PosPage() {
       setDiscountStr("");
       setCashGiven("");
       const chooser = await shouldOpenPrintChooser();
-      const bridge = await fetchBridgeStatus();
-      setAndroidOnline(bridge.connected);
       if (chooser) {
         setPendingOrder(order);
         setPrintChooser(true);
-        setBridgeNote(bridge.connected ? "" : "Android printer not connected — open Staff APK");
+        setBridgeNote("");
       } else {
         const printed = await executeLocalPrint(tenant, order, "bill");
         if (printed) setPrintKind("bill");
@@ -242,20 +241,14 @@ export default function PosPage() {
   async function sendToAndroidPrinter() {
     const order = pendingOrder;
     if (!order || !tenant) return;
-    const bridge = await fetchBridgeStatus();
-    setAndroidOnline(bridge.connected);
-    if (!bridge.connected) {
-      setBridgeNote("Android printer not connected — open Staff APK");
-      return;
-    }
     try {
       await enqueueSlip(tenant, order, "bill");
-      setBridgeNote(`Order #${order.number} sent to Android`);
+      setBridgeNote("");
       setPrintChooser(false);
       setPendingOrder(null);
       setPrintKind("bill");
     } catch {
-      setBridgeNote("Could not reach the Android printer — print here or check Staff APK.");
+      setBridgeNote("Could not queue the slip — print here or check the network.");
     }
   }
 
@@ -268,6 +261,31 @@ export default function PosPage() {
     if (printed) setPrintKind("bill");
   }
 
+  function pauseBill() {
+    if (!cart.length) return;
+    setPausedCart([...cart]);
+    setPausedMeta({ name: customerName, phone: customerPhone, discount: discountStr });
+    setCart([]);
+    setCustomerName("");
+    setCustomerPhone("");
+    setDiscountStr("");
+    setCashGiven("");
+    setMsg("Bill held — tap Resume to continue");
+  }
+
+  function resumeBill() {
+    if (!pausedCart) return;
+    setCart(pausedCart);
+    if (pausedMeta) {
+      setCustomerName(pausedMeta.name);
+      setCustomerPhone(pausedMeta.phone);
+      setDiscountStr(pausedMeta.discount);
+    }
+    setPausedCart(null);
+    setPausedMeta(null);
+    setMsg("Bill restored");
+  }
+
   const dismissPrint = useCallback(() => setPrintKind(null), []);
 
   return (
@@ -277,7 +295,6 @@ export default function PosPage() {
         <PrintTargetChooser
           order={pendingOrder}
           kind="bill"
-          androidOnline={androidOnline}
           note={bridgeNote}
           onAndroid={() => void sendToAndroidPrinter()}
           onBrowser={() => void printHere()}
@@ -415,7 +432,7 @@ export default function PosPage() {
             )}
           </div>
 
-          <div className={`${styles.card} ${styles.posCart}`}>
+          <div id="pos-charge-panel" className={`${styles.card} ${styles.posCart}`}>
             <div className={styles.posCartHead}>
               <strong>Bill</strong>
               {cart.length > 0 ? (
@@ -549,6 +566,17 @@ export default function PosPage() {
               </p>
             )}
             <div className={styles.row}>
+              {pausedCart ? (
+                <button type="button" className={styles.btnGhost} onClick={resumeBill}>
+                  ▶ Resume held bill ({pausedCart.length} items)
+                </button>
+              ) : (
+                <button type="button" className={styles.btnGhost} disabled={!cart.length} onClick={pauseBill}>
+                  ⏸ Pause / hold bill
+                </button>
+              )}
+            </div>
+            <div className={styles.row} style={{ alignItems: "center" }}>
               <button
                 type="button"
                 className={styles.btn}
@@ -557,15 +585,30 @@ export default function PosPage() {
               >
                 {charging ? "Charging…" : "Charge & print"}
               </button>
+              <PrintBridgeLamp />
             </div>
             <p className={styles.muted}>
-              Laptop / iPhone: Charge opens <b>Print to Android</b> (connected vs not connected). Staff APK
-              with a printer selected prints 58mm from the pocket.
+              Laptop / iPhone: Charge opens <b>Print to Android</b> (live green / red). If the Staff phone is
+              off, the bill is queued and prints when the app is back.
             </p>
             {msg && <p className={styles.muted}>{msg}</p>}
           </div>
         </div>
       </div>
+      {cart.length > 0 && (
+        <div className={styles.posStickyBar}>
+          <strong className={styles.posStickyTotal}>
+            {cart.length} item{cart.length === 1 ? "" : "s"} · {money(tenant?.shop.currency || "PKR", billTotal)}
+          </strong>
+          <button
+            type="button"
+            className={styles.btn}
+            onClick={() => document.getElementById("pos-charge-panel")?.scrollIntoView({ behavior: "smooth" })}
+          >
+            Review &amp; charge
+          </button>
+        </div>
+      )}
     </AppShell>
   );
 }

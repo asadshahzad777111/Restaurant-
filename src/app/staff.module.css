@@ -23,6 +23,27 @@
   gap: 0.6rem;
 }
 
+.posStickyBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem calc(0.7rem + env(safe-area-inset-bottom, 0px));
+  background: #171411;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.posStickyTotal {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -74,12 +95,26 @@
   width: 0.55rem;
   height: 0.55rem;
   border-radius: 50%;
-  background: #1a9d48;
+  background: #c0392b;
   flex-shrink: 0;
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.18);
+}
+
+.bridgeDotOn {
+  background: #1a9d48;
+  box-shadow: 0 0 0 3px rgba(26, 157, 72, 0.22);
 }
 
 .bridgeDotOff {
   background: #c0392b;
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.18);
+}
+
+.bridgeModalTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 0.25rem;
 }
 
 .bridgeAndroidBtn {
