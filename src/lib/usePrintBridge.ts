@@ -17,6 +17,7 @@ export function usePrintBridge() {
 
   const tickStation = useCallback(async () => {
     if (!isNativeStaffApp()) return;
+    if (typeof window !== "undefined" && !localStorage.getItem("restaurant_pos_token_v2")) return;
     const printer = await getSavedPrinter();
     if (!printer?.address) {
       setStationOnline(false);
@@ -31,6 +32,10 @@ export function usePrintBridge() {
       for (const job of jobs) {
         try {
           await printApi.ack(job.id, { status: "printing", station: "android" });
+        } catch {
+          continue;
+        }
+        try {
           const out = await nativePrintText(job.text, { address: printer.address });
           await printApi.ack(job.id, {
             status: out.ok ? "done" : "failed",
@@ -52,6 +57,7 @@ export function usePrintBridge() {
 
   const tickPresence = useCallback(async () => {
     if (isNativeStaffApp()) return;
+    if (typeof window !== "undefined" && !localStorage.getItem("restaurant_pos_token_v2")) return;
     try {
       const st = await printApi.getBridge();
       setBridge(st);

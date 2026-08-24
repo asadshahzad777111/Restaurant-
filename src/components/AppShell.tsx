@@ -8,6 +8,7 @@ import type { DictKey } from "@/lib/i18n";
 import { Sidebar } from "./Sidebar";
 import { StaffAlerts } from "./StaffAlerts";
 import { usePrintBridge } from "@/lib/usePrintBridge";
+import { isStaffShell } from "@/lib/app-shell";
 import styles from "./AppShell.module.css";
 
 const TITLE_KEYS: Record<string, DictKey> = {
@@ -18,6 +19,7 @@ const TITLE_KEYS: Record<string, DictKey> = {
   Tables: "tables",
   Menu: "menu",
   Staff: "staff",
+  Stock: "stock",
   "Day close": "dayClose",
   "Sales & Profit": "sales",
   Printer: "printer",
@@ -37,7 +39,7 @@ export function AppShell({
   const [navOpen, setNavOpen] = useState(false);
   const [slow, setSlow] = useState(false);
   const router = useRouter();
-  usePrintBridge();
+  const { printerLinked, androidConnected } = usePrintBridge();
 
   useEffect(() => {
     if (loading) return;
@@ -45,11 +47,16 @@ export function AppShell({
       router.replace("/login");
       return;
     }
-    // Super without Help is not restaurant Admin — send them to HQ, never keep them in this shell.
+    // Super without Help is not restaurant Admin. Staff APK must never open HQ.
     if (role === "super" && !impersonating) {
+      if (isStaffShell()) {
+        void logout();
+        router.replace("/login?app=staff");
+        return;
+      }
       router.replace("/control");
     }
-  }, [loading, token, role, impersonating, router]);
+  }, [loading, token, role, impersonating, router, logout]);
 
   useEffect(() => {
     if (loading || !token || role === "super" || (tenant && user)) return;
@@ -158,6 +165,11 @@ export function AppShell({
                 {user.role === "admin" ? t("restaurantAdmin") : t("staffRole")} · {tenant.code}
               </span>
             )}
+            {printerLinked ? (
+              <span className={styles.badge}>{t("printerLinked")}</span>
+            ) : androidConnected ? (
+              <span className={styles.badge}>{t("androidPrinter")}</span>
+            ) : null}
             <span className={styles.user}>
               {user.roleLabel} · {user.username}
               {user.email ? ` · ${user.email}` : ""}

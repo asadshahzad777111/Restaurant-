@@ -118,7 +118,8 @@ export function PosPrinterPanel({ compact = false }: { compact?: boolean }) {
       <p>
         {saved ? (
           <>
-            Ready: <strong>{saved.name || saved.address}</strong>
+            {native ? "Printer linked: " : "Ready: "}
+            <strong>{saved.name || saved.address}</strong>
           </>
         ) : (
           <span className={styles.muted}>No printer selected</span>

@@ -14,6 +14,7 @@ import {
 const STAFF_UI = [
   "/home",
   "/pos",
+  "/printer",
   "/orders",
   "/kitchen",
   "/menu",

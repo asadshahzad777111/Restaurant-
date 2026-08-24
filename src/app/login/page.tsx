@@ -99,13 +99,19 @@ export default function LoginPage() {
     e.preventDefault();
     setBusy(true);
     setError("");
+    const staff = appShell === "staff" || isStaffShell();
+    if (staff && mode === "super") {
+      setBusy(false);
+      setError("Staff app is for kitchen login only.");
+      return;
+    }
     const res = await fetch("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(
         mode === "super"
-          ? { mode: "super", username, password }
-          : { mode: "tenant", code: code.trim().toUpperCase(), username, password },
+          ? { mode: "super", username, password, app: readAppShell() }
+          : { mode: "tenant", code: code.trim().toUpperCase(), username, password, app: readAppShell() },
       ),
     });
     const data = await res.json();

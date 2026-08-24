@@ -13,6 +13,7 @@ export const dict = {
   tables: { en: "Tables", ur: "Tables" },
   menu: { en: "Menu", ur: "Menu" },
   staff: { en: "Staff", ur: "Staff" },
+  stock: { en: "Stock", ur: "Stock" },
   dayClose: { en: "Day close", ur: "Din band" },
   sales: { en: "Sales & Profit", ur: "Sales & Profit" },
   settings: { en: "Settings", ur: "Settings" },
@@ -24,6 +25,8 @@ export const dict = {
   restaurantAdmin: { en: "Restaurant Admin", ur: "Restaurant Admin" },
   staffRole: { en: "Staff", ur: "Staff" },
   superHelping: { en: "Super helping this restaurant", ur: "Super is kitchen mein madad kar raha hai" },
+  printerLinked: { en: "Printer linked", ur: "Printer linked" },
+  androidPrinter: { en: "Android printer: connected", ur: "Android printer: connected" },
   helpTitle: { en: "Help mode · Super", ur: "Help mode · Super" },
   helpBody: {
     en: "You are helping {name} ({code}). This is not ORDO HQ and not their Admin login — open any Admin screen without their password.",

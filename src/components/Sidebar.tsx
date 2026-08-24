@@ -18,6 +18,7 @@ const NAV: { href: string; key: DictKey; perm: Permission | "any" }[] = [
   { href: "/tables", key: "tables", perm: "pos" },
   { href: "/menu", key: "menu", perm: "menu" },
   { href: "/staff", key: "staff", perm: "staff" },
+  { href: "/stock", key: "stock", perm: "stock" },
   { href: "/day-close", key: "dayClose", perm: "settings" },
   { href: "/sales", key: "sales", perm: "settings" },
   { href: "/settings", key: "settings", perm: "settings" },

@@ -549,8 +549,9 @@ export default function PosPage() {
               </button>
             </div>
             <p className={styles.muted}>
-              First tap Printer above and Use this. Then Charge & print sends the bill to that thermal
-              printer.
+              Staff APK: Printer → Use this, then Charge prints on the 58mm. Laptop / iPhone: Charge
+              offers <strong>Send to Android</strong> when that phone is linked; browser print stays as
+              fallback.
             </p>
             {msg && <p className={styles.muted}>{msg}</p>}
           </div>

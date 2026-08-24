@@ -9,6 +9,7 @@ import type { LineModifier, OrderLine } from "@/lib/tenant-types";
 import type { AdvanceRail, PaymentMethod, PaymentStatus, ServiceType } from "@/lib/types";
 import { sendNewOrderEmail, sendOrderWhatsapp, tenantAdminEmails } from "@/lib/notify";
 import { appUrl } from "@/lib/urls";
+import { enqueueOrderSlip, shouldAutoPrintGuestOrder } from "@/lib/print-bridge";
 
 export const runtime = "nodejs";
 
@@ -267,6 +268,16 @@ export async function POST(req: NextRequest) {
       total,
       discount: discount || undefined,
     });
+
+    if (shouldAutoPrintGuestOrder(order)) {
+      void (async () => {
+        try {
+          await enqueueOrderSlip(tenantId, tenant, order, "bill");
+        } catch (err) {
+          console.error("[print-bridge] auto bill failed:", err instanceof Error ? err.message : err);
+        }
+      })();
+    }
 
     // Deduct stock for this sale (POS / guest). Best-effort — don't block the order.
     if ((tenant.stock || []).length) {

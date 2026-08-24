@@ -26,14 +26,22 @@ export async function POST(req: NextRequest) {
     }
     await ensureStore();
     const body = await req.json();
-    const { mode, username, password, code } = body as {
+    const { mode, username, password, code, app } = body as {
       mode?: "super" | "tenant";
       username: string;
       password: string;
       code?: string;
+      app?: string;
     };
     if (!username || !password) {
       return NextResponse.json({ error: "Missing credentials" }, { status: 400 });
+    }
+    const staffApp = app === "staff" || app === "pos" || app === "client";
+    if (staffApp && (mode === "super" || (!code && mode !== "tenant"))) {
+      return NextResponse.json(
+        { error: "Staff app is for kitchen login only — platform HQ is not available here." },
+        { status: 403 },
+      );
     }
     if (mode === "super" || (!code && mode !== "tenant")) {
       const session = await loginSuper(username, password);

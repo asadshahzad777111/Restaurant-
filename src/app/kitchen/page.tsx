@@ -4,7 +4,6 @@ import { useEffect, useCallback, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
-import { printKitchenTicket } from "@/lib/print";
 import { PrintTargetChooser } from "@/components/PrintTargetChooser";
 import { decidePrintPath, enqueueSlip, executeLocalPrint } from "@/lib/print-target";
 import type { OrderStatus } from "@/lib/types";
@@ -116,6 +115,8 @@ export default function KitchenPage() {
       setBridgeNote("Could not reach the Android printer — print here or check Staff APK.");
     }
   }
+
+  const dismissPrint = useCallback(() => setPrintKind(null), []);
 
   function remain(endsAt?: number) {
     if (!endsAt) return "";

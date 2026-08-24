@@ -121,9 +121,7 @@ function readBlob(tenantId: string): FileBlob {
 function writeBlob(tenantId: string, blob: FileBlob) {
   const file = filePath(tenantId);
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  const tmp = `${file}.${process.pid}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify({ jobs: pruneJobs(blob.jobs), bridge: blob.bridge }, null, 2));
-  fs.renameSync(tmp, file);
+  fs.writeFileSync(file, JSON.stringify({ jobs: pruneJobs(blob.jobs), bridge: blob.bridge }, null, 2));
 }
 
 async function jobsCol() {
