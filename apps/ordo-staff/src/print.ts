@@ -9,8 +9,15 @@ async function sendBluetooth(bytes: Uint8Array, mac: string): Promise<boolean> {
     if (!BluetoothClassic?.connect) return false;
     const conn = await BluetoothClassic.connect(mac);
     if (!conn) return false;
-    await conn.write(bytes as any);
-    await conn.disconnect();
+    // Write the raw bytes as an ArrayBuffer (the lib expects ArrayBuffer | string).
+    await conn.write(new Uint8Array(bytes).buffer as any);
+    // Wait for the printer to flush the line before cutting the connection.
+    await new Promise((r) => setTimeout(r, 900));
+    try {
+      await conn.disconnect();
+    } catch {
+      /* ignore */
+    }
     return true;
   } catch {
     return false;
