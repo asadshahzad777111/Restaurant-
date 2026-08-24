@@ -7,6 +7,7 @@ import { useLang } from "@/lib/lang-context";
 import type { DictKey } from "@/lib/i18n";
 import { Sidebar } from "./Sidebar";
 import { StaffAlerts } from "./StaffAlerts";
+import { usePrintBridge } from "@/lib/usePrintBridge";
 import styles from "./AppShell.module.css";
 
 const TITLE_KEYS: Record<string, DictKey> = {
@@ -35,6 +36,7 @@ export function AppShell({
   const { lang, toggle, t } = useLang();
   const [navOpen, setNavOpen] = useState(false);
   const router = useRouter();
+  const { online: bridgeOnline } = usePrintBridge();
 
   useEffect(() => {
     if (loading) return;

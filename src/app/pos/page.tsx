@@ -6,6 +6,7 @@ import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
 import { computeFees, lineUnitPrice, money } from "@/lib/fees";
 import { printCustomerReceipt } from "@/lib/print";
+import { printApi } from "@/lib/print-api";
 import { PosPrinterPanel } from "@/components/PosPrinterPanel";
 import type { LineModifier, MenuItem, ModifierGroup, Order } from "@/lib/tenant-types";
 import type { PaymentMethod } from "@/lib/types";
@@ -216,7 +217,26 @@ export default function PosPage() {
       setDiscountStr("");
       setCashGiven("");
       const printed = await printCustomerReceipt(tenant, order);
-      if (printed) setPrintKind("bill");
+      if (printed) {
+        setPrintKind("bill");
+      } else {
+        // Not in the native APK (laptop/admin): send to a mobile printer station.
+        try {
+          const st = await printApi.getStations();
+          const stn = (st as { stations: { android?: { online: boolean } } }).stations?.android;
+          if (stn?.online && typeof window !== "undefined") {
+            const { customerReceiptText } = await import("@/lib/print");
+            await printApi.createPrintJob({
+              text: customerReceiptText(tenant, order),
+              target: "android",
+              orderId: order.id,
+            });
+            setMsg(`Order #${order.number} sent to mobile printer`);
+          }
+        } catch {
+          /* fallback already handled */
+        }
+      }
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Failed");
     } finally {
