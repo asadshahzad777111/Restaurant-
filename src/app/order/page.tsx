@@ -21,6 +21,7 @@ import { enabledAdvanceRails, normalizeTenantPayments, paymentChoicesFor } from 
 import { GuestSpecialOfferPopup } from "@/components/GuestSpecialOfferPopup";
 import { GuestCoverQr } from "@/components/GuestCoverQr";
 import { isCustomerShell, readLockedCustomerTenant } from "@/lib/app-shell";
+import { InstallAppBanner } from "@/components/InstallAppBanner";
 import {
   backdropTransition,
   emptyState,
@@ -1084,6 +1085,13 @@ function OrderInner() {
                     </a>
                   </p>
                 </motion.div>
+              )}
+              {!loading && (
+                <InstallAppBanner
+                  tenantCode={tenantCode}
+                  restaurantName={branding?.name || tenantCode}
+                  logoUrl={branding?.logoUrl}
+                />
               )}
               {loading && <p className={styles.muted}>Loading this kitchen’s menu…</p>}
 
