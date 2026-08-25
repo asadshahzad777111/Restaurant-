@@ -83,7 +83,7 @@ export function buildSlipEscPos(
   qrUrl?: string | null,
   logoRaster?: ArrayLike<number> | null,
 ): Uint8Array {
-  const body = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/^\n+/, "");
+  const body = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/^\n+/, "").replace(/\n+$/, "");
   const parts: number[][] = [[0x1b, 0x40], ALIGN_LEFT, TOP_FEED];
   if (logoRaster && logoRaster.length) {
     parts.push(Array.from(logoRaster), [0x0a]);

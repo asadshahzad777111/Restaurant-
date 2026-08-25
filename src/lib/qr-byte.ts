@@ -419,7 +419,7 @@ export function qrSvgMarkup(text: string, mm = 22): string {
 }
 
 /** ESC/POS raster (GS v 0) — centred on 384-dot 58mm, scaled bigger. */
-export function qrEscPosRaster(text: string, scale?: number, quiet = 2): number[] {
+export function qrEscPosRaster(text: string, scale?: number, quiet = 1): number[] {
   const m = encodeQrMatrix(text);
   const n = m.length;
   const s = scale && scale > 0 ? scale : qrScaleFor58mm(n, quiet);
