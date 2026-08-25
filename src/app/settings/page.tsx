@@ -32,7 +32,7 @@ export default function SettingsPage() {
   });
   const [printLogoOnBill, setPrintLogoOnBill] = useState(false);
   const [printGstOnBill, setPrintGstOnBill] = useState(false);
-  const [emailOnOrder, setEmailOnOrder] = useState(true);
+  const [emailOnOrder, setEmailOnOrder] = useState(false);
   const [fbrEnabled, setFbrEnabled] = useState(false);
   const [pw, setPw] = useState({ current: "", next: "" });
   const [emailDraft, setEmailDraft] = useState("");
@@ -57,7 +57,7 @@ export default function SettingsPage() {
     });
     setPrintLogoOnBill(tenant.shop.printLogoOnBill === true);
     setPrintGstOnBill(tenant.shop.printGstOnBill === true);
-    setEmailOnOrder(tenant.shop.emailOnOrder !== false);
+    setEmailOnOrder(tenant.shop.emailOnOrder === true);
     setFbrEnabled(Boolean(tenant.shop.fbrEnabled));
     setEmailDraft(user?.email || "");
   }, [tenant, user]);
@@ -389,11 +389,12 @@ export default function SettingsPage() {
               checked={emailOnOrder}
               onChange={(e) => setEmailOnOrder(e.target.checked)}
             />
-            Email me on every new order
+            Email me on every new order (optional)
           </label>
           <p className={styles.muted} style={{ margin: 0 }}>
-            Keep this OFF on the free plan to save email quota — new orders still show in the app and
-            can alert you on WhatsApp. Welcome / password-reset emails are always sent.
+            Off by default to save email quota — new orders still show in the app and can alert you on
+            WhatsApp. Tick this only if you want a copy of every order in your inbox. Welcome /
+            password-reset emails are always sent.
           </p>
           <button type="submit" className={styles.btn}>
             Save settings
