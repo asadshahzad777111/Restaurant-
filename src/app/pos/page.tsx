@@ -65,6 +65,7 @@ export default function PosPage() {
   const searchRef = useRef<HTMLInputElement | null>(null);
   const discountRef = useRef<HTMLInputElement | null>(null);
   const customerRef = useRef<HTMLInputElement | null>(null);
+  const cashRef = useRef<HTMLInputElement | null>(null);
 
   const lowStock = (tenant?.stock ?? []).filter((s) => s.quantity <= s.lowThreshold);
   const categories = useMemo(() => {
@@ -320,7 +321,7 @@ export default function PosPage() {
           </div>
         )}
         <div className={styles.posLayout}>
-          <div>
+          <div id="pos-items">
             <div className={styles.posSearchWrap}>
               <input
                 ref={searchRef}
@@ -557,6 +558,7 @@ export default function PosPage() {
                 <label>
                   Cash received (optional)
                   <input
+                    ref={cashRef}
                     value={cashGiven}
                     onChange={(e) => setCashGiven(e.target.value.replace(/[^\d]/g, ""))}
                     placeholder="Amount given"
@@ -611,6 +613,16 @@ export default function PosPage() {
             </strong>
           </div>
           <div className={styles.posActions}>
+            <button
+              type="button"
+              className={styles.posAction}
+              onClick={() => {
+                document.getElementById("pos-items")?.scrollIntoView({ behavior: "smooth" });
+                searchRef.current?.focus();
+              }}
+            >
+              🧾 Items
+            </button>
             <button type="button" className={styles.posAction} onClick={() => { searchRef.current?.focus(); }}>
               Search
             </button>
@@ -633,6 +645,16 @@ export default function PosPage() {
               }}
             >
               Customer
+            </button>
+            <button
+              type="button"
+              className={styles.posAction}
+              onClick={() => {
+                document.getElementById("pos-charge-panel")?.scrollIntoView({ behavior: "smooth" });
+                cashRef.current?.focus();
+              }}
+            >
+              💵 Amount
             </button>
             <button
               type="button"
