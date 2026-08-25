@@ -16,6 +16,13 @@ export default function TablesPage() {
   const [edit, setEdit] = useState({ label: "", seats: 4 });
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  // Live tick so reservation countdowns keep counting down.
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+  void tick;
 
   const canEdit =
     user?.permissions?.includes("settings") ||
@@ -103,7 +110,13 @@ export default function TablesPage() {
     await saveTables(
       tables.map((t) =>
         t.id === id
-          ? { ...t, status, ...(status === "empty" ? { currentOrderId: undefined } : {}) }
+          ? {
+              ...t,
+              status,
+              ...(status === "empty"
+                ? { currentOrderId: undefined, reservedBy: undefined, reservedUntil: undefined }
+                : {}),
+            }
           : t,
       ),
     );

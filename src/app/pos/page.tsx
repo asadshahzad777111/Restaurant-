@@ -492,7 +492,13 @@ export default function PosPage() {
             <div className={styles.posCartHead}>
               <strong>Bill</strong>
               {cart.length > 0 ? (
-                <button type="button" className={styles.btnGhost} onClick={() => setCart([])}>
+                <button
+                  type="button"
+                  className={styles.btnGhost}
+                  onClick={() => {
+                    if (window.confirm("Clear the whole bill?")) setCart([]);
+                  }}
+                >
                   Clear
                 </button>
               ) : null}
@@ -739,7 +745,21 @@ export default function PosPage() {
             <button
               type="button"
               className={`${styles.posAction} ${styles.posActionPrint} ${androidOnline ? styles.posPrintOn : ""}`}
-              onClick={() => document.getElementById("pos-charge-panel")?.scrollIntoView({ behavior: "smooth" })}
+              onClick={() => {
+                if (lastBillOrder && tenant) {
+                  void (async () => {
+                    if (androidOnline || (await shouldOpenPrintChooser())) {
+                      setPendingOrder(lastBillOrder);
+                      setPrintChooser(true);
+                      setBridgeNote("");
+                    } else {
+                      await executeLocalPrint(tenant, lastBillOrder, "bill");
+                    }
+                  })();
+                } else {
+                  document.getElementById("pos-charge-panel")?.scrollIntoView({ behavior: "smooth" });
+                }
+              }}
             >
               🖨️ Print
             </button>

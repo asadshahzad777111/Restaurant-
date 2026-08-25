@@ -68,8 +68,15 @@ export default function HomePage() {
   }, []);
 
   const orders = tenant?.orders ?? [];
-  // Stable "today" baseline — resolve the calendar day once, not on every render.
-  const day = useMemo(() => new Date().toDateString(), []);
+  // "Today" baseline — rolls over at midnight (checked every minute).
+  const [day, setDay] = useState(() => new Date().toDateString());
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const now = new Date().toDateString();
+      setDay((cur) => (cur === now ? cur : now));
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, []);
   const today = useMemo(
     () =>
       orders.filter((o) => {
@@ -157,7 +164,7 @@ export default function HomePage() {
           initial="hidden"
           animate="show"
         >
-          <StatCard label={t("todayRevenue")} value={money(cur, revenueShown)} accent hint="PKR · live" />
+          <StatCard label={t("todayRevenue")} value={money(cur, revenueShown)} accent hint={`${cur} · live`} />
           <StatCard label={t("openTickets")} value={String(openShown)} hint={t("onThePass")} />
           <StatCard
             label={t("completedVoid")}

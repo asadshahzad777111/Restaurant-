@@ -164,7 +164,7 @@ export function demoMenu(): MenuItem[] {
       modifiers: spiceMod,
     }),
     dish("m15", "White Karahi", "Cream · black pepper · chicken", 1650, "Karahi", p(2474658)),
-    dish("m16", "Handi Chicken", "Slow handi · yogurt gravy · kasuri methi", 1550, "Karahi", u("photo-1631452180519-c014fe946bcc")),
+    dish("m16", "Handi Chicken", "Slow handi · yogurt gravy · kasuri methi", 1550, "Karahi", u("photo-1601050690597-df0568f70950")),
 
     dish("m17", "Chicken Tikka", "Charcoal tikka · chat masala · lemon", 890, "Grill", u("photo-1599487488170-d11ec9c172f0")),
     dish("m18", "Seekh Kebab", "Minced beef · four pieces · mint raita", 780, "Grill", u("photo-1555939594-58d7cb561ad1")),
@@ -179,9 +179,9 @@ export function demoMenu(): MenuItem[] {
     dish("m25", "Mutton Biryani", "On-bone mutton · saffron steam", 790, "Biryani", p(1624487)),
     dish("m26", "Vegetable Biryani", "Mixed veg · mint · fried onion", 490, "Biryani", u("photo-1589302168068-964664d93dc0")),
 
-    dish("m27", "Fettuccine Alfredo", "Cream · parmesan · garlic", 890, "Pasta", u("photo-1621996346565-e3dbc646d9a7")),
+    dish("m27", "Fettuccine Alfredo", "Cream · parmesan · garlic", 890, "Pasta", u("photo-1473093295043-cdd812d0e601")),
     dish("m28", "Chicken Penne", "Arrabbiata · grilled chicken", 950, "Pasta", u("photo-1551183053-bf91a1d81141")),
-    dish("m29", "Spaghetti", "Tomato basil · olive oil", 780, "Pasta", u("photo-1612874742237-65262258ea32")),
+    dish("m29", "Spaghetti", "Tomato basil · olive oil", 780, "Pasta", u("photo-1547592180-85f173990554")),
 
     dish("m30", "Masala Fries", "Chat masala · garlic mayo", 280, "Sides", u("photo-1573080496219-bb080dd4f877")),
     dish("m31", "Garlic Naan", "Tandoor · butter garlic", 120, "Sides", u("photo-1565557623262-b51c2513a641")),

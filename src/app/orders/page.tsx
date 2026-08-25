@@ -9,7 +9,7 @@ import { PrintTargetChooser } from "@/components/PrintTargetChooser";
 import { PrintBridgeBar } from "@/components/PrintBridgeBar";
 import { enqueueSlip, executeLocalPrint, shouldOpenPrintChooser } from "@/lib/print-target";
 import { copyText, statusMessage, whatsappShareUrl } from "@/lib/status-messages";
-import type { Order } from "@/lib/tenant-types";
+import type { DiningTable, Order } from "@/lib/tenant-types";
 import type { OrderStatus } from "@/lib/types";
 import styles from "./orders.module.css";
 
@@ -92,46 +92,71 @@ export default function OrdersPage() {
     [orders],
   );
 
+  async function runMutation(fn: () => Promise<Response | null>, failMsg: string) {
+    try {
+      const res = await fn();
+      if (!res) return;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMsg((data as { error?: string }).error || failMsg);
+        return null;
+      }
+      return data as { order?: Order; tables?: DiningTable[] };
+    } catch {
+      setMsg(failMsg);
+      return null;
+    }
+  }
+
   async function advance(id: string, status: OrderStatus) {
     const next = NEXT[status];
     if (!next) return;
-    const res = await api(`/api/orders/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ status: next }),
-    });
-    const data = await res.json();
-    if (res.ok && data.order) applyOrder(data.order, { tables: data.tables });
+    const data = await runMutation(
+      () =>
+        api(`/api/orders/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: next }),
+        }),
+      "Could not update the order",
+    );
+    if (data?.order) applyOrder(data.order, { tables: data.tables });
   }
 
   async function markPaid(id: string) {
-    const res = await api(`/api/orders/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ paymentStatus: "paid" }),
-    });
-    const data = await res.json();
-    if (res.ok && data.order) applyOrder(data.order, { tables: data.tables });
+    const data = await runMutation(
+      () =>
+        api(`/api/orders/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ paymentStatus: "paid" }),
+        }),
+      "Could not mark as paid",
+    );
+    if (data?.order) applyOrder(data.order, { tables: data.tables });
   }
 
   async function complete(id: string) {
-    const res = await api(`/api/orders/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ status: "completed" }),
-    });
-    const data = await res.json();
-    if (res.ok && data.order) applyOrder(data.order, { tables: data.tables });
+    const data = await runMutation(
+      () =>
+        api(`/api/orders/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: "completed" }),
+        }),
+      "Could not complete the order",
+    );
+    if (data?.order) applyOrder(data.order, { tables: data.tables });
   }
 
   async function cancelOrder() {
     if (!cancelId || !reason.trim()) return;
-    const res = await api(`/api/orders/${cancelId}`, {
-      method: "PATCH",
-      body: JSON.stringify({ status: "cancelled", cancelReason: reason.trim() }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setMsg(data.error || "Cancel failed");
-      return;
-    }
+    const data = await runMutation(
+      () =>
+        api(`/api/orders/${cancelId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: "cancelled", cancelReason: reason.trim() }),
+        }),
+      "Cancel failed",
+    );
+    if (!data) return;
     setCancelId(null);
     setReason("");
     setMsg("Order voided (no refund flow)");
@@ -142,10 +167,19 @@ export default function OrdersPage() {
     if (!tenant) return;
     const order = tenant.orders.find((o) => o.id === orderId);
     if (!order) return;
+    const phone = order.customerPhone || tenant.shop.whatsapp;
+    if (!phone?.trim()) {
+      setMsg("No phone number on this order to message");
+      return;
+    }
     const text = statusMessage(tenant, order, kind);
-    await copyText(text);
-    setMsg("Message copied — WhatsApp opened");
-    window.open(whatsappShareUrl(order.customerPhone || tenant.shop.whatsapp, text), "_blank");
+    try {
+      await copyText(text);
+    } catch {
+      /* clipboard may be blocked; still open WhatsApp */
+    }
+    setMsg("WhatsApp opened with the message");
+    window.open(whatsappShareUrl(phone, text), "_blank");
   }
 
   async function requestPrint(orderId: string, kind: "bill" | "kitchen") {

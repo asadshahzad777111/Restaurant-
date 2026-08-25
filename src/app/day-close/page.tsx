@@ -22,6 +22,7 @@ export default function DayClosePage() {
   const { api, tenant } = useStore();
   const [preview, setPreview] = useState<Preview | null>(null);
   const [history, setHistory] = useState<DayCloseSummary[]>([]);
+  const [closing, setClosing] = useState(false);
   const [msg, setMsg] = useState("");
 
   const load = useCallback(async () => {
@@ -42,18 +43,25 @@ export default function DayClosePage() {
   }, [load]);
 
   async function closeShift() {
-    const res = await api("/api/day-close", {
-      method: "POST",
-      body: JSON.stringify({}),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setMsg(data.error || "Failed");
-      return;
+    if (closing) return;
+    if (!window.confirm("Close the shift now? This is final and cannot be undone.")) return;
+    setClosing(true);
+    try {
+      const res = await api("/api/day-close", {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsg(data.error || "Failed");
+        return;
+      }
+      setMsg("Shift closed — print the summary for the till drawer.");
+      await load();
+      window.print();
+    } finally {
+      setClosing(false);
     }
-    setMsg("Shift closed — print the summary for the till drawer.");
-    await load();
-    window.print();
   }
 
   const cur = tenant?.shop.currency || "PKR";
@@ -96,8 +104,8 @@ export default function DayClosePage() {
                 )}
               </ul>
               <div className={styles.row}>
-                <button type="button" className={styles.btn} onClick={() => void closeShift()}>
-                  Close shift & print
+                <button type="button" className={styles.btn} disabled={closing} onClick={() => void closeShift()}>
+                  {closing ? "Closing…" : "Close shift & print"}
                 </button>
                 <button type="button" className={styles.btnGhost} onClick={() => window.print()}>
                   Print preview

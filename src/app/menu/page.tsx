@@ -83,7 +83,8 @@ function freshGroup(template?: ModifierGroup): ModifierGroup {
 }
 
 export default function MenuPage() {
-  const { tenant, api, applyTenant, token } = useStore();
+  const { tenant, api, applyTenant, token, user } = useStore();
+  const canEditMenu = user?.role === "admin" || user?.permissions?.includes("menu");
   const [draft, setDraft] = useState(emptyDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
@@ -105,6 +106,7 @@ export default function MenuPage() {
   }
 
   async function toggle86(itemId: string) {
+    if (!canEditMenu) return;
     const res = await api("/api/admin", {
       method: "PUT",
       body: JSON.stringify({ action: "toggle86", itemId }),
@@ -116,7 +118,7 @@ export default function MenuPage() {
   }
 
   async function deleteItem(itemId: string) {
-    if (!tenant) return;
+    if (!tenant || !canEditMenu) return;
     const res = await api("/api/admin", {
       method: "PUT",
       body: JSON.stringify({
@@ -137,13 +139,14 @@ export default function MenuPage() {
   }
 
   function startEdit(item: MenuItem) {
+    if (!canEditMenu) return;
     setEditingId(item.id);
     setDraft({
       name: item.name,
       description: item.description || "",
       price: String(item.price),
       costPrice: item.costPrice != null ? String(item.costPrice) : "",
-      category: item.isDeal ? "Burgers" : item.category,
+      category: item.isDeal ? "Deals" : item.category,
       isDeal: !!item.isDeal,
       dealLabel: item.dealLabel || "",
       compareAtPrice: item.compareAtPrice != null ? String(item.compareAtPrice) : "",
@@ -246,6 +249,11 @@ export default function MenuPage() {
     <AppShell title="Menu">
       <PlanGate need="menu">
       <div className={styles.stack}>
+        {!canEditMenu && (
+          <p className={styles.muted} style={{ padding: "0.5rem 0" }}>
+            View only — you need the Menu permission to add or edit items.
+          </p>
+        )}
         <form className={styles.form} onSubmit={addItem}>
           <h3 style={{ margin: 0 }}>{editingId ? "Edit item" : "Add item / deal"}</h3>
           <input
@@ -462,7 +470,7 @@ export default function MenuPage() {
           </div>
 
           <div className={styles.row}>
-            <button type="submit" className={styles.btn}>
+            <button type="submit" className={styles.btn} disabled={!canEditMenu}>
               {editingId ? "Save changes" : "Add"}
             </button>
             {editingId && (

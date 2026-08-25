@@ -28,9 +28,10 @@ interface TrackData {
     serviceType: string;
     paymentMethod: string;
     paymentStatus: string;
-    lines: { name: string; qty: number; unitPrice: number }[];
+    lines: { name: string; qty: number; unitPrice: number; modifiers?: { optionName: string }[]; lineNote?: string }[];
     total: number;
     tableNumber?: string;
+    note?: string;
   };
   review: { rating: number; comment: string } | null;
   canReview: boolean;
@@ -60,6 +61,7 @@ export default function TrackPage() {
   const [sent, setSent] = useState(false);
   const [reviewError, setReviewError] = useState("");
   const [readyOpen, setReadyOpen] = useState(false);
+  const [stopped, setStopped] = useState(false);
   const prevStatus = useRef<string | null>(null);
   const notified = useRef(false);
   const reduced = usePrefersReducedMotion();
@@ -68,21 +70,28 @@ export default function TrackPage() {
   const stepVar = listItem(reduced, coarse);
 
   async function load() {
-    const res = await fetch(`/api/track/${token}`);
-    const json = await res.json();
-    if (!res.ok) {
-      setError(json.error || "Not found");
-      return;
+    try {
+      const res = await fetch(`/api/track/${token}`);
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error || "Not found");
+        setStopped(true);
+        return;
+      }
+      setData(json);
+      setError("");
+    } catch {
+      setError("Network error — retry to reload");
     }
-    setData(json);
   }
 
   useEffect(() => {
+    if (stopped) return;
     void load();
     const id = setInterval(() => void load(), 4000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, stopped]);
 
   useEffect(() => {
     if (!data) return;
@@ -137,8 +146,21 @@ export default function TrackPage() {
   if (error) {
     return (
       <div className={styles.page}>
-        <p className={styles.fail}>{error}</p>
-        <Link href="/guest">Find a restaurant</Link>
+        <p className={styles.fail} role="alert">{error}</p>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={styles.retry}
+            onClick={() => {
+              setError("");
+              setStopped(false);
+              void load();
+            }}
+          >
+            Retry
+          </button>
+          <Link href="/guest">Find a restaurant</Link>
+        </div>
       </div>
     );
   }
@@ -239,6 +261,10 @@ export default function TrackPage() {
             <li key={i}>
               <span>
                 {l.qty}× {l.name}
+                {l.modifiers?.map((m) => (
+                  <em key={m.optionName}> +{m.optionName}</em>
+                ))}
+                {l.lineNote ? <em className={styles.noteInline}> · {l.lineNote}</em> : null}
               </span>
               <span>
                 {data.shop.currency} {l.unitPrice * l.qty}
@@ -246,6 +272,11 @@ export default function TrackPage() {
             </li>
           ))}
         </ul>
+        {data.order.note ? (
+          <p className={styles.meta}>
+            <strong>Kitchen note:</strong> {data.order.note}
+          </p>
+        ) : null}
         <p className={styles.total}>
           Total · {data.shop.currency} {data.order.total}
         </p>

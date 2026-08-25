@@ -7,7 +7,7 @@ import { Suspense } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { LineModifier, MenuItem, ModifierGroup, TenantPayments, TenantSpecialOffer } from "@/lib/tenant-types";
 import type { AdvanceRail, PaymentMethod, ServiceType } from "@/lib/types";
-import { lineUnitPrice } from "@/lib/fees";
+import { computeFees, lineUnitPrice } from "@/lib/fees";
 import { useLang } from "@/lib/lang-context";
 import {
   LAST_GUEST_TENANT_KEY,
@@ -42,6 +42,8 @@ type CartLine = {
   qty: number;
   modifiers: LineModifier[];
   unitPrice: number;
+  /** Per-item special instruction (e.g. "no onion"). */
+  note?: string;
 };
 
 function toMods(groups: ModifierGroup[], selected: Record<string, string[]>): LineModifier[] {
@@ -85,6 +87,10 @@ type PublicShop = {
   phone: string;
   currency: string;
   openHours: string;
+  deliveryFee?: number;
+  packingFee?: number;
+  taxRate?: number;
+  serviceChargePercent?: number;
 };
 
 function qtyOf(cart: CartLine[], id: string) {
@@ -119,11 +125,21 @@ function CheckoutForm({
   onPlace,
   onClear,
   cart,
+  fees,
+  onLineNote,
 }: {
   mode: ServiceType;
   table?: string;
   currency: string;
   total: number;
+  fees: {
+    subtotal: number;
+    deliveryFee: number;
+    packingFee: number;
+    serviceCharge: number;
+    tax: number;
+    total: number;
+  } | null;
   paymentMethod: PaymentMethod;
   setPaymentMethod: (m: PaymentMethod) => void;
   payments: TenantPayments;
@@ -147,6 +163,7 @@ function CheckoutForm({
   onPlace: () => void;
   onClear: () => void;
   cart: CartLine[];
+  onLineNote: (key: string, note: string) => void;
 }) {
   const pays = paymentChoicesFor(mode, payments);
   const rails = enabledAdvanceRails(payments);
@@ -170,6 +187,13 @@ function CheckoutForm({
             <span>
               {currency} {c.unitPrice * c.qty}
             </span>
+            <input
+              className={styles.lineNote}
+              value={c.note || ""}
+              onChange={(e) => onLineNote(c.key, e.target.value)}
+              placeholder={`Note for ${c.item.name} (optional)`}
+              aria-label={`Special instructions for ${c.item.name}`}
+            />
           </li>
         ))}
       </ul>
@@ -200,7 +224,9 @@ function CheckoutForm({
 
       {paymentMethod === "paid_in_advance" && (
         <div className={styles.advanceBlock}>
-          <p className={styles.muted}>Transfer to one of these accounts, then upload your screenshot.</p>
+          <p className={styles.muted}>
+            Amount to pay: <strong>{currency} {fees ? fees.total : total}</strong> (includes packing, delivery &amp; tax if any). Transfer to one of these accounts, then upload your screenshot.
+          </p>
           {rails.length === 0 ? (
             <p className={styles.error}>Admin has not published transfer details yet.</p>
           ) : (
@@ -323,8 +349,26 @@ function CheckoutForm({
           {error}
         </p>
       )}
+      {fees && (
+        <div className={styles.feeBreakdown}>
+          <div className={styles.feeRow}><span>Subtotal</span><span>{currency} {fees.subtotal}</span></div>
+          {fees.packingFee > 0 && (
+            <div className={styles.feeRow}><span>Packing</span><span>{currency} {fees.packingFee}</span></div>
+          )}
+          {fees.deliveryFee > 0 && (
+            <div className={styles.feeRow}><span>Delivery</span><span>{currency} {fees.deliveryFee}</span></div>
+          )}
+          {fees.serviceCharge > 0 && (
+            <div className={styles.feeRow}><span>Service</span><span>{currency} {fees.serviceCharge}</span></div>
+          )}
+          {fees.tax > 0 && (
+            <div className={styles.feeRow}><span>Tax</span><span>{currency} {fees.tax}</span></div>
+          )}
+          <div className={`${styles.feeRow} ${styles.feeGrand}`}><span>Total</span><span>{currency} {fees.total}</span></div>
+        </div>
+      )}
       <button type="button" className={styles.place} disabled={busy || !cart.length} onClick={onPlace}>
-        {busy ? "Placing…" : `Place order · ${currency} ${total}`}
+        {busy ? "Placing…" : `Place order · ${currency} ${fees ? fees.total : total}`}
       </button>
     </div>
   );
@@ -546,6 +590,20 @@ function OrderInner() {
   const count = cart.reduce((s, c) => s + c.qty, 0);
   const currency = shop?.currency || "PKR";
 
+  // Fee-aware order total matching the server (delivery/packing/service/tax).
+  const fees = useMemo(() => {
+    if (!shop || !mode || cart.length === 0) return null;
+    const orderLines = cart.map((c) => ({
+      itemId: c.item.id,
+      name: c.item.name,
+      qty: c.qty,
+      unitPrice: c.unitPrice,
+      modifiers: c.modifiers,
+    }));
+    return computeFees(shop as Parameters<typeof computeFees>[0], mode as Parameters<typeof computeFees>[1], orderLines);
+  }, [shop, mode, cart]);
+  const grandTotal = fees ? fees.total : total;
+
   function flyToCart(fromEl: HTMLElement | null, item: MenuItem) {
     if (reduced || !fromEl) return;
     const start = fromEl.getBoundingClientRect();
@@ -621,6 +679,10 @@ function OrderInner() {
     } else {
       setToast("Some items are unavailable right now");
     }
+  }
+
+  function setLineNote(key: string, note: string) {
+    setCart((prev) => prev.map((p) => (p.key === key ? { ...p, note } : p)));
   }
 
   async function uploadProof(file: File) {
@@ -831,6 +893,7 @@ function OrderInner() {
           basePrice: c.item.price,
           modifiers: c.modifiers,
           unitPrice: c.unitPrice,
+          lineNote: c.note?.trim() || undefined,
         })),
       }),
     });
@@ -885,7 +948,9 @@ function OrderInner() {
       mode={mode!}
       table={table}
       currency={currency}
-      total={total}
+      total={grandTotal}
+      fees={fees}
+      onLineNote={setLineNote}
       paymentMethod={paymentMethod}
       setPaymentMethod={setPaymentMethod}
       payments={payments}
@@ -1364,6 +1429,8 @@ function OrderInner() {
                                     type="button"
                                     onClick={() => removeItem(menuItem.id)}
                                     aria-label={`Remove ${menuItem.name}`}
+                                    disabled={!inCart}
+                                    hidden={!inCart}
                                   >
                                     −
                                   </button>
@@ -1413,11 +1480,11 @@ function OrderInner() {
             <em key={count} className={styles.cartBarCount}>
               {count} item{count === 1 ? "" : "s"}
             </em>
-            <strong key={total}>
-              {currency} {total}
+            <strong key={grandTotal}>
+              {currency} {grandTotal}
             </strong>
           </span>
-          <span className={styles.cartBarCta}>Place order · {currency} {total}</span>
+          <span className={styles.cartBarCta}>Place order · {currency} {grandTotal}</span>
         </button>
       )}
 

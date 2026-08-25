@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import type { Order, TenantState } from "@/lib/tenant-types";
 import { customerReceiptHtml } from "@/lib/print";
@@ -22,8 +22,20 @@ export function PrintSuccess({
   onPrintAgain?: (order: Order) => void | Promise<void>;
 }) {
   const [showPreview, setShowPreview] = useState(false);
+  const closeRef = useRef<HTMLButtonElement | null>(null);
 
   const showBill = kind === "bill" && Boolean(tenant && order);
+
+  // Move focus into the dialog and close on Escape.
+  useEffect(() => {
+    if (!showBill) return;
+    closeRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onDone();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [showBill, onDone]);
 
   // Auto-show the on-screen receipt once the bill is done.
   useEffect(() => {
@@ -65,7 +77,7 @@ export function PrintSuccess({
               <p className={styles.kicker}>Bill printed</p>
               <h2>Order #{order!.number}</h2>
             </div>
-            <button type="button" className={styles.closeBtn} onClick={onDone} aria-label="Close receipt">
+            <button ref={closeRef} type="button" className={styles.closeBtn} onClick={onDone} aria-label="Close receipt">
               ✕
             </button>
           </div>
