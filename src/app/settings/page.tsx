@@ -21,6 +21,8 @@ export default function SettingsPage() {
     address: "",
     phone: "",
     allowApk: false,
+    scanOrderQr: true,
+    deliveryEnabled: true,
   });
   const [fees, setFees] = useState({
     deliveryFee: 0,
@@ -43,6 +45,8 @@ export default function SettingsPage() {
       address: tenant.shop.address || "",
       phone: tenant.shop.phone || "",
       allowApk: Boolean(tenant.branding.allowApk),
+      scanOrderQr: tenant.branding.scanOrderQr !== false,
+      deliveryEnabled: tenant.shop.deliveryEnabled !== false,
     });
     setFees({
       deliveryFee: tenant.shop.deliveryFee || 0,
@@ -71,8 +75,14 @@ export default function SettingsPage() {
           logoUrl: branding.logoUrl,
           receiptFooter: branding.receiptFooter,
           allowApk: Boolean(branding.allowApk),
+          scanOrderQr: Boolean(branding.scanOrderQr),
         },
-        shop: { address: branding.address, phone: branding.phone, printLogoOnBill },
+        shop: {
+          address: branding.address,
+          phone: branding.phone,
+          printLogoOnBill,
+          deliveryEnabled: Boolean(branding.deliveryEnabled),
+        },
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -277,6 +287,27 @@ export default function SettingsPage() {
             />
             Allow this kitchen's own APK download (Staff + Customer)
           </label>
+          <label className={styles.rowCheck}>
+            <input
+              type="checkbox"
+              checked={branding.scanOrderQr}
+              onChange={(e) => setBranding({ ...branding, scanOrderQr: e.target.checked })}
+            />
+            Print "Scan to order" QR on customer receipt (59mm)
+          </label>
+          <label className={styles.rowCheck}>
+            <input
+              type="checkbox"
+              checked={branding.deliveryEnabled}
+              onChange={(e) => setBranding({ ...branding, deliveryEnabled: e.target.checked })}
+            />
+            Enable Delivery option for customers
+          </label>
+          {tenant && (
+            <div className={styles.row}>
+              <a className={styles.btn} href="/tables?printQr=1">🪑 Print table QR</a>
+            </div>
+          )}
           {branding.allowApk && tenant && (
             <div className={styles.apkLinks}>
               <a className={styles.btn} href={`/apk/install/${tenant.code}/staff`} download>🧑‍🍳 Staff APK</a>

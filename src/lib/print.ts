@@ -179,7 +179,9 @@ export function customerReceiptHtml(tenant: TenantState, order: Order) {
   <p class="thanks">Thank you</p>
   <p class="visit">Visit again</p>
   ${extraFooter ? `<p class="center">${escapeHtml(extraFooter)}</p>` : ""}
-  <div class="qr">${qrPrintImgMarkup(qrUrl, RECEIPT_QR_PRINT_MM)}<p class="qr-cap">${escapeHtml(RECEIPT_QR_CAPTION[0])}</p><p class="qr-cap">${escapeHtml(RECEIPT_QR_CAPTION[1])}</p></div>
+  ${tenant.branding.scanOrderQr !== false
+    ? `<div class="qr">${qrPrintImgMarkup(qrUrl, RECEIPT_QR_PRINT_MM)}<p class="qr-cap">${escapeHtml(RECEIPT_QR_CAPTION[0])}</p><p class="qr-cap">${escapeHtml(RECEIPT_QR_CAPTION[1])}</p></div>`
+    : ""}
 </main>
 </body></html>`;
 }

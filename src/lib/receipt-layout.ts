@@ -55,7 +55,7 @@ export function shouldPrintGst(shop?: { printGstOnBill?: boolean } | null): bool
 }
 
 /** 58mm QR caption — short so it does not wrap. Same copy on ESC/POS and HTML. */
-export const RECEIPT_QR_CAPTION = ["Scan to order", "Open menu"] as const;
+export const RECEIPT_QR_CAPTION = ["Scan to order", "Cash · Pickup · Delivery"] as const;
 
 /** Print the uploaded shop logo on the bill only when the admin ticks Settings. Off by default. */
 export function shouldPrintLogoOnBill(tenant?: {

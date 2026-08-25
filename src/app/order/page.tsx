@@ -1008,11 +1008,15 @@ function OrderInner() {
                     </button>
                   </motion.article>
                   <motion.article variants={itemVar}>
-                    <h3>Delivery</h3>
-                    <p>Cash on delivery or recorded as paid in advance.</p>
-                    <button type="button" onClick={() => goMode("delivery")}>
-                      Order delivery
-                    </button>
+                    {(shop as unknown as { deliveryEnabled?: boolean })?.deliveryEnabled !== false && (
+                      <>
+                        <h3>Delivery</h3>
+                        <p>Cash on delivery or recorded as paid in advance.</p>
+                        <button type="button" onClick={() => goMode("delivery")}>
+                          Order delivery
+                        </button>
+                      </>
+                    )}
                   </motion.article>
                 </motion.div>
               )}

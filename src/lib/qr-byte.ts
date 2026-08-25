@@ -326,7 +326,7 @@ export function encodeQrMatrix(text: string): BitGrid {
 /** 58mm @ ~203 dpi. Target QR ~40–50% of paper (~160–200 dots). */
 export const RECEIPT_PAPER_DOTS = 384;
 export const RECEIPT_QR_TARGET_DOTS = 184;
-export const RECEIPT_QR_PRINT_MM = 28;
+export const RECEIPT_QR_PRINT_MM = 42;
 
 /** Module scale so the raster QR lands around 160–200 dots, flush left. */
 export function qrScaleFor58mm(matrixModules: number, quiet = 2): number {

@@ -13,6 +13,8 @@ export interface TenantBranding {
   receiptFooter: string;
   /** Whether this kitchen may distribute its own APK (admin downloads + receipt QR). */
   allowApk?: boolean;
+  /** Print a 'Scan to order' QR on the customer receipt (default on). */
+  scanOrderQr?: boolean;
 }
 
 export interface TenantShop {
@@ -25,6 +27,8 @@ export interface TenantShop {
   openHours: string;
   deliveryFee: number;
   packingFee: number;
+  /** When false, the guest checkout hides the Delivery option. */
+  deliveryEnabled?: boolean;
   /** Service charge % of subtotal */
   serviceChargePercent: number;
   /**
