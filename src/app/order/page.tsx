@@ -1445,6 +1445,17 @@ function OrderInner() {
                 onClick={() => {
                   pushLine(modItem, toMods(modItem.modifiers || [], modSel));
                   setModItem(null);
+                  setSheetOpen(true);
+                }}
+              >
+                Place order
+              </button>
+              <button
+                type="button"
+                className={styles.place}
+                onClick={() => {
+                  pushLine(modItem, toMods(modItem.modifiers || [], modSel));
+                  setModItem(null);
                 }}
               >
                 Add to cart · {currency}{" "}
