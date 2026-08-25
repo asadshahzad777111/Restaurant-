@@ -73,7 +73,7 @@ export function escPosQrZijiang(url: string, mag = ZIJIANG_QR_MAG): number[] {
 }
 
 function qrCaptionBytes(): number[] {
-  return [...ALIGN_LEFT, ...utf8(RECEIPT_QR_CAPTION[0]), 0x0a, ...utf8(RECEIPT_QR_CAPTION[1]), 0x0a];
+  return [...ALIGN_CENTER, ...utf8(RECEIPT_QR_CAPTION[0]), 0x0a, ...utf8(RECEIPT_QR_CAPTION[1]), 0x0a];
 }
 
 /** Full slip: init, optional logo, top feed, body, left QR, captions, bottom feed, partial cut (GS V 1). */
@@ -90,8 +90,9 @@ export function buildSlipEscPos(
   parts.push(utf8(body), [0x0a, 0x0a]);
   const url = String(qrUrl || "").trim();
   if (url) {
-    parts.push(escPosQrZijiang(url, ZIJIANG_QR_MAG));
+    // Print one QR (raster — reliable + sized wider) + its caption, centered.
     parts.push(qrEscPosRaster(url));
+    parts.push([0x0a]);
     parts.push(qrCaptionBytes());
   }
   parts.push(BOTTOM_FEED, [0x1d, 0x56, 0x01]);
