@@ -61,6 +61,7 @@ export default function PosPage() {
   const [bridgeNote, setBridgeNote] = useState("");
   const [pausedCart, setPausedCart] = useState<CartLine[] | null>(null);
   const [pausedMeta, setPausedMeta] = useState<{ name: string; phone: string; discount: string } | null>(null);
+  const [androidOnline, setAndroidOnline] = useState(false);
   const searchRef = useRef<HTMLInputElement | null>(null);
   const discountRef = useRef<HTMLInputElement | null>(null);
   const customerRef = useRef<HTMLInputElement | null>(null);
