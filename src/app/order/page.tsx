@@ -374,6 +374,7 @@ function OrderInner() {
   const [cartReady, setCartReady] = useState(false);
   const [modItem, setModItem] = useState<MenuItem | null>(null);
   const [modSel, setModSel] = useState<Record<string, string[]>>({});
+  const [modQty, setModQty] = useState(1);
   const [flyers, setFlyers] = useState<
     Array<{ id: number; x: number; y: number; tx: number; ty: number; src?: string; letter: string }>
   >([]);
@@ -542,16 +543,16 @@ function OrderInner() {
   // Brief accent flash on the tile right after an item is added
   const [flashId, setFlashId] = useState<string | null>(null);
 
-  function pushLine(item: MenuItem, modifiers: LineModifier[], fromEl?: HTMLElement | null) {
+  function pushLine(item: MenuItem, modifiers: LineModifier[], fromEl?: HTMLElement | null, qty = 1) {
     const unitPrice = lineUnitPrice(item.price, modifiers);
     const key = `${item.id}:${modifiers.map((m) => m.optionId).sort().join(",")}`;
     setCart((prev) => {
       const hit = prev.find((p) => p.key === key);
-      if (hit) return prev.map((p) => (p.key === key ? { ...p, qty: p.qty + 1 } : p));
-      return [...prev, { key, item, qty: 1, modifiers, unitPrice }];
+      if (hit) return prev.map((p) => (p.key === key ? { ...p, qty: p.qty + qty } : p));
+      return [...prev, { key, item, qty, modifiers, unitPrice }];
     });
     flyToCart(fromEl || null, item);
-    setToast(`Added ${item.name}`);
+    setToast(`Added ${item.name}${qty > 1 ? ` ×${qty}` : ""}`);
     setFlashId(item.id);
     window.setTimeout(() => setFlashId((cur) => (cur === item.id ? null : cur)), 620);
   }
@@ -567,6 +568,7 @@ function OrderInner() {
         init[g.id] = g.required && g.options[0] ? [g.options[0].id] : [];
       });
       setModSel(init);
+      setModQty(1);
       setModItem(item);
       return;
     }
@@ -1397,27 +1399,48 @@ function OrderInner() {
               transition={reduced ? backdropTransition(true) : sheetTransition}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className={styles.sheetHead}>
-                <h3 id="mod-title">Customize · {modItem.name}</h3>
-                <button type="button" onClick={() => setModItem(null)}>
-                  Close
+              {/* Item header — photo, name, description */}
+              <div className={styles.modHead}>
+                {modItem.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={modItem.imageUrl} alt="" className={styles.modImg} />
+                ) : (
+                  <span className={styles.modEmoji} aria-hidden>
+                    {modItem.imageEmoji || modItem.name.slice(0, 1)}
+                  </span>
+                )}
+                <div className={styles.modHeadText}>
+                  <h3 id="mod-title">{modItem.name}</h3>
+                  {modItem.description ? (
+                    <p className={styles.muted}>{modItem.description}</p>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  className={styles.sheetClose}
+                  onClick={() => setModItem(null)}
+                  aria-label="Close"
+                >
+                  ✕
                 </button>
               </div>
+
+              {/* Modifier groups — name on top, options below */}
               {(modItem.modifiers || []).map((g) => (
-                <div key={g.id} style={{ marginBottom: "0.85rem" }}>
-                  <p className={styles.muted}>
+                <div key={g.id} className={styles.modGroupBlock}>
+                  <p className={styles.modGroupLabel}>
                     {g.name}
-                    {g.required ? " *" : ""}
+                    {g.required ? <span className={styles.modReq}> · required</span> : null}
+                    {g.multi ? <span className={styles.modMulti}> · pick several</span> : null}
                   </p>
-                  <div className={styles.qty} style={{ flexWrap: "wrap", gap: "0.4rem" }}>
+                  <div className={styles.modOptionsWrap}>
                     {g.options.map((o) => {
                       const on = (modSel[g.id] || []).includes(o.id);
                       return (
                         <button
                           key={o.id}
                           type="button"
-                          className={on ? styles.place : styles.clear}
-                          style={{ width: "auto", margin: 0 }}
+                          className={on ? styles.modOptOn : styles.modOpt}
                           onClick={() => {
                             setModSel((prev) => {
                               const cur = prev[g.id] || [];
@@ -1431,35 +1454,66 @@ function OrderInner() {
                             });
                           }}
                         >
-                          {o.name}
-                          {o.priceDelta ? ` ${o.priceDelta > 0 ? "+" : ""}${o.priceDelta}` : ""}
+                          <span className={styles.modOptName}>{o.name}</span>
+                          {o.priceDelta ? (
+                            <span className={styles.modOptPrice}>
+                              {o.priceDelta > 0 ? "+" : ""}
+                              {currency} {o.priceDelta}
+                            </span>
+                          ) : null}
+                          {on ? <span className={styles.modOptTick} aria-hidden>✓</span> : null}
                         </button>
                       );
                     })}
                   </div>
                 </div>
               ))}
+
+              {/* Quantity */}
+              <div className={styles.modQtyRow}>
+                <span className={styles.modQtyLabel}>Quantity</span>
+                <div className={styles.qty}>
+                  <button type="button" onClick={() => setModQty((q) => Math.max(1, q - 1))} aria-label="Decrease quantity">
+                    −
+                  </button>
+                  <span>{modQty}</span>
+                  <button type="button" onClick={() => setModQty((q) => Math.min(20, q + 1))} aria-label="Increase quantity">
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Live total */}
+              <div className={styles.modTotal}>
+                <span>Total</span>
+                <strong>
+                  {currency}{" "}
+                  {lineUnitPrice(modItem.price, toMods(modItem.modifiers || [], modSel)) * modQty}
+                </strong>
+              </div>
+
+              {/* Dual CTA — everything inside the sheet */}
               <button
                 type="button"
                 className={styles.place}
                 onClick={() => {
-                  pushLine(modItem, toMods(modItem.modifiers || [], modSel));
-                  setModItem(null);
-                  setSheetOpen(true);
-                }}
-              >
-                Place order
-              </button>
-              <button
-                type="button"
-                className={styles.place}
-                onClick={() => {
-                  pushLine(modItem, toMods(modItem.modifiers || [], modSel));
+                  pushLine(modItem, toMods(modItem.modifiers || [], modSel), null, modQty);
                   setModItem(null);
                 }}
               >
                 Add to cart · {currency}{" "}
-                {lineUnitPrice(modItem.price, toMods(modItem.modifiers || [], modSel))}
+                {lineUnitPrice(modItem.price, toMods(modItem.modifiers || [], modSel)) * modQty}
+              </button>
+              <button
+                type="button"
+                className={styles.placeGhost}
+                onClick={() => {
+                  pushLine(modItem, toMods(modItem.modifiers || [], modSel), null, modQty);
+                  setModItem(null);
+                  setSheetOpen(true);
+                }}
+              >
+                Add &amp; go to checkout
               </button>
             </motion.div>
           </motion.div>

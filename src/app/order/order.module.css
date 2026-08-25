@@ -1009,6 +1009,181 @@
   padding: 0.85rem;
 }
 
+.placeGhost {
+  width: 100%;
+  margin-top: 0.5rem;
+  border: 1px solid var(--guest-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--guest-text);
+  font-weight: 700;
+  padding: 0.8rem;
+}
+
+/* ---- Customize sheet (world-perfect) ---- */
+.modHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.modImg {
+  width: 4.4rem;
+  height: 4.4rem;
+  object-fit: cover;
+  border-radius: 14px;
+  flex-shrink: 0;
+}
+
+.modEmoji {
+  width: 4.4rem;
+  height: 4.4rem;
+  border-radius: 14px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  background: rgba(255, 133, 0, 0.12);
+}
+
+.modHeadText {
+  flex: 1;
+  min-width: 0;
+}
+
+.modHeadText h3 {
+  margin: 0 0 0.2rem;
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+
+.modHeadText .muted {
+  margin: 0;
+}
+
+.sheetClose {
+  border: 1px solid var(--guest-line);
+  background: transparent;
+  color: var(--guest-text);
+  border-radius: 999px;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.modGroupBlock {
+  margin-bottom: 1rem;
+}
+
+.modGroupLabel {
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--guest-text);
+}
+
+.modReq {
+  color: var(--ember);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 700;
+}
+
+.modMulti {
+  color: var(--guest-muted);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
+.modOptionsWrap {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: 0.45rem;
+}
+
+.modOpt,
+.modOptOn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.65rem 0.7rem;
+  border-radius: 12px;
+  border: 1px solid var(--guest-line);
+  background: var(--guest-soft);
+  color: var(--guest-text);
+  font-weight: 600;
+  text-align: left;
+}
+
+.modOptOn {
+  border-color: var(--ember);
+  background: rgba(255, 133, 0, 0.14);
+}
+
+.modOptName {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.modOptPrice {
+  color: var(--guest-muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.modOptTick {
+  color: var(--ember);
+  font-weight: 800;
+}
+
+.modQtyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0.4rem 0 0.85rem;
+}
+
+.modQtyLabel {
+  color: var(--guest-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.modQtyRow .qty {
+  margin: 0;
+}
+
+.modTotal {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.7rem;
+  border-top: 1px dashed var(--guest-line);
+}
+
+.modTotal span {
+  color: var(--guest-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.modTotal strong {
+  font-size: 1.4rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--guest-text);
+}
+
 .note,
 .muted {
   font-size: 0.85rem;
