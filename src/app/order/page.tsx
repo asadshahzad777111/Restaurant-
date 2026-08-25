@@ -394,6 +394,15 @@ function OrderInner() {
       router.replace("/guest");
       return;
     }
+    // Per-restaurant PWA: iOS 'Add to Home Screen' opens this menu with the
+    // right name, icon and start_url (not the platform root).
+    let link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "manifest";
+      document.head.appendChild(link);
+    }
+    link.href = `/api/manifest?tenant=${tenantCode}&app=customer`;
     const locked = readLockedCustomerTenant();
     if (isCustomerShell() && locked && tenantCode !== locked) {
       router.replace(guestOrderPath({ tenant: locked }));
