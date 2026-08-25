@@ -252,6 +252,13 @@
   justify-self: start;
 }
 
+.pinHint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--guest-muted);
+  opacity: 0.85;
+}
+
 .forgot:hover {
   color: var(--ember-bright);
 }

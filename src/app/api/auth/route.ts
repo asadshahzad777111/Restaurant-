@@ -3,6 +3,7 @@ import {
   AuthError,
   loginSuper,
   loginTenant,
+  loginTenantByPin,
   logout,
   getBearerToken,
   getSessionUser,
@@ -26,14 +27,15 @@ export async function POST(req: NextRequest) {
     }
     await ensureStore();
     const body = await req.json();
-    const { mode, username, password, code, app } = body as {
+    const { mode, username, password, code, app, pin } = body as {
       mode?: "super" | "tenant";
       username: string;
       password: string;
       code?: string;
       app?: string;
+      pin?: string;
     };
-    if (!username || !password) {
+    if (!username || (!password && !pin)) {
       return NextResponse.json({ error: "Missing credentials" }, { status: 400 });
     }
     const staffApp = app === "staff" || app === "pos" || app === "client";
@@ -50,7 +52,9 @@ export async function POST(req: NextRequest) {
       return res;
     }
     if (!code) return NextResponse.json({ error: "Restaurant code required" }, { status: 400 });
-    const session = await loginTenant(code, username, password);
+    const session = pin
+      ? await loginTenantByPin(code, username, pin)
+      : await loginTenant(code, username, password);
     const user = publicUser(await getSessionUser(session));
     const tenant = session.tenantId ? await readTenantStaffView(session.tenantId) : null;
     return NextResponse.json({ token: session.token, session, user, tenant });

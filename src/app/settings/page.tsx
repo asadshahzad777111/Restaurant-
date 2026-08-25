@@ -36,6 +36,8 @@ export default function SettingsPage() {
   const [emailOnOrder, setEmailOnOrder] = useState(false);
   const [fbrEnabled, setFbrEnabled] = useState(false);
   const [pw, setPw] = useState({ current: "", next: "" });
+  const [pinDraft, setPinDraft] = useState({ password: "", pin: "" });
+  const [pinMsg, setPinMsg] = useState("");
   const [emailDraft, setEmailDraft] = useState("");
 
   useEffect(() => {
@@ -163,6 +165,26 @@ export default function SettingsPage() {
     if (res.ok) {
       setPw({ current: "", next: "" });
     }
+  }
+
+  async function savePin(e: React.FormEvent) {
+    e.preventDefault();
+    setPinMsg("");
+    const res = await api("/api/admin", {
+      method: "PUT",
+      body: JSON.stringify({
+        action: "setPin",
+        currentPassword: pinDraft.password,
+        pin: pinDraft.pin,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setPinMsg((data as { error?: string }).error || "Failed");
+      return;
+    }
+    setPinDraft({ password: "", pin: "" });
+    setPinMsg(pinDraft.pin ? "Quick PIN saved — use it on the login page" : "Quick PIN removed");
   }
 
   async function changeEmail(e: React.FormEvent) {
@@ -449,6 +471,33 @@ export default function SettingsPage() {
           <button type="submit" className={styles.btn}>
             Update password
           </button>
+        </form>
+
+        <form className={styles.form} onSubmit={(e) => void savePin(e)}>
+          <h3 style={{ margin: 0 }}>🔢 Quick PIN login</h3>
+          <p className={styles.muted}>
+            Set a 4–6 digit PIN to sign in fast without an email. You still use your password to change it.
+          </p>
+          <input
+            type="password"
+            autoComplete="current-password"
+            placeholder="Your password (to verify)"
+            value={pinDraft.password}
+            onChange={(e) => setPinDraft({ ...pinDraft, password: e.target.value })}
+          />
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="New PIN (4–6 digits) — leave empty to remove"
+            value={pinDraft.pin}
+            onChange={(e) => setPinDraft({ ...pinDraft, pin: e.target.value.replace(/\D/g, "").slice(0, 6) })}
+          />
+          <div className={styles.row}>
+            <button type="submit" className={styles.btn}>
+              Save PIN
+            </button>
+          </div>
+          {pinMsg && <p className={styles.muted}>{pinMsg}</p>}
         </form>
 
         <form className={styles.form} onSubmit={(e) => void changeEmail(e)}>

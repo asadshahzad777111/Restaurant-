@@ -22,6 +22,7 @@ export default function LoginPage() {
   const [code, setCode] = useState("");
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("");
+  const [pinMode, setPinMode] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [hideSuper, setHideSuper] = useState(() => isStaffShell() || appShell === "staff");
@@ -124,7 +125,15 @@ export default function LoginPage() {
       body: JSON.stringify(
         mode === "super"
           ? { mode: "super", username, password, app: readAppShell() }
-          : { mode: "tenant", code: code.trim().toUpperCase(), username, password, app: readAppShell() },
+          : pinMode
+            ? {
+                mode: "tenant",
+                code: code.trim().toUpperCase(),
+                username,
+                pin: password,
+                app: readAppShell(),
+              }
+            : { mode: "tenant", code: code.trim().toUpperCase(), username, password, app: readAppShell() },
       ),
     });
     const data = await res.json();
@@ -337,20 +346,41 @@ export default function LoginPage() {
           />
         </label>
         <label className={styles.field}>
-          Password
+          {pinMode ? "Quick PIN" : "Password"}
           <input
             className={styles.input}
-            type="password"
+            type={pinMode ? "password" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
+            autoComplete={pinMode ? "one-time-code" : "current-password"}
+            inputMode={pinMode ? "numeric" : undefined}
+            maxLength={pinMode ? 6 : undefined}
+            placeholder={pinMode ? "4–6 digit PIN" : undefined}
             required
           />
         </label>
+        {mode === "tenant" && !pinMode && (
+          <p className={styles.pinHint}>
+            Have a Quick PIN? Set it once in Settings → staff can sign in without typing a password.
+          </p>
+        )}
         {error && <p className={styles.error}>{error}</p>}
         <button type="submit" className={styles.submit} disabled={busy}>
-          {busy ? "Signing in…" : "Sign in"}
+          {busy ? "Signing in…" : pinMode ? "Sign in with PIN" : "Sign in"}
         </button>
+        {mode === "tenant" && (
+          <button
+            type="button"
+            className={styles.forgot}
+            onClick={() => {
+              setPinMode((v) => !v);
+              setPassword("");
+              setError("");
+            }}
+          >
+            {pinMode ? "← Use password instead" : "Use Quick PIN instead"}
+          </button>
+        )}
         {mode === "tenant" && !codeLocked && (
           <button
             type="button"

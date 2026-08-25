@@ -97,9 +97,36 @@ export async function loginTenant(
   });
 }
 
-/** Staff/Admin Google login — email must already be set on that kitchen user. */
-export async function loginTenantByEmail(code: string, email: string): Promise<Session> {
+/**
+ * Quick PIN login — staff set a 4–6 digit PIN once in Settings. This is a
+ * convenience path (no email OTP), so the PIN must be present and correct.
+ */
+export async function loginTenantByPin(
+  code: string,
+  username: string,
+  pin: string,
+): Promise<Session> {
   const meta = await findTenantMetaByCode(code);
+  if (!meta) throw new AuthError("Restaurant code not found", 404);
+  if (meta.status === "suspended") throw new AuthError("Restaurant is suspended", 403);
+  const user = await findUser(meta.id, username);
+  if (!user) throw new AuthError("Invalid PIN", 401);
+  const { verifyPassword } = await import("./password");
+  if (!user.pinHash || !(await verifyPassword(pin, user.pinHash)).ok) {
+    throw new AuthError("Invalid PIN", 401);
+  }
+  const role: SessionRole = user.role === "admin" ? "tenant_admin" : "staff";
+  return addSession({
+    token: newToken(),
+    role,
+    tenantId: meta.id,
+    userId: user.id,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+/** Staff/Admin Google login — email must already be set on that kitchen user. */
+export async function loginTenantByEmail(code: string, email: string): Promise<Session> {  const meta = await findTenantMetaByCode(code);
   if (!meta) throw new AuthError("Restaurant code not found", 404);
   if (meta.status === "suspended") throw new AuthError("Restaurant is suspended", 403);
   const user = await findUserByEmail(meta.id, email);

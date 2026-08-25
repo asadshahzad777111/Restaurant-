@@ -57,6 +57,12 @@ export interface TenantUser {
   permissions: Permission[];
   active: boolean;
   mustChangePassword?: boolean;
+  /**
+   * Optional quick-login PIN (scrypt-hashed, 4–6 digits). Staff set this once
+   * in Settings (after verifying their password); login then accepts code +
+   * username + PIN without emailing an OTP.
+   */
+  pinHash?: string;
   /** Optional — restaurant Admin inbox for order/welcome mail. */
   email?: string;
   /**

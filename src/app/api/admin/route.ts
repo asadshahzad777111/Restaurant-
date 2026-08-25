@@ -146,6 +146,28 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    // Set or clear the quick-login PIN. Verify the current password first.
+    if (action === "setPin") {
+      const t = await readTenant(tenantId);
+      const user = t.users.find((u) => u.id === session.userId);
+      if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      const { verifyPassword, hashPassword } = await import("@/lib/password");
+      if (!body.currentPassword) {
+        return NextResponse.json({ error: "Enter your password to change the PIN" }, { status: 400 });
+      }
+      const cur = await verifyPassword(String(body.currentPassword), user.password);
+      if (!cur.ok) {
+        return NextResponse.json({ error: "Password wrong" }, { status: 400 });
+      }
+      const pin = String(body.pin || "").trim();
+      if (pin && !/^\d{4,6}$/.test(pin)) {
+        return NextResponse.json({ error: "PIN must be 4 to 6 digits" }, { status: 400 });
+      }
+      user.pinHash = pin ? await hashPassword(pin) : undefined;
+      await updateUsers(tenantId, t.users);
+      return NextResponse.json({ ok: true, hasPin: Boolean(pin) });
+    }
+
     if (action === "changeEmail") {
       const t = await readTenant(tenantId);
       const user = t.users.find((u) => u.id === session.userId);
