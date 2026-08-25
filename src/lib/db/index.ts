@@ -169,6 +169,7 @@ export async function createEmptyTenantState(input: {
   adminPassword: string;
   adminEmail?: string;
   adminKnownPassword?: string;
+  planId?: string;
 }) {
   await ensureStore();
   return useMongo()

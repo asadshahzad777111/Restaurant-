@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
         adminPassword,
         adminEmail: adminEmail || undefined,
         adminKnownPassword: adminPasswordRaw,
+        planId,
       });
       const meta = await createTenantMeta({
         id,

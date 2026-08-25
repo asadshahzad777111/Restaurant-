@@ -244,12 +244,17 @@ export function createEmptyTenant(input: {
   adminEmail?: string;
   /** Super-only copy of Admin password for HQ display (not used for login). */
   adminKnownPassword?: string;
+  planId?: string;
 }): TenantState {
   // Isolated kitchen: empty catalog, not DEMO menu/logo/stock. Admin belongs to this id only.
   // Ids are platform-generated (tenant_…), but the folder name is derived from it — never traverse.
   if (!/^[A-Za-z0-9_-]{1,80}$/.test(input.id)) {
     throw new Error("Invalid tenant id");
   }
+  // Plan-based defaults: delivery + online ordering come on automatically for
+  // paid plans; Starter keeps it lean so the upgrade path is clear.
+  const planId = (input.planId || "starter") as "starter" | "pro" | "enterprise";
+  const deliveryEnabled = planId !== "starter";
   const state: TenantState = {
     id: input.id,
     code: input.code.toUpperCase(),
@@ -269,6 +274,8 @@ export function createEmptyTenant(input: {
       deliveryFee: 0,
       packingFee: 0,
       serviceChargePercent: 0,
+      deliveryEnabled,
+      emailOnOrder: false,
     },
     users: [
       {

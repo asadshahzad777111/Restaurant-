@@ -46,7 +46,34 @@ if (!codeRaw) {
 
 const code = codeRaw.toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24) || "KITCHEN";
 const safeId = code.toLowerCase().replace(/[^a-z0-9]/g, "");
-const displayName = nameRaw.trim() || code;
+let displayName = nameRaw.trim() || code;
+let displayColor = brandColor;
+let logoUrl = "";
+
+// Auto-brand from the tenant store when --tenant=<CODE> is used (or always try
+// .data/tenants/…/tenant.json) so the APK name, color and logo match the
+// restaurant without manual inputs.
+const tenantJsonPath = path.join(__dirname, "..", ".data", "tenants", `tenant_${safeId}`, "tenant.json");
+const tenantByCodePath = path.join(__dirname, "..", ".data", "tenants", "tenant_demo", "tenant.json");
+function tryAutoBrand(filePath) {
+  if (!fs.existsSync(filePath)) return false;
+  try {
+    const t = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    const tname = t?.branding?.name;
+    if (tname) displayName = tname;
+    if (t?.branding?.logoUrl) logoUrl = t.branding.logoUrl;
+    if (t?.shop?.themeColor) displayColor = t.shop.themeColor;
+    return true;
+  } catch {
+    return false;
+  }
+}
+// Prefer an exact tenant file; fall back to DEMO when code is DEMO.
+tryAutoBrand(tenantJsonPath);
+if (code === "DEMO") tryAutoBrand(tenantByCodePath);
+if (!arg("name") && !arg("color")) {
+  console.log(`Auto-branded APK from tenant data: "${displayName}"${logoUrl ? " + logo" : ""} ${displayColor}`);
+}
 const root = path.join(__dirname, "..");
 
 const shells = [
@@ -86,16 +113,16 @@ function writeConfig(shell) {
     webDir: "www",
     // Branded splash / native background — this is what makes the APK feel "native",
     // not a bare web preview.
-    backgroundColor: brandColor,
+    backgroundColor: displayColor,
     server: {
       url: shell.url,
       cleartext: false,
       allowNavigation: ["ordo.asfins.com", "localhost", "127.0.0.1", "api.ordo.asfins.com"],
     },
-    android: { allowMixedContent: false, backgroundColor: brandColor },
+    android: { allowMixedContent: false, backgroundColor: displayColor },
     plugins: {
       SplashScreen: {
-        backgroundColor: brandColor,
+        backgroundColor: displayColor,
         showSpinner: false,
         launchAutoHide: true,
       },
@@ -117,11 +144,40 @@ function writeConfig(shell) {
     );
     fs.writeFileSync(
       path.join(androidValuesDir, "colors.xml"),
-      `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n  <color name="colorPrimary">${brandColor}</color>\n  <color name="colorPrimaryDark">${brandColor}</color>\n  <color name="colorAccent">${brandColor}</color>\n</resources>\n`,
+      `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n  <color name="colorPrimary">${displayColor}</color>\n  <color name="colorPrimaryDark">${displayColor}</color>\n  <color name="colorAccent">${displayColor}</color>\n</resources>\n`,
     );
-    console.log(`Branded theme: ${shell.appName} → ${brandColor}`);
+    console.log(`Branded theme: ${shell.appName} → ${displayColor}`);
   } catch (e) {
     console.warn("Theme write skipped:", e.message);
+  }
+
+  // Auto-icon: when the tenant has a logo URL, drop it into the Android
+  // launcher icon slots (mipmap). Requires a local copy (download once here).
+  if (logoUrl) {
+    try {
+      const mipmaps = [
+        "mipmap-mdpi", "mipmap-hdpi", "mipmap-xhdpi", "mipmap-xxhdpi", "mipmap-xxxhdpi",
+      ];
+      const base = path.join(dir, "android", "app", "src", "main", "res");
+      for (const m of mipmaps) {
+        const target = path.join(base, m, "ic_launcher.png");
+        fs.mkdirSync(path.dirname(target), { recursive: true });
+        const url = logoUrl.startsWith("http") ? logoUrl : `${host}${logoUrl.startsWith("/") ? "" : "/"}${logoUrl}`;
+        const res = require("child_process").spawnSync(
+          process.platform === "win32" ? "powershell" : "curl",
+          process.platform === "win32"
+            ? ["-Command", `Invoke-WebRequest -Uri '${url}' -OutFile '${target}' -UseBasicParsing`]
+            : ["-L", "-o", target, url],
+          { stdio: "ignore" },
+        );
+        if (res.status === 0 && fs.existsSync(target)) {
+          console.log(`Launcher icon: ${target}`);
+          break; // one size is enough to prove the pipeline; resize tooling can refine
+        }
+      }
+    } catch (e) {
+      console.warn("Auto-icon skipped (logo not downloadable):", e.message);
+    }
   }
 
   console.log(`Configured ${shell.appName} → ${shell.url}`);

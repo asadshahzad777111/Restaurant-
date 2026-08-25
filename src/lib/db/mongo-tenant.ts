@@ -161,7 +161,10 @@ export async function createEmptyTenantMongo(input: {
   adminEmail?: string;
   /** Super-only copy of Admin password for HQ display (not used for login). */
   adminKnownPassword?: string;
+  planId?: string;
 }) {
+  const planId = (input.planId || "starter") as "starter" | "pro" | "enterprise";
+  const deliveryEnabled = planId !== "starter";
   const state: TenantState = {
     id: input.id,
     code: input.code.toUpperCase(),
@@ -181,6 +184,8 @@ export async function createEmptyTenantMongo(input: {
       deliveryFee: 0,
       packingFee: 0,
       serviceChargePercent: 0,
+      deliveryEnabled,
+      emailOnOrder: false,
     },
     users: [
       {
