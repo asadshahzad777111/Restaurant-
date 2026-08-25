@@ -184,9 +184,14 @@ function GuestInner() {
             {brand?.name || "ORDO"}
           </span>
         ) : (
-          <Link href="/" className={styles.brand}>
-            ORDO
-          </Link>
+          <div className={styles.topLeft}>
+            <Link href="/" className={styles.backLink} aria-label="Back to home">
+              ←
+            </Link>
+            <Link href="/" className={styles.brand}>
+              ORDO
+            </Link>
+          </div>
         )}
         {appShell === "customer" || isCustomerShell() ? (
           <span className={styles.staff}>This kitchen only · {preset || code || "—"}</span>

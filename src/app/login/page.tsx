@@ -183,6 +183,11 @@ export default function LoginPage() {
         />
       ) : null}
       <form className={styles.card} onSubmit={onSubmit}>
+        {!ownerDesk && (
+          <Link href="/" className={styles.loginBack} aria-label="Back to home">
+            ←
+          </Link>
+        )}
         {showKitchenBrand ? (
           <div className={styles.kitchenBrand}>
             {kitchenBrand!.logoUrl ? (

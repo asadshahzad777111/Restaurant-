@@ -19,6 +19,30 @@
   flex-wrap: wrap;
 }
 
+/* One-level back: leave this restaurant's menu, back to the restaurant list */
+.headerBack {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid var(--guest-line);
+  background: var(--guest-elevated);
+  color: var(--guest-text);
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: border-color 0.16s ease, transform 0.16s ease;
+}
+
+.headerBack:hover {
+  border-color: rgba(255, 133, 0, 0.55);
+  transform: translateX(-2px);
+}
+
 .header h1 {
   margin: 0;
   font-family: var(--display);

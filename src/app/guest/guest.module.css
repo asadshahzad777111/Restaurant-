@@ -12,11 +12,40 @@
   padding: 1.1rem var(--page-pad);
 }
 
+.topLeft {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.3rem;
+  height: 2.3rem;
+  border: 1px solid var(--guest-line);
+  background: var(--guest-elevated);
+  color: var(--guest-text);
+  border-radius: 10px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  transition: border-color 0.16s ease, transform 0.16s ease;
+}
+
+.backLink:hover {
+  border-color: rgba(255, 133, 0, 0.55);
+  transform: translateX(-2px);
+}
+
 .brand {
   font-family: var(--display);
   font-weight: 600;
   letter-spacing: 0.08em;
   font-size: 1.35rem;
+  text-decoration: none;
 }
 
 .staff {

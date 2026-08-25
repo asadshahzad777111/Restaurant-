@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { useLang } from "@/lib/lang-context";
 import type { DictKey } from "@/lib/i18n";
@@ -54,6 +54,7 @@ function AppShellInner({
   const [navOpen, setNavOpen] = useState(false);
   const [slow, setSlow] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const { printerLinked, androidConnected } = usePrintBridge();
 
   useEffect(() => {
@@ -144,6 +145,19 @@ function AppShellInner({
             <span />
             <span />
           </button>
+          {pathname !== "/home" && (
+            <button
+              type="button"
+              className={styles.backBtn}
+              aria-label="Go back"
+              onClick={() => {
+                if (window.history.length > 1) window.history.back();
+                else router.push("/home");
+              }}
+            >
+              ←
+            </button>
+          )}
           <div className={styles.brandBlock}>
             {tenant.branding.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element

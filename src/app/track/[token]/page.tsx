@@ -215,8 +215,13 @@ export default function TrackPage() {
 
   return (
     <motion.div className={styles.page} variants={enter} initial="hidden" animate="show">
-      <header>
-        <p className={styles.brand}>{data.branding.name}</p>
+      <header className={styles.headWrap}>
+        <div className={styles.headRow}>
+          <Link href={guestOrderPath({ tenant: data.code })} className={styles.headBack} aria-label="Back to menu">
+            ←
+          </Link>
+          <p className={styles.brand}>{data.branding.name}</p>
+        </div>
         <h1>Order #{data.order.number}</h1>
         <p className={current === "cancelled" ? styles.statusBad : styles.status}>
           {LABELS[current] || current}

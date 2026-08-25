@@ -223,6 +223,30 @@
   border-radius: 2px;
 }
 
+/* One-level back button (shown on every staff page except Home) */
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid #ddd6cc;
+  background: #fff;
+  border-radius: 10px;
+  color: var(--staff-text, #211a15);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: border-color 0.16s ease, transform 0.16s ease;
+}
+
+.backBtn:hover {
+  border-color: rgba(255, 133, 0, 0.55);
+  transform: translateX(-2px);
+}
+
 .logout {
   border: 1px solid #ddd6cc;
   background: #fff;

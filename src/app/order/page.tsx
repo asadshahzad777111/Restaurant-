@@ -982,6 +982,9 @@ function OrderInner() {
       <div className={showMenu ? styles.layout : styles.shell}>
         <div>
           <header className={styles.header}>
+            <Link href="/guest" className={styles.headerBack} aria-label="Back to restaurant list">
+              ←
+            </Link>
             {branding?.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={branding.logoUrl} alt="" className={styles.logo} />
