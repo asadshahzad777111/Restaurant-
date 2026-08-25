@@ -10,6 +10,7 @@ const BOTTOM_FEED = [0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a];
 /** Zijiang module size — mag 6 ≈ 170–200 dots on typical guest-order URLs. */
 export const ZIJIANG_QR_MAG = 6;
 const ALIGN_LEFT = [0x1b, 0x61, 0x00];
+const ALIGN_CENTER = [0x1b, 0x61, 0x01];
 
 function utf8(str: string): number[] {
   const out: number[] = [];
