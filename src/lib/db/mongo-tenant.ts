@@ -15,6 +15,7 @@ import { getDb } from "../mongo";
 import { ensureMongoBootstrap } from "./mongo-platform";
 import { normalizeSpecialOffer, normalizeTenantPayments } from "../payments";
 import { printableShopPhone } from "../receipt-layout";
+import { itemOrderCounts, itemRatings } from "../ratings";
 
 type TenantDoc = TenantState & { _id: string };
 
@@ -127,6 +128,8 @@ export async function getPublicMenuMongo(tenantId: string) {
       reservedUntil: tb.reservedUntil,
     })),
     menu: t.menu.map(({ costPrice: _c, ...m }) => m),
+    ratings: itemRatings(t.orders, t.reviews || []),
+    bestsellers: itemOrderCounts(t.orders),
   };
 }
 

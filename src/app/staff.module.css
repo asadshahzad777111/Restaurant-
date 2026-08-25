@@ -556,8 +556,34 @@
   min-width: 0;
 }
 
-/* ---- Modifier / extra options editor (Menu admin) ---- */
-.modsEditor {
+/* Item badges: Bestseller / New / Spicy (admin editor) */
+.badgeRow {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.badgeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid #e8e4de;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--staff-text);
+  cursor: pointer;
+}
+
+.badgeChipOn {
+  background: #fff3e6;
+  border-color: rgba(255, 133, 0, 0.55);
+  color: #b45a00;
+}
+
+/* ---- Modifier / extra options editor (Menu admin) ---- */.modsEditor {
   display: grid;
   gap: 0.65rem;
   padding: 0.8rem;

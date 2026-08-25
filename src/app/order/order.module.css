@@ -619,6 +619,78 @@
   overflow-wrap: anywhere;
 }
 
+/* Item badges: Bestseller / New / Spicy (top-right, above the cart tick) */
+.tagBadge {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  z-index: 2;
+  padding: 0.16rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  background: var(--guest-soft);
+  border: 1px solid var(--guest-line);
+  color: var(--guest-text);
+  box-shadow: 0 6px 14px rgba(18, 11, 7, 0.28);
+}
+
+.tagbestseller {
+  background: linear-gradient(135deg, #ff9d2e, #ff8500);
+  border-color: transparent;
+  color: #120b07;
+}
+
+.tagnew {
+  background: linear-gradient(135deg, #2f9e6b, #1d7a4f);
+  border-color: transparent;
+  color: #fff;
+}
+
+.tagspicy {
+  background: linear-gradient(135deg, #e54838, #c22f20);
+  border-color: transparent;
+  color: #fff;
+}
+
+/* Prep time + rating stars under the item name */
+.tileMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.3rem;
+}
+
+.stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.05rem;
+  color: #ffb020;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
+.starsDim {
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.stars em {
+  font-style: normal;
+  color: var(--guest-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-left: 0.15rem;
+}
+
+.prep {
+  color: var(--guest-muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .tileBottom {
   margin-top: 0.8rem;
   display: flex;
@@ -666,8 +738,7 @@
 
 /* Item in cart -> accent highlight + tick */
 .tile {
-  position: relative;
-  transition:
+  position: relative;  transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
     transform 0.14s var(--ease-primary);
@@ -849,8 +920,29 @@
   opacity: 0.92;
 }
 
-.cartBarMeta em {
+.cartBarBag {
+  font-size: 1rem;
+  margin-right: 0.4rem;
+}
+
+.cartBarCount {
   font-style: normal;
+  display: inline-block;
+  animation: cartBounce 0.5s var(--ease-primary);
+}
+
+@keyframes cartBounce {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .cartBarMeta strong {
@@ -1319,6 +1411,118 @@
   margin: 0 0 0.4rem;
   font-family: var(--display);
 }
+
+/* Search results header */
+.searchHead {
+  margin: 0.4rem 0 1rem;
+}
+
+.searchHead h2 {
+  margin: 0 0 0.2rem;
+  font-size: 1.2rem;
+}
+
+.searchHead .muted {
+  margin: 0;
+}
+
+/* Order again banner */
+.reorder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0 0 1rem;
+  padding: 0.8rem 0.95rem;
+  border-radius: 16px;
+  background:
+    radial-gradient(120% 160% at 0% 0%, rgba(255, 133, 0, 0.14), transparent 55%),
+    var(--guest-elevated);
+  border: 1px solid rgba(255, 133, 0, 0.4);
+}
+
+.reorderCopy {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.reorderCopy strong {
+  font-size: 0.95rem;
+}
+
+.reorderCopy .muted {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.reorderBtn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.6rem 0.95rem;
+  background: var(--ember);
+  color: var(--ember-ink);
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(255, 133, 0, 0.3);
+  transition: box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.reorderBtn:hover {
+  box-shadow: 0 12px 26px rgba(255, 133, 0, 0.38);
+  transform: translateY(-1px);
+}
+
+/* Skeleton loaders while the menu loads */
+.skelGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0.85rem;
+}
+
+.skelCard {
+  background: var(--guest-elevated);
+  border: 1px solid var(--guest-line);
+  border-radius: 16px;
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.skelPhoto {
+  height: 7.5rem;
+  border-radius: 12px;
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0.06) 40%, rgba(255, 255, 255, 0.14) 50%, rgba(255, 255, 255, 0.06) 60%);
+  background-size: 200% 100%;
+  animation: skelShimmer 1.4s infinite;
+}
+
+.skelLine {
+  height: 0.8rem;
+  border-radius: 6px;
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0.06) 40%, rgba(255, 255, 255, 0.14) 50%, rgba(255, 255, 255, 0.06) 60%);
+  background-size: 200% 100%;
+  animation: skelShimmer 1.4s infinite;
+}
+
+@keyframes skelShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skelPhoto,
+  .skelLine {
+    animation: none;
+  }
+}
+
 
 @media (min-width: 960px) {
   .layout {

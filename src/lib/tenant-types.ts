@@ -89,6 +89,10 @@ export interface MenuItem {
   imageEmoji?: string;
   imageUrl?: string;
   modifiers?: ModifierGroup[];
+  /** Estimated preparation time in minutes — shown on the guest menu. */
+  prepMin?: number;
+  /** Customer-facing tags: "bestseller" | "new" | "spicy". */
+  tags?: string[];
 }
 
 export interface StockItem {

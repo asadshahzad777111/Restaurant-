@@ -21,6 +21,8 @@ const emptyDraft = {
   dealLabel: "",
   compareAtPrice: "",
   imageUrl: "",
+  prepMin: "",
+  tags: [] as string[],
   modifiers: [] as ModifierGroup[],
 };
 
@@ -146,6 +148,8 @@ export default function MenuPage() {
       dealLabel: item.dealLabel || "",
       compareAtPrice: item.compareAtPrice != null ? String(item.compareAtPrice) : "",
       imageUrl: item.imageUrl || "",
+      prepMin: item.prepMin != null ? String(item.prepMin) : "",
+      tags: item.tags || [],
       modifiers: (item.modifiers || []).map((g) => ({
         ...g,
         id: g.id || uid(),
@@ -174,6 +178,8 @@ export default function MenuPage() {
       compareAtPrice: draft.compareAtPrice ? Number(draft.compareAtPrice) : undefined,
       imageUrl: draft.imageUrl || undefined,
       imageEmoji: draft.isDeal ? "🔥" : "🍽️",
+      prepMin: draft.prepMin !== "" ? Math.max(1, Math.min(180, Number(draft.prepMin) || 0)) : undefined,
+      tags: draft.tags.length ? [...draft.tags] : undefined,
     };
     const modifiers = draft.modifiers
       .filter((g) => g.name.trim() && g.options.some((o) => o.name.trim()))
@@ -291,6 +297,34 @@ export default function MenuPage() {
               }}
             />
           </label>
+          <input
+            type="number"
+            min={1}
+            max={180}
+            placeholder="Prep time (minutes, e.g. 12) — shown to guests"
+            value={draft.prepMin}
+            onChange={(e) => setDraft({ ...draft, prepMin: e.target.value.replace(/[^\d]/g, "") })}
+          />
+          <div className={styles.badgeRow}>
+            {(["bestseller", "new", "spicy"] as const).map((tag) => {
+              const on = draft.tags.includes(tag);
+              return (
+                <label key={tag} className={`${styles.badgeChip}${on ? ` ${styles.badgeChipOn}` : ""}`}>
+                  <input
+                    type="checkbox"
+                    checked={on}
+                    onChange={() =>
+                      setDraft((d) => ({
+                        ...d,
+                        tags: on ? d.tags.filter((t) => t !== tag) : [...d.tags, tag],
+                      }))
+                    }
+                  />{" "}
+                  {tag === "bestseller" ? "🔥 Bestseller" : tag === "new" ? "🆕 New" : "🌶️ Spicy"}
+                </label>
+              );
+            })}
+          </div>
           <label>
             <input
               type="checkbox"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
@@ -353,9 +353,12 @@ function OrderInner() {
   const [orderingClosed, setOrderingClosed] = useState(false);
   const [billingPastDue, setBillingPastDue] = useState(false);
   const [menu, setMenu] = useState<MenuItem[]>([]);
+  const [ratings, setRatings] = useState<Record<string, { avg: number; count: number }>>({});
+  const [bestsellers, setBestsellers] = useState<Record<string, number>>({});
   const [loadError, setLoadError] = useState("");
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<CartLine[]>([]);
+  const [lastOrder, setLastOrder] = useState<Array<{ itemId: string; name: string; qty: number; basePrice: number; modifiers?: LineModifier[]; unitPrice?: number }> | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pay_at_counter");
@@ -424,6 +427,8 @@ function OrderInner() {
         setBranding(d.public.branding);
         setShop(d.public.shop);
         setMenu(d.public.menu);
+        setRatings(d.public.ratings || {});
+        setBestsellers(d.public.bestsellers || {});
         setTables((d.public.tables || []).map((t: any) => ({
           id: t.id,
           label: t.label,
@@ -457,6 +462,15 @@ function OrderInner() {
     } catch {
       /* ignore */
     }
+    try {
+      const raw = localStorage.getItem(`ordo_last_order_${tenantCode}`);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Array<{ itemId: string; name: string; qty: number; basePrice: number; modifiers?: LineModifier[]; unitPrice?: number }>;
+        if (Array.isArray(parsed) && parsed.length) setLastOrder(parsed);
+      }
+    } catch {
+      /* ignore */
+    }
     setCartReady(true);
   }, [tenantCode]);
 
@@ -481,10 +495,16 @@ function OrderInner() {
   }, [toast]);
 
   const query = search.trim().toLowerCase();
-  const visibleMenu = useMemo(
-    () => (query ? menu.filter((m) => m.name.toLowerCase().includes(query)) : menu),
-    [menu, query],
+  // Popular-first: items ordered more times rank higher (best when searching).
+  const popRank = useCallback(
+    (a: MenuItem, b: MenuItem) => (bestsellers[b.id] || 0) - (bestsellers[a.id] || 0),
+    [bestsellers],
   );
+  const visibleMenu = useMemo(() => {
+    if (!query) return menu;
+    const hits = menu.filter((m) => m.name.toLowerCase().includes(query));
+    return [...hits].sort(popRank);
+  }, [menu, query, popRank]);
   const deals = useMemo(() => visibleMenu.filter((m) => m.isDeal), [visibleMenu]);
   const categories = useMemo(() => {
     const map = new Map<string, MenuItem[]>();
@@ -572,13 +592,35 @@ function OrderInner() {
       setToast(`${item.name} is unavailable (out of stock)`);
       return;
     }
-    const init: Record<string, string[]> = {};
-    (item.modifiers || []).forEach((g) => {
-      init[g.id] = g.required && g.options[0] ? [g.options[0].id] : [];
-    });
-    setModSel(init);
-    setModQty(1);
-    setModItem(item);
+    if (item.modifiers?.length) {
+      const init: Record<string, string[]> = {};
+      item.modifiers.forEach((g) => {
+        init[g.id] = g.required && g.options[0] ? [g.options[0].id] : [];
+      });
+      setModSel(init);
+      setModQty(1);
+      setModItem(item);
+      return;
+    }
+    pushLine(item, [], fromEl);
+  }
+
+  /** Re-add the guest's last order in one tap (returns true if anything was added). */
+  function reorderLast() {
+    if (!lastOrder || !lastOrder.length) return;
+    let added = 0;
+    for (const row of lastOrder) {
+      const item = menu.find((m) => m.id === row.itemId);
+      if (!item || !item.available) continue;
+      const mods = row.modifiers || [];
+      pushLine(item, mods, null, Math.max(1, row.qty || 1));
+      added += 1;
+    }
+    if (added) {
+      setToast(`Reordered ${added} item${added === 1 ? "" : "s"}`);
+    } else {
+      setToast("Some items are unavailable right now");
+    }
   }
 
   async function uploadProof(file: File) {
@@ -799,6 +841,24 @@ function OrderInner() {
       return;
     }
     localStorage.removeItem(cartStorageKey(tenantCode));
+    // Save the just-placed order so returning guests can reorder in one tap.
+    try {
+      localStorage.setItem(
+        `ordo_last_order_${tenantCode}`,
+        JSON.stringify(
+          cart.map((c) => ({
+            itemId: c.item.id,
+            name: c.item.name,
+            qty: c.qty,
+            basePrice: c.item.price,
+            modifiers: c.modifiers,
+            unitPrice: c.unitPrice,
+          })),
+        ),
+      );
+    } catch {
+      /* ignore */
+    }
     setCart([]);
     router.push(`/track/${data.order.trackToken}`);
   }
@@ -1098,7 +1158,17 @@ function OrderInner() {
                   logoUrl={branding?.logoUrl}
                 />
               )}
-              {loading && <p className={styles.muted}>Loading this kitchen’s menu…</p>}
+              {loading && (
+                <div className={styles.skelGrid} aria-hidden>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className={styles.skelCard}>
+                      <div className={styles.skelPhoto} />
+                      <div className={styles.skelLine} style={{ width: "70%" }} />
+                      <div className={styles.skelLine} style={{ width: "40%" }} />
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {!loading && !query && menu.length === 0 && (
                 <motion.div
@@ -1121,6 +1191,31 @@ function OrderInner() {
                 >
                   <h2>{t("noResults")}</h2>
                 </motion.div>
+              )}
+
+              {query && !loading && visibleMenu.length > 0 && (
+                <div className={styles.searchHead}>
+                  <h2>
+                    Results for “{search.trim()}”
+                  </h2>
+                  <p className={styles.muted}>
+                    {visibleMenu.length} item{visibleMenu.length === 1 ? "" : "s"} · most popular first
+                  </p>
+                </div>
+              )}
+
+              {!loading && cart.length === 0 && lastOrder && lastOrder.length > 0 && (
+                <div className={styles.reorder}>
+                  <div className={styles.reorderCopy}>
+                    <strong>Order again?</strong>
+                    <span className={styles.muted}>
+                      Re-add your last order ({lastOrder.reduce((s, l) => s + (l.qty || 1), 0)} items)
+                    </span>
+                  </div>
+                  <button type="button" className={styles.reorderBtn} onClick={reorderLast}>
+                    🔁 Order again
+                  </button>
+                </div>
               )}
 
               {deals.length > 0 && (
@@ -1219,6 +1314,11 @@ function OrderInner() {
                               Sold out
                             </span>
                           ) : null}
+                          {(menuItem.tags || []).map((tag) => (
+                            <span key={tag} className={`${styles.tagBadge} ${styles[`tag${tag}`] || ""}`}>
+                              {tag === "bestseller" ? "🔥 Bestseller" : tag === "new" ? "🆕 New" : tag === "spicy" ? "🌶️ Spicy" : tag}
+                            </span>
+                          ))}
                           {inCart && !soldOut && (
                             <span className={styles.inCartBadge} aria-hidden>
                               ✓
@@ -1233,6 +1333,22 @@ function OrderInner() {
                             <div>
                               <strong>{menuItem.name}</strong>
                               <p>{menuItem.description}</p>
+                              <div className={styles.tileMeta}>
+                                {ratings[menuItem.id] && ratings[menuItem.id].count > 0 ? (
+                                  <span className={styles.stars} aria-label={`Rated ${ratings[menuItem.id].avg} of 5`}>
+                                    {"★".repeat(Math.round(ratings[menuItem.id].avg))}
+                                    <span className={styles.starsDim}>
+                                      {"★".repeat(5 - Math.round(ratings[menuItem.id].avg))}
+                                    </span>
+                                    <em>{ratings[menuItem.id].avg}</em>
+                                  </span>
+                                ) : null}
+                                {menuItem.prepMin ? (
+                                  <span className={styles.prep}>
+                                    ⏱ ~{menuItem.prepMin} min
+                                  </span>
+                                ) : null}
+                              </div>
                             </div>
                           </div>
                           <div className={styles.tileBottom}>
@@ -1293,7 +1409,10 @@ function OrderInner() {
           onClick={() => setSheetOpen(true)}
         >
           <span className={styles.cartBarMeta}>
-            <em>{count} item{count === 1 ? "" : "s"}</em>
+            <span className={styles.cartBarBag} aria-hidden>🛍️</span>
+            <em key={count} className={styles.cartBarCount}>
+              {count} item{count === 1 ? "" : "s"}
+            </em>
             <strong key={total}>
               {currency} {total}
             </strong>

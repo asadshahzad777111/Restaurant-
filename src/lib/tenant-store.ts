@@ -15,6 +15,7 @@ import type {
 import { ensureBootstrap } from "./bootstrap";
 import { normalizeSpecialOffer, normalizeTenantPayments } from "./payments";
 import { printableShopPhone } from "./receipt-layout";
+import { itemOrderCounts, itemRatings } from "./ratings";
 
 const DATA_ROOT = path.join(process.cwd(), ".data");
 /** One JSON file per tenantId — never read another kitchen's folder. */
@@ -155,6 +156,8 @@ export function getPublicMenu(tenantId: string) {
       reservedUntil: tb.reservedUntil,
     })),
     menu: t.menu.map(({ costPrice: _c, ...m }) => m),
+    ratings: itemRatings(t.orders, t.reviews || []),
+    bestsellers: itemOrderCounts(t.orders),
   };
 }
 
