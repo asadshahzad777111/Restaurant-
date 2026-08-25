@@ -149,12 +149,12 @@ export function StaffAlerts() {
     const zero = newlyLow.some((s) => s.quantity <= 0);
     setPanel({
       kind: "stock",
-      title: zero ? "Stock 86 / empty" : "Low stock",
+      title: zero ? "Stock empty" : "Low stock",
       body: names,
     });
     showApkNotify(
       tenant.branding.name || "ORDO · Stock",
-      zero ? `86 / empty: ${names}` : `Low stock: ${names}`,
+      zero ? `Out of stock: ${names}` : `Low stock: ${names}`,
       `stock-${newlyLow[0].id}`,
     );
     if (soundOk) startContinuousAlert("stock");

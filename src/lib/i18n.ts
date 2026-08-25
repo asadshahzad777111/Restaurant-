@@ -49,7 +49,7 @@ export const dict = {
   beepContinues: { en: "Beep continues until you stop it.", ur: "Beep tab tak chalta rahega jab tak aap roko." },
   newOrder: { en: "New order", ur: "Naya order" },
   lowStock: { en: "Low stock", ur: "Stock kam" },
-  stockEmpty: { en: "Stock 86 / empty", ur: "Stock 86 / khali" },
+  stockEmpty: { en: "Out of stock", ur: "Stock khatam" },
 
   // common
   all: { en: "All", ur: "Sab" },
@@ -141,7 +141,7 @@ export const dict = {
   flowRecord: { en: "Pay method ticket par. Stock alerts isi tenant par.", ur: "Pay method ticket par. Stock alerts isi tenant par." },
   flowUnderstand: { en: "Guest tracking live. Completed ticket = review.", ur: "Guest tracking live. Completed ticket = review." },
   tourGuest: { en: "Scan table QR ya Customer APK — menu, cart, track.", ur: "Table QR scan ya Customer APK — menu, cart, track." },
-  tourPos: { en: "Staff APK / POS — 58mm print, same catalog. 86 blocks.", ur: "Staff APK / POS — 58mm print, same catalog. 86 block." },
+  tourPos: { en: "Staff APK / POS — 58mm print, same catalog. Out-of-stock blocks sale.", ur: "Staff APK / POS — 58mm print, same catalog. Out-of-stock block." },
   tourKitchen: { en: "Tickets placed → preparing → ready. Sound + notify.", ur: "Tickets placed → preparing → ready. Sound + notify." },
   tourOwner: { en: "Sales & Profit, day close, Super HQ billing, APKs.", ur: "Sales & Profit, day close, Super HQ billing, APKs." },
   footerTag: { en: "Guest QR, counter POS, aur pass — ek system mein.", ur: "Guest QR, counter POS, aur pass — ek system mein." },

@@ -463,7 +463,7 @@ export default function MenuPage() {
                   className={m.available ? styles.btnGhost : styles.btn}
                   onClick={() => void toggle86(m.id)}
                 >
-                  {m.available ? "86" : "Restore"}
+                  {m.available ? "Out of stock" : "Restore"}
                 </button>
                 <button
                   type="button"
@@ -491,7 +491,7 @@ export default function MenuPage() {
               <th>Category</th>
               <th>Price</th>
               <th>Options</th>
-              <th>86 / Available</th>
+              <th>Out of stock / Available</th>
               <th></th>
             </tr>
           </thead>
@@ -515,7 +515,7 @@ export default function MenuPage() {
                     className={m.available ? styles.btnGhost : styles.btn}
                     onClick={() => void toggle86(m.id)}
                   >
-                    {m.available ? "Available · tap 86" : "86 · tap to restore"}
+                    {m.available ? "Available" : "Out of stock"}
                   </button>
                 </td>
                 <td>

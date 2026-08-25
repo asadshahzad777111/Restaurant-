@@ -207,7 +207,7 @@ export default function HomePage() {
           >
             <strong>
               {zeroStockCount > 0
-                ? `⚠ ${zeroStockCount} item${zeroStockCount > 1 ? "s" : ""} are 86 (out of stock)`
+                ? `⚠ ${zeroStockCount} item${zeroStockCount > 1 ? "s" : ""} are out of stock`
                 : "⚠ Low stock — warning only, app still works"}
             </strong>
             <p className={styles.muted}>

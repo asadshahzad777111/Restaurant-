@@ -569,7 +569,7 @@ function OrderInner() {
 
   function addItem(item: MenuItem, fromEl?: HTMLElement | null) {
     if (!item.available) {
-      setToast(`${item.name} is 86 / unavailable`);
+      setToast(`${item.name} is unavailable (out of stock)`);
       return;
     }
     const init: Record<string, string[]> = {};

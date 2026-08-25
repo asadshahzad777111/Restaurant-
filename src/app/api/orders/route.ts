@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
       const item = tenant.menu.find((m) => m.id === line.itemId);
       if (!item || !item.available) {
         return NextResponse.json(
-          { error: `${line.name || "Item"} is 86 / unavailable` },
+          { error: `${line.name || "Item"} is unavailable` },
           { status: 400 },
         );
       }
@@ -186,7 +186,7 @@ export async function POST(req: NextRequest) {
           {
             error:
               stockHit.quantity <= 0
-                ? `${item.name} is out of stock (86)`
+                ? `${item.name} is out of stock`
                 : `${item.name}: only ${stockHit.quantity} in stock`,
           },
           { status: 400 },
@@ -253,7 +253,10 @@ export async function POST(req: NextRequest) {
           ? advanceRail
           : undefined,
       paymentProofUrl: paymentProofUrl?.trim() || undefined,
-      paymentStatus: paymentStatusFor(paymentMethod, paymentProofUrl),
+      // POS/counter sales are collected at the till at checkout (cash taken, change
+      // given) — so they are paid immediately and never need a manual "Mark paid".
+      // Guest orders keep the online logic (COD stays pending until the person pays).
+      paymentStatus: channel === "pos" ? "paid" : paymentStatusFor(paymentMethod, paymentProofUrl),
       status: "placed",
       statusHistory: [{ status: "placed", at: now }],
       trackToken: trackToken(),

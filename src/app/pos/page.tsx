@@ -115,12 +115,12 @@ export default function PosPage() {
 
   function startAdd(item: MenuItem) {
     if (!item.available) {
-      setMsg(`${item.name} is 86 / unavailable`);
+      setMsg(`${item.name} is unavailable`);
       return;
     }
     const avail = stockOf(item.name);
     if (avail !== null && avail <= 0) {
-      setMsg(`${item.name} is out of stock (86)`);
+      setMsg(`${item.name} is out of stock`);
       return;
     }
     if (item.modifiers?.length) {
@@ -142,7 +142,7 @@ export default function PosPage() {
     setCart((prev) => {
       const curQty = prev.reduce((s, p) => (p.item.id === item.id ? s + p.qty : s), 0);
       if (avail !== null && curQty + 1 > avail) {
-        setMsg(avail <= 0 ? `${item.name} is out of stock (86)` : `${item.name}: only ${avail} left`);
+        setMsg(avail <= 0 ? `${item.name} is out of stock` : `${item.name}: only ${avail} left`);
         return prev;
       }
       const hit = prev.find((p) => p.key === key);
@@ -164,7 +164,7 @@ export default function PosPage() {
               .filter((x) => x.key !== key && x.item.id === p.item.id)
               .reduce((s, x) => s + x.qty, 0);
             if (onOtherLines + qty > avail) {
-              setMsg(avail <= 0 ? `${p.item.name} is out of stock (86)` : `${p.item.name}: only ${avail} left`);
+              setMsg(avail <= 0 ? `${p.item.name} is out of stock` : `${p.item.name}: only ${avail} left`);
               return [p];
             }
           }
@@ -411,7 +411,7 @@ export default function PosPage() {
                     onClick={() => startAdd(m)}
                     style={{ opacity: m.available ? 1 : 0.55 }}
                   >
-                    {isOff ? <span className={styles.item86Badge}>86</span> : null}
+                    {isOff ? <span className={styles.item86Badge}>Unavailable</span> : null}
                     {inCart > 0 ? <span className={styles.itemQtyBadge}>{inCart}</span> : null}
                     {m.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -423,7 +423,7 @@ export default function PosPage() {
                     )}
                     <strong>
                       {m.name}
-                      {isOff ? " · 86" : ""}
+                      {isOff ? " · out of stock" : ""}
                     </strong>
                     <span className={styles.muted}>
                       {tenant?.shop.currency} {m.price}
