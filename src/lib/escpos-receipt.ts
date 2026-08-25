@@ -103,12 +103,10 @@ export function buildSlipEscPos(
       parts.push(ALIGN_LEFT, utf8(line), [0x0a]);
     }
   }
-  parts.push([0x0a]);
   const url = String(qrUrl || "").trim();
   if (url) {
-    // Print one QR (raster — reliable + sized wider) + its caption, centered.
+    // Print one QR (raster — reliable + sized wider) + its caption, flush.
     parts.push(qrEscPosRaster(url));
-    parts.push([0x0a]);
     parts.push(qrCaptionBytes());
   }
   parts.push(BOTTOM_FEED, [0x1d, 0x56, 0x01]);
