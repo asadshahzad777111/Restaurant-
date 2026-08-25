@@ -4,7 +4,7 @@ import { qrEscPosRaster } from "./qr-byte";
 import { RECEIPT_QR_CAPTION } from "./receipt-layout";
 
 /** Cheap 58mm printers clip ~8–12mm after a cut — feed before the shop name. */
-const TOP_FEED = [0x0a, 0x0a, 0x0a, 0x0a];
+const TOP_FEED = [0x0a];
 /** Extra feed so the bigger QR is not in the blade zone. */
 const BOTTOM_FEED = [0x0a, 0x0a];
 /** Zijiang module size — mag 6 ≈ 170–200 dots on typical guest-order URLs. */
