@@ -870,6 +870,17 @@ export default function ControlPage() {
                               Unpause
                             </button>
                           )}
+                          <button
+                            type="button"
+                            style={{ background: "#c0392b", color: "#fff", fontWeight: 700 }}
+                            onClick={() => {
+                              if (window.confirm(`Deactivate ${t.name || t.code}? This finishes it immediately — login is blocked.`)) {
+                                void setStatus(t.id, "suspended");
+                              }
+                            }}
+                          >
+                            Deactivate
+                          </button>
                         </td>
                       </tr>
                     ))}
