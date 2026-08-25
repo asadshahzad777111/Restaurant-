@@ -57,10 +57,12 @@ export default function SalesPage() {
       .sort((a, b) => b.value - a.value);
   }, [data]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (signal?: AbortSignal) => {
     try {
       const days = Number(range);
-      const res = await api(`/api/sales?from=${encodeURIComponent(daysAgoIso(days))}`);
+      const res = await api(`/api/sales?from=${encodeURIComponent(daysAgoIso(days))}`, {
+        signal,
+      });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError((json as { error?: string }).error || "Could not load sales");
@@ -68,13 +70,16 @@ export default function SalesPage() {
       }
       setError("");
       setData(json as SalesPayload);
-    } catch {
+    } catch (e) {
+      if ((e as Error)?.name === "AbortError") return;
       setError("Could not load sales — check the connection and retry.");
     }
   }, [api, range]);
 
   useEffect(() => {
-    void load();
+    const ctrl = new AbortController();
+    void load(ctrl.signal);
+    return () => ctrl.abort();
   }, [load]);
 
   function exportOrdersCsv() {

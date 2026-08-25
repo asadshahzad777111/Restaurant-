@@ -117,7 +117,14 @@ export default function ScanPage() {
         return;
       }
       video.srcObject = stream;
-      await video.play();
+      try {
+        await video.play();
+      } catch {
+        setCam("unsupported");
+        setStatus("Camera could not start — paste the QR link or enter a code below.");
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
       const detector = new Detector({ formats: ["qr_code"] });
 
       const tick = async () => {
@@ -133,6 +140,7 @@ export default function ScanPage() {
                 setStatus("QR read — not an ORDO link. Try another table.");
               } else {
                 lock.current = true;
+                setError("");
                 openKitchen(parsed.tenant, { table: parsed.table, mode: parsed.mode });
                 return;
               }
@@ -170,6 +178,7 @@ export default function ScanPage() {
     localStorage.setItem(LAST_GUEST_TENANT_KEY, parsed.tenant);
     rememberKitchen(parsed.tenant);
     setActiveTenant(parsed.tenant);
+    setError("");
     router.push(guestOrderPath(parsed));
   }
 

@@ -3,10 +3,9 @@ import styles from "./lab.module.css";
 
 const LINKS = [
   { href: "/", label: "Marketing home", note: "ORDO landing" },
-  { href: "/guest", label: "Guest entry", note: "Code · paste QR · Demo Kitchen" },
+  { href: "/guest", label: "Guest entry", note: "Code · paste QR" },
   { href: "/scan", label: "QR scanner", note: "Camera + paste fallback" },
-  { href: "/super", label: "Super Admin", note: "super / super123" },
-  { href: "/login", label: "Staff login", note: "DEMO · admin / admin123 (change in prod)" },
+  { href: "/login", label: "Staff login", note: "Restaurant code + username" },
   { href: "/order?tenant=DEMO", label: "Guest hub", note: "Dining / takeaway / delivery" },
   { href: "/order?tenant=DEMO&table=7", label: "Table 7 QR", note: "Pay at counter" },
   { href: "/order?tenant=DEMO&mode=pickup", label: "Takeaway", note: "Counter or paid in advance" },
@@ -22,15 +21,33 @@ const LINKS = [
   { href: "/lab/otp", label: "OTP / PIN input", note: "Auto-verify · paste · resend · animation" },
 ];
 
+/** Lab index is a localhost/demo-only navigation map — never on a live host. */
+function isLabAllowed() {
+  if (typeof window === "undefined") return true; // SSR-safe default
+  const host = window.location.hostname;
+  return host === "localhost" || host === "127.0.0.1" || host.includes("vercel.app");
+}
+
 export default function LabPage() {
+  if (!isLabAllowed()) {
+    return (
+      <div className={styles.page}>
+        <header>
+          <p className={styles.brand}>ORDO</p>
+          <h1>Not available</h1>
+          <p className={styles.sub}>The lab index is only reachable on localhost.</p>
+        </header>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.page}>
       <header>
         <p className={styles.brand}>ORDO</p>
         <h1>Lab — demo links</h1>
         <p className={styles.sub}>
-          Localhost only. Cancel/void ≠ refund. Review path: guest order → Completed → track stars.
-          Soft drinks stock is low on purpose for alerts.
+          Localhost / preview only. Cancel/void ≠ refund. Review path: guest order → Completed → track stars.
         </p>
       </header>
       <ul className={styles.list}>

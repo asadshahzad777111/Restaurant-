@@ -47,6 +47,7 @@ export default function KitchenPage() {
   const [printTarget, setPrintTarget] = useState<Order | null>(null);
   const [bridgeNote, setBridgeNote] = useState("");
   const [countdowns, setCountdowns] = useState<Record<string, number>>({}); // orderId -> end ms
+  const [timerDraft, setTimerDraft] = useState<Record<string, string>>({});
   const [, forceTick] = useState(0);
   const tickets = (tenant?.orders ?? []).filter(
     (o) => !["completed", "cancelled"].includes(o.status),
@@ -61,7 +62,7 @@ export default function KitchenPage() {
   }, [countdowns]);
 
   function setTimer(id: string) {
-    const mins = Number(prompt("Set timer (minutes)", "15")) || 15;
+    const mins = Math.max(1, Math.min(180, Number(timerDraft[id]) || 15));
     setCountdowns((prev) => ({ ...prev, [id]: Date.now() + mins * 60000 }));
   }
   function clearTimer(id: string) {
@@ -178,9 +179,32 @@ export default function KitchenPage() {
               Print ticket
             </button>
           )}
-          <button type="button" className={styles.btnGhost} onClick={() => (cd ? clearTimer(o.id) : setTimer(o.id))}>
-            {cd ? "Clear timer" : "⏱ Timer"}
-          </button>
+          {cd ? (
+            <button type="button" className={styles.btnGhost} onClick={() => clearTimer(o.id)}>
+              Clear timer
+            </button>
+          ) : (
+            <>
+              <input
+                type="number"
+                min={1}
+                max={180}
+                className={styles.timerInput}
+                value={timerDraft[o.id] ?? ""}
+                onChange={(e) => setTimerDraft((p) => ({ ...p, [o.id]: e.target.value }))}
+                placeholder="min"
+                aria-label={`Timer minutes for order ${o.number}`}
+              />
+              <button
+                type="button"
+                className={styles.btnGhost}
+                onClick={() => setTimer(o.id)}
+                disabled={!(Number(timerDraft[o.id]) > 0)}
+              >
+                ⏱ Set timer
+              </button>
+            </>
+          )}
         </div>
       </article>
     );

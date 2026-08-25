@@ -1345,7 +1345,14 @@
 }
 
 /* Keyboard focus ring for all interactive elements */
-.btn:focus-visible,
+.timerInput {
+  width: 4rem;
+  border: 1px solid #ddd6cc;
+  border-radius: 8px;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.85rem;
+  text-align: center;
+}.btn:focus-visible,
 .btnGhost:focus-visible,
 .item:focus-visible,
 .quickTile:focus-visible,

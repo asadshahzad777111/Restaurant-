@@ -62,9 +62,14 @@ export default function LoginPage() {
     const guide = new URLSearchParams(window.location.search).get("guide") === "1"
       || new URLSearchParams(window.location.search).get("install") === "1";
     setForceIosGuide(guide);
-    setCode((urlTenant || lockedStaff || saved || (staff ? "" : "DEMO")).toUpperCase());
+    // Only pre-fill demo credentials on localhost / the owner desk. Never on a
+    // live restaurant host — a visitor should not log in without typing.
+    const allowDemoDefaults = onLocal || onControl || owner;
+    setCode((urlTenant || lockedStaff || saved || (staff ? "" : allowDemoDefaults ? "DEMO" : "")).toUpperCase());
     setCodeLocked(Boolean(staff && (urlTenant || lockedStaff)));
-    setPassword(staff ? "" : desk ? "super123" : "admin123");
+    setPassword(
+      staff ? "" : desk ? "super123" : allowDemoDefaults ? "admin123" : "",
+    );
     if (desk) router.prefetch("/control");
     else router.prefetch("/home");
   }, [router]);
@@ -297,9 +302,11 @@ export default function LoginPage() {
           />
         )}
         <p className={styles.hint}>
-          {hideSuper
-            ? "Restaurant code required. Demo kitchen: DEMO · admin / admin123"
-            : "Demo: code DEMO · admin/admin123 · or Super super/super123"}
+          {code && (code === "DEMO" || codeLocked)
+            ? "Demo kitchen: DEMO · admin / admin123"
+            : hideSuper
+              ? "Restaurant code required."
+              : "Demo: code DEMO · admin/admin123 · or Super super/super123"}
           <br />
           Lab demos only — production pe passwords change karein (Settings).
         </p>
