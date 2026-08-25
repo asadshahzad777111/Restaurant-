@@ -29,6 +29,14 @@ export default function LoginPage() {
   const [kitchenBrand, setKitchenBrand] = useState<{ name: string; logoUrl: string } | null>(null);
   const [codeLocked, setCodeLocked] = useState(false);
   const [forceIosGuide, setForceIosGuide] = useState(false);
+  // Password reset (forgot) flow
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotStep, setForgotStep] = useState<"email" | "otp" | "done">("email");
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotOtp, setForgotOtp] = useState("");
+  const [forgotNew, setForgotNew] = useState("");
+  const [forgotErr, setForgotErr] = useState("");
+  const [forgotBusy, setForgotBusy] = useState(false);
 
   useEffect(() => {
     const shell = readAppShell();
@@ -173,6 +181,52 @@ export default function LoginPage() {
 
   const showKitchenBrand = Boolean(kitchenBrand && mode === "tenant" && (hideSuper || appShell === "staff"));
 
+  async function requestOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setForgotErr("");
+    setForgotBusy(true);
+    try {
+      const res = await fetch("/api/auth/forgot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, email: forgotEmail }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setForgotErr((data as { error?: string }).error || "Failed to send code");
+        return;
+      }
+      setForgotStep("otp");
+    } finally {
+      setForgotBusy(false);
+    }
+  }
+
+  async function submitReset(e: React.FormEvent) {
+    e.preventDefault();
+    setForgotErr("");
+    if (forgotNew.length < 6) {
+      setForgotErr("Password must be at least 6 characters");
+      return;
+    }
+    setForgotBusy(true);
+    try {
+      const res = await fetch("/api/auth/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, email: forgotEmail, otp: forgotOtp, newPassword: forgotNew }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setForgotErr((data as { error?: string }).error || "Reset failed");
+        return;
+      }
+      setForgotStep("done");
+    } finally {
+      setForgotBusy(false);
+    }
+  }
+
   return (
     <div className={styles.page}>
       {!ownerDesk && (hideSuper || appShell === "staff" || forceIosGuide) ? (
@@ -297,6 +351,19 @@ export default function LoginPage() {
         <button type="submit" className={styles.submit} disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
         </button>
+        {mode === "tenant" && !codeLocked && (
+          <button
+            type="button"
+            className={styles.forgot}
+            onClick={() => {
+              setForgotOpen(true);
+              setForgotStep("email");
+              setForgotErr("");
+            }}
+          >
+            Forgot password?
+          </button>
+        )}
         {mode === "tenant" && (
           <GoogleSignInButton
             mode="staff"
@@ -316,6 +383,92 @@ export default function LoginPage() {
           Lab demos only — production pe passwords change karein (Settings).
         </p>
       </form>
+
+      {forgotOpen && (
+        <div className={styles.forgotOverlay} role="dialog" aria-modal="true" aria-label="Reset password">
+          <div className={styles.forgotCard}>
+            <div className={styles.forgotHead}>
+              <h3>{forgotStep === "done" ? "Password reset" : "Reset password"}</h3>
+              <button
+                type="button"
+                className={styles.forgotClose}
+                aria-label="Close"
+                onClick={() => setForgotOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {forgotStep === "email" && (
+              <form onSubmit={(e) => void requestOtp(e)}>
+                <p className={styles.muted}>
+                  Enter the Gmail saved on this kitchen’s staff login — we’ll email you a one-time code.
+                  Kitchen: <strong>{code || "—"}</strong>
+                </p>
+                <input
+                  className={styles.input}
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  placeholder="you@gmail.com"
+                  autoComplete="email"
+                  required
+                />
+                {forgotErr && <p className={styles.error} role="alert">{forgotErr}</p>}
+                <button type="submit" className={styles.submit} disabled={forgotBusy}>
+                  {forgotBusy ? "Sending…" : "Send code"}
+                </button>
+              </form>
+            )}
+
+            {forgotStep === "otp" && (
+              <form onSubmit={(e) => void submitReset(e)}>
+                <p className={styles.muted}>Enter the 6-digit code we emailed, then set your new password.</p>
+                <input
+                  className={styles.input}
+                  inputMode="numeric"
+                  value={forgotOtp}
+                  onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="6-digit code"
+                  autoComplete="one-time-code"
+                  required
+                />
+                <input
+                  className={styles.input}
+                  type="password"
+                  value={forgotNew}
+                  onChange={(e) => setForgotNew(e.target.value)}
+                  placeholder="New password (min 6)"
+                  autoComplete="new-password"
+                  required
+                />
+                {forgotErr && <p className={styles.error} role="alert">{forgotErr}</p>}
+                <button type="submit" className={styles.submit} disabled={forgotBusy}>
+                  {forgotBusy ? "Resetting…" : "Set new password"}
+                </button>
+              </form>
+            )}
+
+            {forgotStep === "done" && (
+              <div>
+                <p className={styles.muted} role="status">
+                  Password updated. Sign in with your new password.
+                </p>
+                <button
+                  type="button"
+                  className={styles.submit}
+                  onClick={() => {
+                    setForgotOpen(false);
+                    setPassword("");
+                  }}
+                >
+                  Back to sign in
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

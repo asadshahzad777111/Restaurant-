@@ -2,7 +2,7 @@ import { contactWhatsapp, resendConfigured, resendFromAddress } from "./env";
 import { appUrl } from "./urls";
 import { sendResendEmail, uniqueEmails, type SendEmailResult } from "./email";
 import { guestWhatsappLink } from "./whatsapp";
-import { adminWelcomeEmail, leadEmail, newOrderEmail } from "./email-templates";
+import { adminWelcomeEmail, leadEmail, newOrderEmail, resetOtpEmail } from "./email-templates";
 import type { PlatformTenantMeta, ServiceType } from "./types";
 import type { TenantState } from "./tenant-types";
 
@@ -136,6 +136,31 @@ export async function sendNewOrderEmail(input: {
       total: input.total,
       currency: input.currency,
       trackUrl: input.trackUrl || `${appUrl()}/orders`,
+    }),
+  });
+}
+
+export async function sendResetOtpEmail(input: {
+  to: string;
+  restaurantName: string;
+  otp: string;
+  ttlMin: number;
+}): Promise<SendEmailResult> {
+  if (!resendConfigured()) {
+    return { skipped: true, reason: "RESEND_API_KEY / from-address not set" };
+  }
+  const text = [
+    `Password reset code for ${input.restaurantName}: ${input.otp}`,
+    `It expires in ${input.ttlMin} minutes. If you didn't ask for this, ignore this email.`,
+  ].join("\n");
+  return sendResendEmail({
+    to: input.to,
+    subject: `ORDO password reset code`,
+    text,
+    html: resetOtpEmail({
+      restaurantName: input.restaurantName,
+      otp: input.otp,
+      ttlMin: input.ttlMin,
     }),
   });
 }

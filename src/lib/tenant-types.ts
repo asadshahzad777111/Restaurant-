@@ -40,6 +40,12 @@ export interface TenantShop {
   printLogoOnBill?: boolean;
   /** Print GST/Tax on the 58mm bill. Off by default — tax is not invented or printed until ticked. */
   printGstOnBill?: boolean;
+  /**
+   * Send the "new order" email to the restaurant Admin. Default true, but a
+   * free-plan kitchen can turn this off to save Resend quota (order alerts
+   * still arrive in-app and via WhatsApp where configured).
+   */
+  emailOnOrder?: boolean;
 }
 
 export interface TenantUser {

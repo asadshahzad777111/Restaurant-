@@ -110,3 +110,23 @@ export function leadEmail(input: {
   ${input.whatsapp ? `<p style="margin:14px 0 0;color:${MUTED};font-size:13px;">WhatsApp: ${escapeHtml(input.whatsapp)}</p>` : ""}`;
   return layout("New ORDO lead", table);
 }
+
+export function resetOtpEmail(input: {
+  restaurantName: string;
+  otp: string;
+  ttlMin: number;
+}): string {
+  const body = `
+  <p style="margin:0 0 6px;color:${INK};font-size:15px;font-weight:700;">Password reset code</p>
+  <p style="margin:0 0 14px;color:${MUTED};font-size:13px;line-height:1.6;">
+    Use this code to set a new password for <strong>${escapeHtml(input.restaurantName)}</strong>.
+    It expires in ${input.ttlMin} minutes.
+  </p>
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+    <tr><td align="center" style="padding:6px 0 14px;">
+      <span style="display:inline-block;padding:12px 22px;background:${PAPER};border:1px dashed ${LINE};border-radius:10px;font-size:26px;font-weight:800;letter-spacing:8px;color:${INK};">${input.otp}</span>
+    </td></tr>
+  </table>
+  <p style="margin:0;color:${MUTED};font-size:12px;line-height:1.6;">If you didn't ask for this, ignore the email — your password is unchanged.</p>`;
+  return layout(`ORDO password reset`, body);
+}

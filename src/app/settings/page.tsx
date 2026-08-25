@@ -32,6 +32,7 @@ export default function SettingsPage() {
   });
   const [printLogoOnBill, setPrintLogoOnBill] = useState(false);
   const [printGstOnBill, setPrintGstOnBill] = useState(false);
+  const [emailOnOrder, setEmailOnOrder] = useState(true);
   const [fbrEnabled, setFbrEnabled] = useState(false);
   const [pw, setPw] = useState({ current: "", next: "" });
   const [emailDraft, setEmailDraft] = useState("");
@@ -56,6 +57,7 @@ export default function SettingsPage() {
     });
     setPrintLogoOnBill(tenant.shop.printLogoOnBill === true);
     setPrintGstOnBill(tenant.shop.printGstOnBill === true);
+    setEmailOnOrder(tenant.shop.emailOnOrder !== false);
     setFbrEnabled(Boolean(tenant.shop.fbrEnabled));
     setEmailDraft(user?.email || "");
   }, [tenant, user]);
@@ -120,11 +122,11 @@ export default function SettingsPage() {
       method: "PUT",
       body: JSON.stringify({
         action: "fees",
-        shop: { ...fees, printGstOnBill },
+        shop: { ...fees, printGstOnBill, emailOnOrder },
       }),
     });
     const data = await res.json().catch(() => ({}));
-    setMsg(res.ok ? "Fees saved" : "Failed");
+    setMsg(res.ok ? "Settings saved" : "Failed");
     if (res.ok && (data as { tenant?: typeof tenant }).tenant) {
       applyTenant((data as { tenant: NonNullable<typeof tenant> }).tenant);
     }
@@ -381,8 +383,20 @@ export default function SettingsPage() {
           <p className={styles.muted} style={{ margin: 0 }}>
             Off by default. GST/Tax is not printed (and not added) until this is ticked.
           </p>
+          <label className={styles.rowCheck}>
+            <input
+              type="checkbox"
+              checked={emailOnOrder}
+              onChange={(e) => setEmailOnOrder(e.target.checked)}
+            />
+            Email me on every new order
+          </label>
+          <p className={styles.muted} style={{ margin: 0 }}>
+            Keep this OFF on the free plan to save email quota — new orders still show in the app and
+            can alert you on WhatsApp. Welcome / password-reset emails are always sent.
+          </p>
           <button type="submit" className={styles.btn}>
-            Save fees
+            Save settings
           </button>
         </form>
 

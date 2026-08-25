@@ -238,6 +238,85 @@
   color: var(--guest-muted);
 }
 
+/* Forgot password link + reset modal */
+.forgot {
+  border: none;
+  background: none;
+  color: var(--guest-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  padding: 0;
+  justify-self: start;
+}
+
+.forgot:hover {
+  color: var(--ember-bright);
+}
+
+.forgotOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(14, 12, 10, 0.66);
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.forgotCard {
+  width: min(100%, 380px);
+  background: var(--guest-elevated);
+  border: 1px solid rgba(243, 237, 228, 0.14);
+  border-radius: 16px;
+  padding: 1.4rem;
+  display: grid;
+  gap: 0.85rem;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+}
+
+.forgotHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.forgotHead h3 {
+  margin: 0;
+  font-family: var(--display);
+}
+
+.forgotClose {
+  border: 1px solid rgba(243, 237, 228, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f7f4ef;
+  border-radius: 999px;
+  width: 2rem;
+  height: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.forgotCard form {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.muted {
+  margin: 0;
+  color: var(--guest-muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.muted strong {
+  color: var(--guest-text);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card {
     backdrop-filter: none;

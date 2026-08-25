@@ -297,6 +297,12 @@ export async function POST(req: NextRequest) {
     // Don't block the guest/POS response on Resend — free-tier latency killer.
     void (async () => {
       try {
+        // Free-plan kitchens can turn the per-order email off (Settings) to save
+        // Resend quota; order alerts still arrive in-app and via WhatsApp.
+        if (tenant.shop.emailOnOrder === false) {
+          console.info("[email] skip order notify: emailOnOrder is off for tenant", tenantId);
+          return;
+        }
         const meta = await findTenantMetaById(tenantId);
         const notifyTo = tenantAdminEmails(tenant, meta);
         if (!notifyTo.length) {
