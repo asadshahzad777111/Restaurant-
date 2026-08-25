@@ -6,6 +6,7 @@ import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
 import { computeFees, lineUnitPrice, money } from "@/lib/fees";
 import { PrintTargetChooser, PrintBridgeLamp } from "@/components/PrintTargetChooser";
+import { KitchenTicketPrompt } from "@/components/KitchenTicketPrompt";
 import { PrintBridgeBar } from "@/components/PrintBridgeBar";
 import { PosPrinterPanel } from "@/components/PosPrinterPanel";
 import { enqueueSlip, executeLocalPrint, shouldOpenPrintChooser } from "@/lib/print-target";
@@ -59,6 +60,7 @@ export default function PosPage() {
   const [printChooser, setPrintChooser] = useState(false);
   const [pendingOrder, setPendingOrder] = useState<Order | null>(null);
   const [bridgeNote, setBridgeNote] = useState("");
+  const [kotAsk, setKotAsk] = useState<{ order: Order; via: "android" | "local" } | null>(null);
   const [pausedCart, setPausedCart] = useState<CartLine[] | null>(null);
   const [pausedMeta, setPausedMeta] = useState<{ name: string; phone: string; discount: string } | null>(null);
   const [androidOnline, setAndroidOnline] = useState(false);
@@ -233,8 +235,8 @@ export default function PosPage() {
         setPrintChooser(true);
         setBridgeNote("");
       } else {
-        const printed = await executeLocalPrint(tenant, order, "bill");
-        if (printed) setPrintKind("bill");
+        await executeLocalPrint(tenant, order, "bill");
+        setKotAsk({ order, via: "local" });
       }
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Failed");
@@ -251,7 +253,7 @@ export default function PosPage() {
       setBridgeNote("");
       setPrintChooser(false);
       setPendingOrder(null);
-      setPrintKind("bill");
+      setKotAsk({ order, via: "android" });
     } catch {
       setBridgeNote("Could not queue the slip — print here or check the network.");
     }
@@ -262,8 +264,27 @@ export default function PosPage() {
     setPrintChooser(false);
     setPendingOrder(null);
     if (!order || !tenant) return;
-    const printed = await executeLocalPrint(tenant, order, "bill");
-    if (printed) setPrintKind("bill");
+    await executeLocalPrint(tenant, order, "bill");
+    setKotAsk({ order, via: "local" });
+  }
+
+  async function printKitchenTicket() {
+    const ask = kotAsk;
+    setKotAsk(null);
+    if (!ask || !tenant) return;
+    try {
+      if (ask.via === "android") await enqueueSlip(tenant, ask.order, "kitchen");
+      else await executeLocalPrint(tenant, ask.order, "kitchen");
+      setPrintKind("kitchen");
+    } catch {
+      setMsg("Kitchen ticket did not print — order is still on Kitchen.");
+      setPrintKind("bill");
+    }
+  }
+
+  function skipKitchenTicket() {
+    setKotAsk(null);
+    setPrintKind("bill");
   }
 
   function pauseBill() {
@@ -306,6 +327,13 @@ export default function PosPage() {
           onClose={() => setPrintChooser(false)}
         />
       )}
+      {kotAsk && (
+        <KitchenTicketPrompt
+          order={kotAsk.order}
+          onYes={() => void printKitchenTicket()}
+          onNo={skipKitchenTicket}
+        />
+      )}
       <div className={styles.page}>
         <PrintBridgeBar />
         <PosPrinterPanel compact />
@@ -321,7 +349,7 @@ export default function PosPage() {
           </div>
         )}
         <div className={styles.posLayout}>
-          <div id="pos-items">
+          <div id="pos-items" style={{ scrollMarginTop: 88 }}>
             <div className={styles.posSearchWrap}>
               <input
                 ref={searchRef}
@@ -617,8 +645,8 @@ export default function PosPage() {
               type="button"
               className={styles.posAction}
               onClick={() => {
-                document.getElementById("pos-items")?.scrollIntoView({ behavior: "smooth" });
-                searchRef.current?.focus();
+                (document.activeElement as HTMLElement | null)?.blur?.();
+                document.getElementById("pos-items")?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
             >
               🧾 Items
