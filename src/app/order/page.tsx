@@ -858,8 +858,8 @@ function OrderInner() {
               <h1>{branding?.name || (loading ? "Loading…" : "Restaurant")}</h1>
               <p>
                 {showMenu
-                  ? `${modeLabel(mode!)}${table ? ` · Table ${table}` : ""} · ${tenantCode}`
-                  : `${tenantCode}${shop?.openHours ? ` · ${shop.openHours}` : ""}`}
+                  ? `${modeLabel(mode!)}${table ? ` · Table ${table}` : ""}`
+                  : `${shop?.openHours ? `Open · ${shop.openHours}` : ""}`}
               </p>
               {shop?.address && <p className={styles.addr}>{shop.address}</p>}
               {shop?.phone && showMenu && (
