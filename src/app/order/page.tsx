@@ -650,9 +650,12 @@ function OrderInner() {
       setToast(`${item.name} is unavailable (out of stock)`);
       return;
     }
-    if (item.modifiers?.length) {
+    // Mobile/touch: every item opens the customize popup so the user never has
+    // to scroll down to find the cart. Desktop: modifier items still get the
+    // popup; plain items add straight to the side cart.
+    if (item.modifiers?.length || coarse || (typeof window !== "undefined" && window.innerWidth < 720)) {
       const init: Record<string, string[]> = {};
-      item.modifiers.forEach((g) => {
+      (item.modifiers || []).forEach((g) => {
         init[g.id] = g.required && g.options[0] ? [g.options[0].id] : [];
       });
       setModSel(init);
@@ -1372,6 +1375,19 @@ function OrderInner() {
                           className={`${styles.tile}${inCart ? ` ${styles.tileInCart}` : ""}${soldOut ? ` ${styles.tileSoldOut}` : ""}${flashId === menuItem.id ? ` ${styles.tileFlash}` : ""}`}
                           variants={itemVar}
                           aria-disabled={soldOut}
+                          onClick={soldOut ? undefined : (e) => addItem(menuItem, e.currentTarget)}
+                          role={soldOut ? undefined : "button"}
+                          tabIndex={soldOut ? undefined : 0}
+                          onKeyDown={
+                            soldOut
+                              ? undefined
+                              : (e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    addItem(menuItem, e.currentTarget);
+                                  }
+                                }
+                          }
                         >
                           {menuItem.imageUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
