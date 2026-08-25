@@ -563,17 +563,13 @@ function OrderInner() {
       setToast(`${item.name} is 86 / unavailable`);
       return;
     }
-    if (item.modifiers?.length) {
-      const init: Record<string, string[]> = {};
-      item.modifiers.forEach((g) => {
-        init[g.id] = g.required && g.options[0] ? [g.options[0].id] : [];
-      });
-      setModSel(init);
-      setModQty(1);
-      setModItem(item);
-      return;
-    }
-    pushLine(item, [], fromEl);
+    const init: Record<string, string[]> = {};
+    (item.modifiers || []).forEach((g) => {
+      init[g.id] = g.required && g.options[0] ? [g.options[0].id] : [];
+    });
+    setModSel(init);
+    setModQty(1);
+    setModItem(item);
   }
 
   async function uploadProof(file: File) {
