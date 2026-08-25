@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
@@ -61,6 +61,9 @@ export default function PosPage() {
   const [bridgeNote, setBridgeNote] = useState("");
   const [pausedCart, setPausedCart] = useState<CartLine[] | null>(null);
   const [pausedMeta, setPausedMeta] = useState<{ name: string; phone: string; discount: string } | null>(null);
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const discountRef = useRef<HTMLInputElement | null>(null);
+  const customerRef = useRef<HTMLInputElement | null>(null);
 
   const lowStock = (tenant?.stock ?? []).filter((s) => s.quantity <= s.lowThreshold);
   const categories = useMemo(() => {
@@ -319,6 +322,7 @@ export default function PosPage() {
           <div>
             <div className={styles.posSearchWrap}>
               <input
+                ref={searchRef}
                 className={styles.posSearch}
                 value={posSearch}
                 onChange={(e) => setPosSearch(e.target.value)}
@@ -514,6 +518,7 @@ export default function PosPage() {
               <label>
                 Customer name
                 <input
+                  ref={customerRef}
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="Walk-in guest"
@@ -540,6 +545,7 @@ export default function PosPage() {
               <label>
                 Discount {tenant?.shop.currency} (optional)
                 <input
+                  ref={discountRef}
                   value={discountStr}
                   onChange={(e) => setDiscountStr(e.target.value.replace(/[^\d]/g, ""))}
                   placeholder="0"
@@ -578,6 +584,7 @@ export default function PosPage() {
             </div>
             <div className={styles.row} style={{ alignItems: "center" }}>
               <button
+                id="pos-charge-btn"
                 type="button"
                 className={styles.btn}
                 disabled={!canCharge}
@@ -597,16 +604,55 @@ export default function PosPage() {
       </div>
       {cart.length > 0 && (
         <div className={styles.posStickyBar}>
-          <strong className={styles.posStickyTotal}>
-            {cart.length} item{cart.length === 1 ? "" : "s"} · {money(tenant?.shop.currency || "PKR", billTotal)}
-          </strong>
-          <button
-            type="button"
-            className={styles.btn}
-            onClick={() => document.getElementById("pos-charge-panel")?.scrollIntoView({ behavior: "smooth" })}
-          >
-            Review &amp; charge
-          </button>
+          <div className={styles.posStickyTop}>
+            <strong className={styles.posStickyTotal}>
+              {cart.length} item{cart.length === 1 ? "" : "s"} · {money(tenant?.shop.currency || "PKR", billTotal)}
+            </strong>
+          </div>
+          <div className={styles.posActions}>
+            <button type="button" className={styles.posAction} onClick={() => { searchRef.current?.focus(); }}>
+              Search
+            </button>
+            <button
+              type="button"
+              className={styles.posAction}
+              onClick={() => {
+                document.getElementById("pos-charge-panel")?.scrollIntoView({ behavior: "smooth" });
+                discountRef.current?.focus();
+              }}
+            >
+              Discount
+            </button>
+            <button
+              type="button"
+              className={styles.posAction}
+              onClick={() => {
+                document.getElementById("pos-charge-panel")?.scrollIntoView({ behavior: "smooth" });
+                customerRef.current?.focus();
+              }}
+            >
+              Customer
+            </button>
+            <button
+              type="button"
+              className={`${styles.posAction} ${styles.posActionPrimary}`}
+              onClick={() => {
+                document.getElementById("pos-charge-panel")?.scrollIntoView({ behavior: "smooth" });
+                const el = document.getElementById("pos-charge-btn");
+                el?.focus();
+                el?.click();
+              }}
+            >
+              Confirm bill
+            </button>
+            <button
+              type="button"
+              className={`${styles.posAction} ${styles.posActionPrint} ${androidOnline ? styles.posPrintOn : ""}`}
+              onClick={() => document.getElementById("pos-charge-panel")?.scrollIntoView({ behavior: "smooth" })}
+            >
+              🖨️ Print
+            </button>
+          </div>
         </div>
       )}
     </AppShell>
