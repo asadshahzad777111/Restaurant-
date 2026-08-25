@@ -9,10 +9,11 @@ import { AdminIosInstallCard } from "@/components/AdminIosInstallCard";
 import { AdminThermalPrinterCard } from "@/components/AdminThermalPrinterCard";
 import { AdminPaymentsCard } from "@/components/AdminPaymentsCard";
 import { AdminSpecialOfferCard } from "@/components/AdminSpecialOfferCard";
+import { planAllows } from "@/lib/plans";
 import styles from "../staff.module.css";
 
 export default function SettingsPage() {
-  const { tenant, api, applyTenant, user, token, loading, platformFeatures, refresh } = useStore();
+  const { tenant, api, applyTenant, user, token, loading, platformFeatures, refresh, planId } = useStore();
   const [msg, setMsg] = useState("");
   const [branding, setBranding] = useState({
     name: "",
@@ -301,16 +302,23 @@ export default function SettingsPage() {
 
         <form className={styles.form} onSubmit={saveAppToggles}>
           <h3 style={{ margin: 0 }}>📱 Mobile App (per restaurant)</h3>
-          <label className={styles.rowCheck}>
-            <input
-              type="checkbox"
-              checked={branding.allowApk}
-              onChange={(e) => {
-                setBranding({ ...branding, allowApk: e.target.checked });
-              }}
-            />
-            Allow this kitchen's own APK download (Staff + Customer)
-          </label>
+          {planAllows(planId, "apk") ? (
+            <label className={styles.rowCheck}>
+              <input
+                type="checkbox"
+                checked={branding.allowApk}
+                onChange={(e) => {
+                  setBranding({ ...branding, allowApk: e.target.checked });
+                }}
+              />
+              Allow this kitchen's own APK download (Staff + Customer)
+            </label>
+          ) : (
+            <p className={styles.muted} style={{ margin: 0 }}>
+              Customer &amp; Staff app is a <strong>Pro</strong> feature (₨1,999/mo). Upgrade to publish
+              your own APK for this kitchen.
+            </p>
+          )}
           <label className={styles.rowCheck}>
             <input
               type="checkbox"
@@ -332,7 +340,7 @@ export default function SettingsPage() {
               <a className={styles.btn} href="/tables?printQr=1">🪑 Print table QR</a>
             </div>
           )}
-          {branding.allowApk && tenant && (
+          {branding.allowApk && planAllows(planId, "apk") && tenant && (
             <div className={styles.apkLinks}>
               <a className={styles.btn} href={`/apk/install/${tenant.code}/staff`} download>🧑‍🍳 Staff APK</a>
               <a className={styles.btn} href={`/apk/install/${tenant.code}/customer`} download>🍽️ Customer APK</a>

@@ -58,9 +58,9 @@ html, body {
 .logo { display: block; width: 48mm; max-width: 48mm; max-height: 22mm; height: auto; margin: 0 auto 3px; object-fit: contain; }
 .name {
   display: block;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 800;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   overflow-wrap: anywhere;
 }

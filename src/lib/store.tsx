@@ -9,7 +9,7 @@ import React, {
   useState,
   startTransition,
 } from "react";
-import type { Permission, PlatformFeatures, SessionRole, TenantStatus } from "./types";
+import type { Permission, PlatformFeatures, PlanId, SessionRole, TenantStatus } from "./types";
 import type { DiningTable, TenantState, MenuItem, Order, StockItem, TenantUser } from "./tenant-types";
 import { setHelpModeCookieClient } from "./help-mode";
 
@@ -37,6 +37,7 @@ export interface AuthState {
   platformFeatures: PlatformFeatures | null;
   billingPastDue: boolean;
   tenantStatus: TenantStatus | null;
+  planId: PlanId | null;
   loading: boolean;
 }
 
@@ -74,6 +75,7 @@ type MemorySession = {
   platformFeatures: PlatformFeatures | null;
   billingPastDue: boolean;
   tenantStatus: TenantStatus | null;
+  planId: PlanId | null;
 };
 
 /** Survives StoreProvider remounts during client navigation (React state does not). */
@@ -120,6 +122,7 @@ function emptyAuth(): Omit<AuthState, "loading"> {
     platformFeatures: null,
     billingPastDue: false,
     tenantStatus: null,
+    planId: null,
   };
 }
 
@@ -145,6 +148,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   );
   const [billingPastDue, setBillingPastDue] = useState(boot.billingPastDue);
   const [tenantStatus, setTenantStatus] = useState<TenantStatus | null>(boot.tenantStatus);
+  const [planId, setPlanId] = useState<PlanId | null>(boot.planId);
   const [loading, setLoading] = useState(boot.loading);
 
   const setToken = useCallback((t: string | null) => {
@@ -178,6 +182,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setPlatformFeatures(payload.platformFeatures);
       setBillingPastDue(Boolean(payload.billingPastDue));
       setTenantStatus(payload.tenantStatus ?? null);
+      setPlanId(payload.planId ?? null);
       if (doneLoading) setLoading(false);
     });
   }, []);
@@ -202,6 +207,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       platformFeatures: null,
       billingPastDue: false,
       tenantStatus: null,
+      planId: null,
     });
   }, [applySession]);
 
@@ -243,6 +249,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setPlatformFeatures(null);
       setBillingPastDue(false);
       setTenantStatus(null);
+      setPlanId(null);
       setImpersonating(false);
       setLoading(false);
       return;
@@ -274,6 +281,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setPlatformFeatures(null);
         setBillingPastDue(false);
         setTenantStatus(null);
+      setPlanId(null);
         setUser(null);
         setImpersonating(false);
         setLoading(false);
@@ -290,6 +298,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         platformFeatures: data.features ?? null,
         billingPastDue: Boolean(data.billingPastDue || data.meta?.status === "past_due"),
         tenantStatus: data.meta?.status ?? null,
+        planId: data.meta?.planId ?? null,
       });
     } catch {
       setLoading(false);
@@ -332,6 +341,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setPlatformFeatures(null);
       setBillingPastDue(false);
       setTenantStatus(null);
+      setPlanId(null);
       setImpersonating(false);
       setLoading(false);
       return;
@@ -406,8 +416,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       platformFeatures,
       billingPastDue,
       tenantStatus,
+      planId,
     });
-  }, [token, role, tenantId, impersonating, user, tenant, platformFeatures, billingPastDue, tenantStatus]);
+  }, [token, role, tenantId, impersonating, user, tenant, platformFeatures, billingPastDue, tenantStatus, planId]);
 
   const value = useMemo(
     () => ({
@@ -420,6 +431,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       platformFeatures,
       billingPastDue,
       tenantStatus,
+      planId,
       loading,
       setToken,
       refresh,
@@ -442,6 +454,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       platformFeatures,
       billingPastDue,
       tenantStatus,
+      planId,
       loading,
       setToken,
       refresh,

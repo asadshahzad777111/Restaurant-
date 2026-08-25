@@ -514,18 +514,22 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  height: 100vh;
+  height: 100dvh;
 }
 
 .catSheet {
   width: min(100%, 30rem);
   max-height: 82vh;
-  padding: 1.15rem 1.25rem 1.4rem;
+  max-height: 82dvh;
+  padding: 1.15rem 1.25rem calc(1.4rem + env(safe-area-inset-bottom, 0px));
   border-radius: 22px 22px 0 0;
   background: var(--guest-elevated);
   border: 1px solid var(--guest-line);
   border-bottom: none;
   display: flex;
   flex-direction: column;
+  overscroll-behavior: contain;
 }
 
 .catSheetHead {
@@ -1060,15 +1064,22 @@
   background: rgba(14, 12, 10, 0.62);
   display: flex;
   align-items: flex-end;
+  /* iOS Safari: use the dynamic viewport so the sheet never hides under the
+     URL bar or sticks to the wrong edge on scroll. */
+  height: 100vh;
+  height: 100dvh;
 }
 
 .sheetPanel {
   width: 100%;
   max-height: 88vh;
+  max-height: 88dvh;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   background: var(--guest-elevated);
   border-radius: 18px 18px 0 0;
-  padding: 1.15rem 1.15rem 1.6rem;
+  padding: 1.15rem 1.15rem calc(1.6rem + env(safe-area-inset-bottom, 0px));
 }
 
 .sheetHead {

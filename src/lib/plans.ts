@@ -12,7 +12,10 @@ export type PlanCapability =
   | "logo"
   | "staff"
   | "stock"
-  | "reviews";
+  | "reviews"
+  | "apk"
+  | "whatsapp"
+  | "multiKitchen";
 
 const STARTER_CAPS: PlanCapability[] = [
   "pos",
@@ -21,14 +24,20 @@ const STARTER_CAPS: PlanCapability[] = [
   "menu",
   "tables",
   "dayClose",
-  "sales",
   "logo",
   "staff",
 ];
 
-const PRO_CAPS: PlanCapability[] = [...STARTER_CAPS, "stock", "reviews"];
+const PRO_CAPS: PlanCapability[] = [
+  ...STARTER_CAPS,
+  "sales",
+  "stock",
+  "reviews",
+  "apk",
+  "whatsapp",
+];
 
-const ENTERPRISE_CAPS: PlanCapability[] = [...PRO_CAPS];
+const ENTERPRISE_CAPS: PlanCapability[] = [...PRO_CAPS, "multiKitchen"];
 
 const CAPS: Record<PlanId, PlanCapability[]> = {
   starter: STARTER_CAPS,
@@ -51,6 +60,7 @@ export const CANONICAL_PLANS: Plan[] = [
       "Public menu in sync with POS",
       "Browser receipts",
       "Up to 5 staff",
+      "Web order alerts (in-app)",
     ],
   },
   {
@@ -58,13 +68,15 @@ export const CANONICAL_PLANS: Plan[] = [
     name: "Pro",
     pricePkr: 1999,
     maxStaff: 15,
-    description: "Staff roles · stock · reviews",
+    description: "Most popular — customer app + stock + reviews",
     features: [
       "Everything in Starter",
+      "Customer app (APK) for your restaurant",
+      "WhatsApp order alerts to your phone",
       "Staff roles & permissions",
-      "Stock alerts",
+      "Stock alerts + sales & profit reports",
       "Guest tracking + reviews",
-      "Receipt branding",
+      "Receipt branding (logo, footer)",
       "Up to 15 staff",
     ],
   },
@@ -73,13 +85,13 @@ export const CANONICAL_PLANS: Plan[] = [
     name: "Enterprise",
     pricePkr: 4499,
     maxStaff: 40,
-    description: "Multi-kitchen Super desk · printer quote",
+    description: "Multi-kitchen Super desk · thermal printer · priority",
     features: [
       "Everything in Pro",
-      "Super Admin: create / suspend kitchens",
-      "Open restaurant (help without mixing data)",
+      "Multiple kitchens under one Super desk",
+      "Create / suspend kitchens, billing notes",
       "Thermal printer package on request",
-      "Priority onboarding",
+      "Priority onboarding & support",
       "Up to 40 staff",
     ],
   },
@@ -99,10 +111,10 @@ export function planAllows(
 
 export function upgradeHint(planId: PlanId | string | null | undefined): string {
   if (planId === "starter") {
-    return "Starter covers one kitchen. Pro (₨1,999) adds stock alerts and reviews.";
+    return "Pro (₨1,999) adds your customer app, WhatsApp order alerts, stock & sales reports, and receipt branding.";
   }
   if (planId === "pro") {
-    return "Need more staff seats or priority support? Talk to ORDO about Enterprise.";
+    return "Need more kitchens or a thermal printer package? Talk to ORDO about Enterprise.";
   }
   return "";
 }
