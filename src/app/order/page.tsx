@@ -19,6 +19,7 @@ import {
 } from "@/lib/guest";
 import { enabledAdvanceRails, normalizeTenantPayments, paymentChoicesFor } from "@/lib/payments";
 import { GuestSpecialOfferPopup } from "@/components/GuestSpecialOfferPopup";
+import { GuestCoverQr } from "@/components/GuestCoverQr";
 import { isCustomerShell, readLockedCustomerTenant } from "@/lib/app-shell";
 import {
   backdropTransition,
@@ -869,6 +870,9 @@ function OrderInner() {
                 </p>
               )}
             </div>
+            {tenantCode ? (
+              <GuestCoverQr tenantCode={tenantCode} restaurantName={branding?.name} compact={showMenu} />
+            ) : null}
           </header>
 
           {!showMenu && (

@@ -1,13 +1,30 @@
 "use client";
 
 import styles from "@/app/staff.module.css";
+import { usePrintBridge } from "@/lib/usePrintBridge";
+import { isNativeStaffApp } from "@/lib/thermal/nativePosPrint";
 import type { Order } from "@/lib/tenant-types";
 
-/** Website print picker — always shows Print to Android + browser fallback. */
+/** Live red/green lamp from Staff APK heartbeat (SSE). No warning copy. */
+export function PrintBridgeLamp({ className }: { className?: string }) {
+  const { androidConnected, printerLinked } = usePrintBridge();
+  const native = typeof window !== "undefined" && isNativeStaffApp();
+  const on = native ? printerLinked : androidConnected;
+  return (
+    <span
+      className={`${styles.bridgeDot} ${on ? styles.bridgeDotOn : styles.bridgeDotOff}${className ? ` ${className}` : ""}`}
+      role="status"
+      aria-live="polite"
+      aria-label={on ? "Android connected" : "Android offline"}
+      title={on ? "Android connected" : "Android offline"}
+    />
+  );
+}
+
+/** Website print picker — live lamp only. Print to Android always queues. */
 export function PrintTargetChooser({
   order,
   kind,
-  androidOnline,
   note,
   onAndroid,
   onBrowser,
@@ -15,7 +32,6 @@ export function PrintTargetChooser({
 }: {
   order: Order;
   kind: "bill" | "kitchen";
-  androidOnline: boolean;
   note?: string;
   onAndroid: () => void;
   onBrowser: () => void;
@@ -25,20 +41,10 @@ export function PrintTargetChooser({
   return (
     <div className={styles.modalOverlay} onClick={onClose} role="dialog" aria-labelledby="print-bridge-title">
       <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-        <h3 id="print-bridge-title" style={{ margin: "0 0 0.25rem" }}>
+        <h3 id="print-bridge-title" className={styles.bridgeModalTitle}>
           Print {label} #{order.number}
+          <PrintBridgeLamp />
         </h3>
-        <p className={styles.muted} style={{ margin: 0 }}>
-          {androidOnline ? (
-            <>
-              <span className={styles.bridgeDot} aria-hidden /> Android printer: <strong style={{ fontSize: "inherit" }}>connected</strong>
-            </>
-          ) : (
-            <>
-              <span className={`${styles.bridgeDot} ${styles.bridgeDotOff}`} aria-hidden /> Android printer not connected — open Staff APK
-            </>
-          )}
-        </p>
         <button
           type="button"
           className={`${styles.btn} ${styles.bridgeAndroidBtn}`}

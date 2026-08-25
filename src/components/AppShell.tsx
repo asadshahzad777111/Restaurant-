@@ -7,7 +7,8 @@ import { useLang } from "@/lib/lang-context";
 import type { DictKey } from "@/lib/i18n";
 import { Sidebar } from "./Sidebar";
 import { StaffAlerts } from "./StaffAlerts";
-import { usePrintBridge } from "@/lib/usePrintBridge";
+import { PrintBridgeProvider, usePrintBridge } from "@/lib/usePrintBridge";
+import { PrintBridgeLamp } from "@/components/PrintTargetChooser";
 import { isStaffShell } from "@/lib/app-shell";
 import styles from "./AppShell.module.css";
 
@@ -27,6 +28,20 @@ const TITLE_KEYS: Record<string, DictKey> = {
 };
 
 export function AppShell({
+  children,
+  title,
+}: {
+  children: React.ReactNode;
+  title?: string;
+}) {
+  return (
+    <PrintBridgeProvider>
+      <AppShellInner title={title}>{children}</AppShellInner>
+    </PrintBridgeProvider>
+  );
+}
+
+function AppShellInner({
   children,
   title,
 }: {
@@ -166,11 +181,17 @@ export function AppShell({
               </span>
             )}
             {printerLinked ? (
-              <span className={styles.badge}>{t("printerLinked")}</span>
+              <span className={styles.badgeLiveOn}>
+                <PrintBridgeLamp /> {t("printerLinked")}
+              </span>
             ) : androidConnected ? (
-              <span className={styles.badge}>{t("androidPrinter")}</span>
+              <span className={styles.badgeLiveOn}>
+                <PrintBridgeLamp /> {t("androidPrinter")}
+              </span>
             ) : (
-              <span className={styles.badgeMuted}>{t("androidPrinterOff")}</span>
+              <span className={styles.badgeLiveOff}>
+                <PrintBridgeLamp /> {t("androidPrinterOff")}
+              </span>
             )}
             <span className={styles.user}>
               {user.roleLabel} · {user.username}

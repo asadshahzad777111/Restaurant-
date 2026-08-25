@@ -48,11 +48,54 @@ export type PrintBridgePresence = {
 const SAFE_TENANT_ID = /^[A-Za-z0-9_-]{1,80}$/;
 const JOB_TTL_MS = 30 * 60 * 1000;
 const DONE_KEEP_MS = 2 * 60 * 60 * 1000;
-const ONLINE_MS = 90_000;
+/** Staff APK heartbeats ~1.5s. After this with no pulse, laptop shows red. */
+const ONLINE_MS = 8_000;
 const MAX_QUEUED = 40;
 const DATA_ROOT = path.join(process.cwd(), ".data");
 
 const fileLocks = new Map<string, Promise<unknown>>();
+const bridgeWaiters = new Map<string, Set<() => void>>();
+
+export function subscribeBridge(tenantId: string, fn: () => void): () => void {
+  assertTenantId(tenantId);
+  let set = bridgeWaiters.get(tenantId);
+  if (!set) {
+    set = new Set();
+    bridgeWaiters.set(tenantId, set);
+  }
+  set.add(fn);
+  return () => {
+    set!.delete(fn);
+    if (set!.size === 0) bridgeWaiters.delete(tenantId);
+  };
+}
+
+/** Resolves on the next Staff heartbeat (or timeout). Laptop live-stream uses this. */
+export function waitBridgePulse(tenantId: string, ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    const t = setTimeout(() => {
+      unsub();
+      resolve();
+    }, ms);
+    const unsub = subscribeBridge(tenantId, () => {
+      clearTimeout(t);
+      unsub();
+      resolve();
+    });
+  });
+}
+
+function notifyBridge(tenantId: string) {
+  const set = bridgeWaiters.get(tenantId);
+  if (!set) return;
+  for (const fn of [...set]) {
+    try {
+      fn();
+    } catch {
+      /* ignore */
+    }
+  }
+}
 
 function assertTenantId(tenantId: string) {
   if (!SAFE_TENANT_ID.test(tenantId)) throw new Error("Invalid tenant");
@@ -152,13 +195,20 @@ async function ensurePrintIndexes() {
   }
 }
 
-export function printBridgePublic(p: PrintBridgePresence | null) {
-  const lastSeen = p?.lastSeen ?? null;
+export function printBridgePublic(p: PrintBridgePresence | null, queued = 0) {
+  const lastSeen = p?.lastSeen == null ? null : Number(p.lastSeen);
+  const seen = lastSeen != null && Number.isFinite(lastSeen) ? lastSeen : null;
   return {
-    connected: isOnline(lastSeen),
-    lastSeen,
+    connected: isOnline(seen),
+    lastSeen: seen,
     printerName: p?.printerName || null,
+    queued,
   };
+}
+
+export async function printBridgeSnapshot(tenantId: string) {
+  const [presence, jobs] = await Promise.all([readPrintBridge(tenantId), listQueuedPrintJobs(tenantId)]);
+  return printBridgePublic(presence, jobs.length);
 }
 
 export async function touchPrintBridge(
@@ -179,15 +229,18 @@ export async function touchPrintBridge(
       { $set: { tenantId, lastSeen, printerName, updatedAt: new Date().toISOString() } },
       { upsert: true },
     );
+    notifyBridge(tenantId);
     return row;
   }
 
-  return withFileLock(tenantId, () => {
+  const saved = await withFileLock(tenantId, () => {
     const blob = readBlob(tenantId);
     blob.bridge = { lastSeen, printerName };
     writeBlob(tenantId, blob);
     return row;
   });
+  notifyBridge(tenantId);
+  return saved;
 }
 
 export async function readPrintBridge(tenantId: string): Promise<PrintBridgePresence | null> {
@@ -247,6 +300,7 @@ export async function createPrintJob(
       if (ids.length) await col.deleteMany({ tenantId, id: { $in: ids } });
     }
     await col.insertOne({ ...job });
+    notifyBridge(tenantId);
     return job;
   }
 
@@ -261,6 +315,7 @@ export async function createPrintJob(
     }
     blob.jobs.push(job);
     writeBlob(tenantId, blob);
+    notifyBridge(tenantId);
     return job;
   });
 }

@@ -195,12 +195,15 @@ public class AsfixThermalPrintPlugin extends Plugin {
         // ESC @ init + UTF-8 text + feed + partial cut (GS V 1)
         byte[] init = new byte[] { 0x1B, 0x40 };
         byte[] body = text.getBytes(StandardCharsets.UTF_8);
-        byte[] feed = new byte[] { 0x0A, 0x0A, 0x0A };
+        // Top + bottom feed so 58mm cutters don't clip the shop name or QR.
+        byte[] feed = new byte[] { 0x0A, 0x0A, 0x0A, 0x0A };
         byte[] cut = new byte[] { 0x1D, 0x56, 0x01 };
-        byte[] payload = new byte[init.length + body.length + feed.length + cut.length];
+        byte[] payload = new byte[init.length + feed.length + body.length + feed.length + cut.length];
         int offset = 0;
         System.arraycopy(init, 0, payload, offset, init.length);
         offset += init.length;
+        System.arraycopy(feed, 0, payload, offset, feed.length);
+        offset += feed.length;
         System.arraycopy(body, 0, payload, offset, body.length);
         offset += body.length;
         System.arraycopy(feed, 0, payload, offset, feed.length);

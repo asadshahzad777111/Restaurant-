@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { modeLabel, trackSteps, guestOrderPath } from "@/lib/guest";
 import { guestWhatsappLink } from "@/lib/whatsapp";
+import { GuestCoverQr } from "@/components/GuestCoverQr";
 import {
   backdropTransition,
   listContainer,
@@ -249,6 +250,8 @@ export default function TrackPage() {
       {(data.review || sent) && (
         <p className={styles.thanks}>Thanks for the {data.review?.rating || rating}★ review.</p>
       )}
+
+      <GuestCoverQr tenantCode={data.code} restaurantName={data.branding.name} />
 
       <p className={styles.footerNav}>
         <Link

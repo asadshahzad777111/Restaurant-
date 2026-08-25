@@ -323,6 +323,58 @@ export function encodeQrMatrix(text: string): BitGrid {
   return best;
 }
 
+/** 1-bit BMP data URL — Windows POS-58 drivers often skip SVG; they do print images. */
+export function qrBmpDataUrl(text: string, scale = 4): string {
+  const m = encodeQrMatrix(text);
+  const quiet = 2;
+  const n = m.length;
+  const dim = (n + quiet * 2) * scale;
+  const rowBytes = Math.ceil(dim / 32) * 4;
+  const pixels = new Uint8Array(rowBytes * dim);
+  for (let y = 0; y < dim; y++) {
+    const my = Math.floor(y / scale) - quiet;
+    const destY = dim - 1 - y;
+    for (let x = 0; x < dim; x++) {
+      const mx = Math.floor(x / scale) - quiet;
+      const on = mx >= 0 && my >= 0 && mx < n && my < n && m[my][mx];
+      if (!on) pixels[destY * rowBytes + (x >> 3)] |= 0x80 >> (x & 7);
+    }
+  }
+  const headerSize = 62;
+  const file = new Uint8Array(headerSize + pixels.length);
+  const dv = new DataView(file.buffer);
+  file[0] = 0x42;
+  file[1] = 0x4d;
+  dv.setUint32(2, file.length, true);
+  dv.setUint32(10, headerSize, true);
+  dv.setUint32(14, 40, true);
+  dv.setInt32(18, dim, true);
+  dv.setInt32(22, dim, true);
+  dv.setUint16(26, 1, true);
+  dv.setUint16(28, 1, true);
+  dv.setUint32(34, pixels.length, true);
+  file[54] = 0;
+  file[55] = 0;
+  file[56] = 0;
+  file[57] = 0;
+  file[58] = 255;
+  file[59] = 255;
+  file[60] = 255;
+  file[61] = 0;
+  file.set(pixels, headerSize);
+  let bin = "";
+  const step = 0x8000;
+  for (let i = 0; i < file.length; i += step) {
+    bin += String.fromCharCode.apply(null, Array.from(file.subarray(i, i + step)) as unknown as number[]);
+  }
+  return `data:image/bmp;base64,${btoa(bin)}`;
+}
+
+export function qrPrintImgMarkup(text: string, mm = 22): string {
+  const src = qrBmpDataUrl(text, 4);
+  return `<img class="qr-img" alt="" width="${mm}mm" height="${mm}mm" src="${src}"/>`;
+}
+
 export function qrSvgMarkup(text: string, mm = 22): string {
   const m = encodeQrMatrix(text);
   const quiet = 2;

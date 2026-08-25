@@ -18,7 +18,7 @@ export default function PrinterPage() {
             <li>Phone Bluetooth → pair the 58mm thermal printer.</li>
             <li>Sign in with the restaurant code → tap <strong>Printer</strong> → <strong>Use this</strong>.</li>
             <li>Staff phone shows <strong>Printer linked</strong>. Laptop / iPhone show <strong>Android printer: connected</strong>.</li>
-            <li>Laptop or iPhone Safari: Charge / Print → <strong>Print to Android</strong> (not iPhone). Browser print is the fallback.</li>
+            <li>Laptop or iPhone: Charge / Print → <strong>Print to Android</strong> (green when Staff APK is on). If the phone is off, the job is queued and prints when the app comes back. Browser print is the fallback.</li>
             <li>Guest takeaway / delivery orders print automatically on that printer.</li>
           </ol>
         </div>

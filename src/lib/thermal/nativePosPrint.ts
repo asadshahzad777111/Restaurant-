@@ -44,11 +44,10 @@ export function isNativeStaffApp() {
   try {
     const c = cap();
     if (!c) return false;
+    // Plugin presence on web is not native — laptop must poll / SSE the Staff APK.
     if (c.isNativePlatform?.() === true) return true;
     const platform = (c as { getPlatform?: () => string }).getPlatform?.();
-    if (platform === "android" || platform === "ios") return true;
-    if (c.Plugins?.AsfixThermalPrint) return true;
-    return false;
+    return platform === "android" || platform === "ios";
   } catch {
     return false;
   }
@@ -157,27 +156,34 @@ export async function nativePrintText(
   const saved = await getSavedPrinter();
   const address = opts?.address || saved?.address;
   if (!address) return { ok: false, reason: "no_printer", message: "Tap Printer, then Use this" };
-  const qrUrl = opts?.qrUrl?.trim();
+  const qrUrl = opts?.qrUrl?.trim() || "";
+  const padded = `\n\n\n${String(text || "").replace(/^\n+/, "")}`;
   try {
     await requestThermalPrintPermissions();
     await plugin.connect({ address });
-    if (qrUrl && plugin.printEscPos) {
-      const bytes = buildSlipEscPos(text, qrUrl);
+    if (plugin.printEscPos) {
+      const bytes = buildSlipEscPos(text, qrUrl || null);
       await plugin.printEscPos({ dataBase64: bytesToBase64(bytes), address });
       return { ok: true };
     }
-    await plugin.printText({ text, address });
+    await plugin.printText({ text: padded, address });
     return { ok: true };
   } catch (err) {
-    if (qrUrl && plugin.printEscPos) {
-      try {
-        await plugin.printText({ text, address });
+    try {
+      if (plugin.printEscPos) {
+        const bytes = buildSlipEscPos(text, qrUrl || null);
+        await plugin.printEscPos({ dataBase64: bytesToBase64(bytes), address });
         return { ok: true };
-      } catch (err2) {
-        return { ok: false, reason: "print_failed", message: errMsg(err2, "Bluetooth print failed") };
       }
+    } catch {
+      /* fall through */
     }
-    return { ok: false, reason: "print_failed", message: errMsg(err, "Bluetooth print failed") };
+    try {
+      await plugin.printText({ text: padded, address });
+      return { ok: true };
+    } catch (err2) {
+      return { ok: false, reason: "print_failed", message: errMsg(err2 || err, "Bluetooth print failed") };
+    }
   }
 }
 

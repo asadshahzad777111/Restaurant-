@@ -25,7 +25,8 @@ Storage: Mongo `print_jobs` + `print_bridge` when `MONGODB_URI` is set; otherwis
 | Method | Path | Purpose |
 |---|---|---|
 | `POST` | `/api/print/bridge` | Heartbeat `{ lastSeen, printerName? }` |
-| `GET` | `/api/print/bridge` | `{ connected, lastSeen, printerName }` for POS “Android printer: connected” |
+| `GET` | `/api/print/bridge` | `{ connected, lastSeen, printerName, queued }` for the POS green/red lamp |
+| `GET` | `/api/print/bridge/live` | SSE stream of the same payload. Pushes on Staff heartbeat so the lamp flips green immediately; rechecks every ~1s so it goes red ~8s after the phone drops. |
 | `GET` | `/api/print/jobs` | Queued jobs for **this** tenant (Staff APK polls every ~1.5s) |
 | `POST` | `/api/print/jobs` | Enqueue from web / iPhone |
 | `POST` | `/api/print/jobs/[id]` | Ack: `{ status: printing\|done\|failed }` |
@@ -45,10 +46,10 @@ Legacy `/api/print-jobs/*` aliases the same store (auth required).
 On **laptop website and iPhone Safari**, POS / Orders / Kitchen / Printer always show an **Android printer: connected** or **not connected — open Staff APK** bar.
 
 Charge or Print **always** opens a chooser (not a silent browser print):
-- **Print to Android** — enqueues the 58mm bill when the Staff APK has heartbeated in the last ~90s. Phone can stay in the pocket.
+- **Print to Android** / **Queue for Android** — always enqueues the 58mm bill for this kitchen. If Staff APK is online it prints within ~1.5s. If the phone is off, the job waits (up to 30 minutes) and prints as soon as the APK heartbeats again. The laptop cannot talk to Bluetooth itself — the phone is the bridge.
 - **Print here (browser)** — fallback.
 
-Native Staff APK with a saved printer still prints Bluetooth directly (no chooser). Super HQ never opens in the Staff APK.
+The POS header and print dialog use a **live green / red lamp** (SSE + 1s poll fallback). No page refresh. Native Staff APK with a saved printer still prints Bluetooth directly (no chooser). Super HQ never opens in the Staff APK.
 
 ## Auto-print
 

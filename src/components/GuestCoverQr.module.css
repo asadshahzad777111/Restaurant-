@@ -1,0 +1,61 @@
+.coverQr {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.35rem 0 0 auto;
+  padding: 0.55rem 0.7rem 0.55rem 0.55rem;
+  border: 1px solid var(--guest-line, #e8e4de);
+  background: #fff;
+  border-radius: 16px;
+  color: inherit;
+  text-decoration: none;
+  max-width: 100%;
+}
+
+.coverQr:hover,
+.coverQr:focus-visible {
+  border-color: var(--ember, #c45c26);
+}
+
+.frame {
+  display: grid;
+  place-items: center;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.frame svg {
+  width: 108px;
+  height: 108px;
+  display: block;
+}
+
+.caption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.caption strong {
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.caption span {
+  color: var(--guest-muted, #6b6560);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.compact .frame svg {
+  width: 72px;
+  height: 72px;
+}
+
+@media (max-width: 640px) {
+  .coverQr {
+    margin-left: 0;
+    width: 100%;
+  }
+}

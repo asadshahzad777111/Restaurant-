@@ -1,6 +1,7 @@
 import type { Order, TenantState } from "./tenant-types";
 import { tryNativeThermalPrint } from "./thermal/nativePosPrint";
-import { qrSvgMarkup } from "./qr-byte";
+import { qrPrintImgMarkup } from "./qr-byte";
+import { buildSlipEscPos, bytesToBase64 } from "./escpos-receipt";
 import {
   billKindLine,
   billStamp,
@@ -43,7 +44,7 @@ html, body {
   width: ${SLIP_MM}mm;
   max-width: ${SLIP_MM}mm;
   margin: 0;
-  padding: 2mm 2mm 3mm;
+  padding: 8mm 2mm 8mm;
   font-family: "Courier New", Courier, ui-monospace, monospace;
   font-size: 10px;
   line-height: 1.22;
@@ -64,8 +65,8 @@ html, body {
 .rule { border: 0; border-top: 1px dashed #111; margin: 3px 0; }
 .meta { display: grid; gap: 1px; margin: 3px 0; font-size: 9.5px; }
 .cols { display: flex; justify-content: space-between; gap: 8px; font-size: 9.5px; font-weight: 700; }
-.qr { text-align: center; margin: 4px 0 0; }
-.qr svg { width: 22mm; height: 22mm; display: block; margin: 0 auto; }
+.qr { text-align: center; margin: 4px 0 2mm; }
+.qr svg, .qr .qr-img { width: 22mm; height: 22mm; display: block; margin: 0 auto; image-rendering: pixelated; }
 .item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -168,17 +169,14 @@ export function customerReceiptHtml(tenant: TenantState, order: Order) {
   <div class="cols"><span>Item</span><span>Total</span></div>
   ${itemRows(order, true) || `<div class="item"><span class="title">No items</span></div>`}
   <hr class="rule"/>
-  <div class="totals">
-    <span>Subtotal</span><strong>${amount(f.subtotal)}</strong>
-    ${extras}
-  </div>
+  ${extras ? `<div class="totals">${extras}</div>` : ""}
   <div class="grand"><span>TOTAL</span><b>${escapeHtml(tenant.shop.currency)} ${amount(printedGrandTotal(order, printGst))}</b></div>
   ${order.note ? `<p class="center">NOTE: ${escapeHtml(order.note)}</p>` : ""}
   <hr class="rule"/>
   <p class="thanks">Thank you</p>
   <p class="visit">Visit again</p>
   ${extraFooter ? `<p class="center">${escapeHtml(extraFooter)}</p>` : ""}
-  <div class="qr">${qrSvgMarkup(qrUrl, 22)}<p class="center">Scan to order</p></div>
+  <div class="qr">${qrPrintImgMarkup(qrUrl, 22)}<p class="center">Scan to order</p></div>
 </main>
 </body></html>`;
 }
@@ -238,7 +236,7 @@ export function customerReceiptText(tenant: TenantState, order: Order) {
     printGst && f.tax ? line("GST/Tax", amount(f.tax)) : "",
     order.discount ? line("Discount", `-${amount(order.discount)}`) : "",
   ].filter(Boolean);
-  return [
+  const body = [
     tenant.branding.name.toUpperCase(),
     address,
     phone,
@@ -251,7 +249,6 @@ export function customerReceiptText(tenant: TenantState, order: Order) {
     rule,
     ...items,
     rule,
-    line("Subtotal", amount(f.subtotal)),
     ...extras,
     line("TOTAL", `${tenant.shop.currency} ${amount(printedGrandTotal(order, printGst))}`),
     ...(order.note ? [`NOTE: ${order.note}`] : []),
@@ -262,6 +259,7 @@ export function customerReceiptText(tenant: TenantState, order: Order) {
   ]
     .filter((row) => row && String(row).trim())
     .join("\n");
+  return `\n\n\n${body}\n\n`;
 }
 
 /** Kitchen ticket plain text for Bluetooth ESC/POS. */
@@ -275,7 +273,7 @@ export function kitchenTicketText(tenant: TenantState, order: Order) {
     if (l.lineNote) rows.push(`  ${l.lineNote}`.slice(0, col));
     return rows;
   });
-  return [
+  const body = [
     "KITCHEN",
     tenant.branding.name.toUpperCase(),
     rule,
@@ -291,6 +289,7 @@ export function kitchenTicketText(tenant: TenantState, order: Order) {
   ]
     .filter((row) => row && String(row).trim())
     .join("\n");
+  return `\n\n\n${body}\n`;
 }
 
 function lockPageToContent(doc: Document, widthMm = SLIP_MM) {
@@ -376,7 +375,7 @@ export function printHtml(html: string): Promise<boolean> {
   });
 }
 
-async function tryOptInBridge(text: string): Promise<boolean> {
+async function tryOptInBridge(text: string, qrUrl?: string | null): Promise<boolean> {
   if (typeof window === "undefined") return false;
   try {
     if (window.localStorage.getItem("ordo_thermal_bridge") !== "1") return false;
@@ -386,10 +385,16 @@ async function tryOptInBridge(text: string): Promise<boolean> {
   const ctrl = new AbortController();
   const timer = window.setTimeout(() => ctrl.abort(), 600);
   try {
+    const payload: { text: string; data_base64?: string } = { text };
+    try {
+      payload.data_base64 = bytesToBase64(buildSlipEscPos(text, qrUrl));
+    } catch {
+      /* text-only still useful */
+    }
     const res = await fetch("http://127.0.0.1:9100/print", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify(payload),
       signal: ctrl.signal,
     });
     const data = (await res.json().catch(() => ({}))) as { ok?: boolean };
@@ -407,10 +412,11 @@ export async function printCustomerReceipt(tenant: TenantState, order: Order) {
   } catch {
     /* ignore */
   }
+  const qrUrl = guestOrderPageUrl(tenant.code);
   const text = customerReceiptText(tenant, order);
-  const native = await tryNativeThermalPrint(text, { qrUrl: guestOrderPageUrl(tenant.code) });
+  const native = await tryNativeThermalPrint(text, { qrUrl });
   if (native.ok) return true;
-  const bridged = await tryOptInBridge(text);
+  const bridged = await tryOptInBridge(text, qrUrl);
   if (bridged) return true;
   return printHtml(customerReceiptHtml(tenant, order));
 }

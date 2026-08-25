@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       await touchPrintBridge(tenantId);
     }
     const [jobs, presence] = await Promise.all([listQueuedPrintJobs(tenantId), readPrintBridge(tenantId)]);
-    return NextResponse.json({ jobs, bridge: printBridgePublic(presence) });
+    return NextResponse.json({ jobs, bridge: printBridgePublic(presence, jobs.length) });
   } catch (e) {
     if (e instanceof AuthError) {
       return NextResponse.json({ error: e.message }, { status: e.status });

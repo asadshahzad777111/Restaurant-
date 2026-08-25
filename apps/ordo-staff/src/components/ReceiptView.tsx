@@ -52,10 +52,6 @@ export function ReceiptView({
                   </View>
                 ))}
                 <View style={s.rule} />
-                <View style={s.lineRow}>
-                  <Text style={s.totalL}>Subtotal</Text>
-                  <Text style={s.lineR}>{order.fees?.subtotal ?? order.subtotal}</Text>
-                </View>
                 {order.fees?.serviceCharge ? (
                   <View style={s.lineRow}>
                     <Text style={s.totalL}>Service</Text>
@@ -77,7 +73,8 @@ export function ReceiptView({
                 <View style={s.lineRow}>
                   <Text style={s.totalL}>TOTAL</Text>
                   <Text style={s.totalR}>
-                    {currency} {order.total}
+                    {currency}{" "}
+                    {printGst ? order.total : Math.max(0, order.total - (order.fees?.tax || 0))}
                   </Text>
                 </View>
                 <Text style={s.foot}>Thank you · Visit again</Text>

@@ -36,7 +36,7 @@ async function request<T = unknown>(path: string, options: RequestInit = {}): Pr
   const f = config.fetchImpl || fetch;
   const headers: Record<string, string> = { "Content-Type": "application/json", ...authHeaders() };
   for (const [k, v] of Object.entries(options.headers || {})) headers[k] = String(v);
-  const res = await f(`${config.baseUrl}${path}`, { ...options, headers });
+  const res = await f(`${config.baseUrl}${path}`, { cache: "no-store", ...options, headers });
   const text = await res.text();
   let data: unknown = null;
   try {
@@ -52,6 +52,7 @@ export type PrintBridgeStatus = {
   connected: boolean;
   lastSeen: number | null;
   printerName: string | null;
+  queued?: number;
 };
 
 export type BridgePrintJob = {
@@ -77,6 +78,35 @@ export const printApi = {
   }) => request<{ job: BridgePrintJob }>("/print/jobs", { method: "POST", body: JSON.stringify(b) }),
   getPending: () => request<{ jobs: BridgePrintJob[]; bridge?: PrintBridgeStatus }>("/print/jobs"),
   getBridge: () => request<PrintBridgeStatus>("/print/bridge"),
+  /** SSE with bearer auth — calls onStatus whenever Staff APK presence changes. */
+  watchBridgeLive: async (onStatus: (s: PrintBridgeStatus) => void, signal: AbortSignal) => {
+    const f = config.fetchImpl || fetch;
+    const res = await f(`${config.baseUrl}/print/bridge/live`, {
+      headers: authHeaders(),
+      cache: "no-store",
+      signal,
+    });
+    if (!res.ok || !res.body) throw new Error(`Live bridge failed (${res.status})`);
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const chunks = buf.split("\n\n");
+      buf = chunks.pop() || "";
+      for (const chunk of chunks) {
+        const line = chunk.split("\n").find((l) => l.startsWith("data: "));
+        if (!line) continue;
+        try {
+          onStatus(JSON.parse(line.slice(6)) as PrintBridgeStatus);
+        } catch {
+          /* skip malformed */
+        }
+      }
+    }
+  },
   heartbeat: (b: { lastSeen?: number; printerName?: string; name?: string; station?: string }) =>
     request<PrintBridgeStatus>("/print/bridge", {
       method: "POST",

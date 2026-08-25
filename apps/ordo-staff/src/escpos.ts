@@ -67,7 +67,7 @@ export function buildReceiptEscPos(
   lines: Row[],
   opts: { cut?: boolean; cashDrawer?: boolean } = {},
 ): Uint8Array {
-  const parts: number[][] = [INIT, [0x1b, 0x61, 0]]; // init + align left
+  const parts: number[][] = [INIT, [0x1b, 0x61, 0], LF, LF, LF, LF]; // init + top feed (58mm unprintable zone)
   for (const row of lines) {
     if (row.text === TICK) {
       parts.push(
@@ -86,6 +86,26 @@ export function buildReceiptEscPos(
   if (opts.cashDrawer) parts.push(KICK);
   if (opts.cut) parts.push(CUT);
   return concat(parts);
+}
+
+/** Zijiang / POS-58 native QR: ESC Z v ecc mag nL nH data. */
+export function escPosQrZijiang(url: string, mag = 4): number[] {
+  const data = utf8(url);
+  const size = Math.max(3, Math.min(8, mag));
+  return [
+    0x1b,
+    0x61,
+    1,
+    0x1b,
+    0x5a,
+    0x00,
+    0x02,
+    size,
+    data.length & 0xff,
+    (data.length >> 8) & 0xff,
+    ...data,
+    0x0a,
+  ];
 }
 
 /** GS ( k QR — compact 58mm; printer firmware draws the code. */
