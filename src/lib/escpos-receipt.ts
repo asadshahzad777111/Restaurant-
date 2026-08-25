@@ -6,7 +6,7 @@ import { RECEIPT_QR_CAPTION } from "./receipt-layout";
 /** Cheap 58mm printers clip ~8–12mm after a cut — feed before the shop name. */
 const TOP_FEED = [0x0a, 0x0a, 0x0a, 0x0a];
 /** Extra feed so the bigger QR is not in the blade zone. */
-const BOTTOM_FEED = [0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a];
+const BOTTOM_FEED = [0x0a, 0x0a];
 /** Zijiang module size — mag 6 ≈ 170–200 dots on typical guest-order URLs. */
 export const ZIJIANG_QR_MAG = 6;
 const ALIGN_LEFT = [0x1b, 0x61, 0x00];
@@ -88,7 +88,22 @@ export function buildSlipEscPos(
   if (logoRaster && logoRaster.length) {
     parts.push(Array.from(logoRaster), [0x0a]);
   }
-  parts.push(utf8(body), [0x0a, 0x0a]);
+  // Print the body line by line: center the header (first non-empty block, the
+  // restaurant name/address) and the footer (Thank you / Visit again), left the rest.
+  const lines = body.split("\n");
+  let centered = 0;
+  for (const raw of lines) {
+    const line = raw;
+    const isHeader = centered < 2 && line.trim() !== "";
+    const isFooter = /thank you|visit again|scan to order|cash - pickup/i.test(line);
+    if (isHeader || isFooter) {
+      if (isHeader) centered++;
+      parts.push(ALIGN_CENTER, utf8(line), [0x0a]);
+    } else {
+      parts.push(ALIGN_LEFT, utf8(line), [0x0a]);
+    }
+  }
+  parts.push([0x0a]);
   const url = String(qrUrl || "").trim();
   if (url) {
     // Print one QR (raster — reliable + sized wider) + its caption, centered.

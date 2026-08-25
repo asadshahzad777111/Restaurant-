@@ -55,7 +55,7 @@ export function shouldPrintGst(shop?: { printGstOnBill?: boolean } | null): bool
 }
 
 /** 58mm QR caption — short so it does not wrap. Same copy on ESC/POS and HTML. */
-export const RECEIPT_QR_CAPTION = ["Scan to order", "Cash · Pickup · Delivery"] as const;
+export const RECEIPT_QR_CAPTION = ["Scan to order", "Cash - Pickup - Delivery"] as const;
 
 /** Print the uploaded shop logo on the bill only when the admin ticks Settings. Off by default. */
 export function shouldPrintLogoOnBill(tenant?: {
@@ -141,16 +141,16 @@ export function billStamp(iso: string): { date: string; time: string; line: stri
   return { date: `${dd}/${mm}`, time: `${hh}:${mi}`, line: `${dd}/${mm} ${hh}:${mi}` };
 }
 
-/** Line 2: Cash · Counter — skip redundant “cash sale” / POS. */
+/** Line 2: Cash - Counter — skip redundant “cash sale” / POS. */
 export function billKindLine(order: Order): string {
-  return [payCompact(order.paymentMethod), serviceCompact(order)].filter(Boolean).join(" · ");
+  return [payCompact(order.paymentMethod), serviceCompact(order)].filter(Boolean).join(" - ");
 }
 
 export function kitchenServiceLine(order: Order): string {
   const bits: string[] = [String(order.serviceType || "counter").toUpperCase()];
   if (order.tableNumber) bits.push(`T${order.tableNumber}`);
   if (order.channel === "pos") bits.push("POS");
-  return bits.join(" · ");
+  return bits.join(" - ");
 }
 
 export function receiptQrUrl(tenant: Pick<TenantState, "code">): string {
