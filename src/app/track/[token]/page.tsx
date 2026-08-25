@@ -142,6 +142,43 @@ export default function TrackPage() {
       </div>
     );
   }
+  function saveReceipt() {
+    if (!data) return;
+    const rows = (data.order.lines || [])
+      .map((l) => `<tr><td>${escapeHtml(l.name)} x ${l.qty}</td><td class="r">${data.shop.currency} ${l.unitPrice * l.qty}</td></tr>`)
+      .join("");
+    const html = `<!doctype html><html><head><meta charset="utf-8"/><style>
+      body{font:13px monospace;color:#000;margin:18px auto;width:280px;}
+      h1{font-size:15px;text-align:center;margin:0;} .c{text-align:center;}
+      hr{border:none;border-top:1px dashed #000;margin:8px 0;}
+      table{width:100%;border-collapse:collapse;} td{padding:2px 0;} td.r{text-align:right;}
+      .t{font-weight:700;font-size:14px;} .m{font-size:11px;color:#333;}
+    </style></head><body>
+    <h1>${escapeHtml(data.branding.name)}</h1>
+    <p class="c m">${escapeHtml(data.shop.phone || "")}</p>
+    <hr/>
+    <p class="m">Bill #${data.order.number} · ${modeLabel(data.order.serviceType)}</p>
+    <hr/>
+    <table>${rows}</table>
+    <hr/>
+    <p class="t">TOTAL${" ".repeat(6)}${data.shop.currency} ${data.order.total}</p>
+    <p class="m">${escapeHtml(data.order.paymentMethod.replaceAll("_", " "))} · ${data.order.paymentStatus}</p>
+    <hr/>
+    <p class="c m">Thank you</p><p class="c m">Visit again</p>
+    </body></html>`;
+    const w = window.open("", "_blank");
+    if (w) {
+      w.document.write(html);
+      w.document.close();
+      w.focus();
+      setTimeout(() => w.print(), 400);
+    }
+  }
+
+  function escapeHtml(s: string) {
+    return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+  }
+
   if (!data) {
     return (
       <div className={styles.page}>
@@ -217,6 +254,9 @@ export default function TrackPage() {
           {data.order.tableNumber ? ` · Table ${data.order.tableNumber}` : ""} ·{" "}
           {data.order.paymentMethod.replaceAll("_", " ")} · {data.order.paymentStatus}
         </p>
+        <button type="button" className={styles.saveReceipt} onClick={saveReceipt}>
+          📥 Save receipt (PDF)
+        </button>
       </section>
 
       {data.canReview && !sent && (
