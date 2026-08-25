@@ -126,7 +126,7 @@ export async function getPublicMenuMongo(tenantId: string) {
       reservedBy: tb.reservedBy,
       reservedUntil: tb.reservedUntil,
     })),
-    menu: t.menu.filter((m) => m.available).map(({ costPrice: _c, ...m }) => m),
+    menu: t.menu.map(({ costPrice: _c, ...m }) => m),
   };
 }
 

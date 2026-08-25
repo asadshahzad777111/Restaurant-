@@ -555,6 +555,7 @@
 }
 
 .deal {
+  position: relative;
   text-align: left;
   border: 1px solid rgba(255, 133, 0, 0.4);
   background: var(--guest-elevated);
@@ -564,6 +565,11 @@
   display: grid;
   gap: 0.3rem;
   min-width: 0;
+}
+
+.dealSoldOut {
+  opacity: 0.7;
+  filter: grayscale(0.55);
 }
 
 .deal em {
@@ -691,6 +697,45 @@
   font-size: 0.8rem;
   font-weight: 800;
   animation: qtyPop 0.4s var(--ease-primary);
+}
+
+/* ---- Sold-out (86 / out of stock) ---- */
+.soldOutBadge {
+  position: absolute;
+  top: 0.55rem;
+  left: 0.55rem;
+  z-index: 2;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  background: #c94a3c;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: 0 6px 14px rgba(201, 74, 60, 0.35);
+}
+
+.tileSoldOut {
+  opacity: 0.72;
+  filter: grayscale(0.55);
+}
+
+.tileSoldOut .tileTop p,
+.tileSoldOut .price {
+  color: var(--guest-muted);
+}
+
+.tileSoldOut .tileTop strong {
+  color: var(--guest-muted);
+}
+
+.soldOutHint {
+  color: var(--guest-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 /* Brief flash ring right after adding */

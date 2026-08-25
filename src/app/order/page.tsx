@@ -1137,10 +1137,15 @@ function OrderInner() {
                       <motion.button
                         key={d.id}
                         type="button"
-                        className={styles.deal}
+                        className={`${styles.deal}${!d.available ? ` ${styles.dealSoldOut}` : ""}`}
                         onClick={(e) => addItem(d, e.currentTarget)}
                         variants={itemVar}
                       >
+                        {!d.available ? (
+                          <span className={styles.soldOutBadge} role="status">
+                            Sold out
+                          </span>
+                        ) : null}
                         {d.imageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={d.imageUrl} alt="" className={styles.dealPhoto} loading="lazy" />
@@ -1197,17 +1202,24 @@ function OrderInner() {
                   >
                     {items.map((menuItem) => {
                       const inCart = qtyOf(cart, menuItem.id) > 0;
+                      const soldOut = !menuItem.available;
                       return (
                         <motion.article
                           key={menuItem.id}
-                          className={`${styles.tile}${inCart ? ` ${styles.tileInCart}` : ""}${flashId === menuItem.id ? ` ${styles.tileFlash}` : ""}`}
+                          className={`${styles.tile}${inCart ? ` ${styles.tileInCart}` : ""}${soldOut ? ` ${styles.tileSoldOut}` : ""}${flashId === menuItem.id ? ` ${styles.tileFlash}` : ""}`}
                           variants={itemVar}
+                          aria-disabled={soldOut}
                         >
                           {menuItem.imageUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={menuItem.imageUrl} alt="" className={styles.tilePhoto} loading="lazy" />
                           ) : null}
-                          {inCart && (
+                          {soldOut ? (
+                            <span className={styles.soldOutBadge} role="status">
+                              Sold out
+                            </span>
+                          ) : null}
+                          {inCart && !soldOut && (
                             <span className={styles.inCartBadge} aria-hidden>
                               ✓
                             </span>
@@ -1228,21 +1240,27 @@ function OrderInner() {
                               {currency} {menuItem.price}
                             </span>
                             <div className={styles.qty}>
-                              <button
-                                type="button"
-                                onClick={() => removeItem(menuItem.id)}
-                                aria-label={`Remove ${menuItem.name}`}
-                              >
-                                −
-                              </button>
-                              <span key={qtyOf(cart, menuItem.id)}>{inCart ? qtyOf(cart, menuItem.id) : ""}</span>
-                              <button
-                                type="button"
-                                onClick={(e) => addItem(menuItem, e.currentTarget.closest("article") as HTMLElement)}
-                                aria-label={`Add ${menuItem.name}`}
-                              >
-                                +
-                              </button>
+                              {soldOut ? (
+                                <span className={styles.soldOutHint}>Unavailable</span>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeItem(menuItem.id)}
+                                    aria-label={`Remove ${menuItem.name}`}
+                                  >
+                                    −
+                                  </button>
+                                  <span key={qtyOf(cart, menuItem.id)}>{inCart ? qtyOf(cart, menuItem.id) : ""}</span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => addItem(menuItem, e.currentTarget.closest("article") as HTMLElement)}
+                                    aria-label={`Add ${menuItem.name}`}
+                                  >
+                                    +
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         </motion.article>
