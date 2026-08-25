@@ -556,6 +556,73 @@
   min-width: 0;
 }
 
+/* ---- Modifier / extra options editor (Menu admin) ---- */
+.modsEditor {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.8rem;
+  border: 1px dashed #d9d0c4;
+  border-radius: 12px;
+  background: #fdfaf6;
+}
+
+.modsEditorHead {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.modsEditorHead strong {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.modsList {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.modGroup {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.7rem;
+  border: 1px solid #e8e4de;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.modGroupRow {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.modGroupRow input {
+  flex: 1;
+  min-width: 0;
+}
+
+.modOptions {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.modOptionRow {
+  display: grid;
+  grid-template-columns: 1fr 5.5rem auto;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.modOptionRow input {
+  min-width: 0;
+  width: 100%;
+}
+
+.modOptionRow input[type="number"] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Staff permission checkboxes — tidy responsive grid of chips */
 .permGrid {
   display: grid;
@@ -1038,6 +1105,42 @@
   top: 0.75rem;
 }
 
+/* Desktop / laptop: the charge panel should own the right column and never
+   require scrolling to reach — no bottom sticky bar needed on wide screens. */
+@media (min-width: 1024px) {
+  .posLayout {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
+    gap: 1.25rem;
+  }
+
+  .posCart {
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem - env(safe-area-inset-bottom, 0px));
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    border-radius: 18px;
+    border: 1px solid var(--staff-line, #e8e4de);
+    box-shadow: 0 1px 2px rgba(33, 26, 21, 0.04), 0 14px 36px rgba(33, 26, 21, 0.08);
+  }
+
+  /* Laptop: drop the mobile bottom action bar — the panel is always visible. */
+  .posStickyBar {
+    display: none;
+  }
+
+  /* Laptop: hide the inline printer setup block (it belongs on /printer and
+     the print chooser). The charge panel owns the right column. */
+  .posPrinterBlock {
+    display: none;
+  }
+
+  .menuGrid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
 .posCartHead {
   display: flex;
   justify-content: space-between;
@@ -1047,6 +1150,64 @@
 
 .posCartHead strong {
   margin: 0;
+}
+
+/* Charge panel totals — clean row breakdown + animated grand total */
+.posTotals {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.6rem 0 0.9rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed #e6dfd5;
+}
+
+.posTotalsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.posTotalsRow span:last-child {
+  font-weight: 600;
+}
+
+.posGrandTotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid #e6dfd5;
+}
+
+.posGrandTotal > span {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--staff-muted);
+}
+
+.posGrandTotal strong {
+  font-size: 1.8rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--staff-accent);
+  line-height: 1;
+}
+
+.posPayRow {
+  display: flex;
+  gap: 0.45rem;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.posPayRow button {
+  flex: 1;
 }
 
 .posCartList {

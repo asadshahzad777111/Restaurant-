@@ -70,6 +70,7 @@ export default function OrdersPage() {
   const [reason, setReason] = useState("");
   const [msg, setMsg] = useState("");
   const [printKind, setPrintKind] = useState<"bill" | "kitchen" | null>(null);
+  const [lastBillOrder, setLastBillOrder] = useState<Order | null>(null);
   const [openMore, setOpenMore] = useState<string | null>(null);
   const [printTarget, setPrintTarget] = useState<{ order: Order; kind: "bill" | "kitchen" } | null>(null);
   const [bridgeNote, setBridgeNote] = useState("");
@@ -159,7 +160,10 @@ export default function OrdersPage() {
       return;
     }
     const printed = await executeLocalPrint(tenant, order, kind);
-    if (printed) setPrintKind(kind);
+    if (printed) {
+      if (kind === "bill") setLastBillOrder(order);
+      setPrintKind(kind);
+    }
   }
 
   async function printBill(orderId: string) {
@@ -175,6 +179,7 @@ export default function OrdersPage() {
     try {
       await enqueueSlip(tenant, printTarget.order, printTarget.kind);
       setBridgeNote("");
+      if (printTarget.kind === "bill") setLastBillOrder(printTarget.order);
       setPrintKind(printTarget.kind);
       setPrintTarget(null);
     } catch {
@@ -269,7 +274,22 @@ export default function OrdersPage() {
 
   return (
     <AppShell title="Orders">
-      <PrintSuccess kind={printKind} onDone={dismissPrint} />
+      <PrintSuccess
+        kind={printKind}
+        tenant={tenant}
+        order={lastBillOrder}
+        onDone={dismissPrint}
+        onPrintAgain={async (order) => {
+          if (!tenant) return;
+          const chooser = await shouldOpenPrintChooser();
+          if (chooser) {
+            setPrintTarget({ order, kind: "bill" });
+            setBridgeNote("");
+          } else {
+            await executeLocalPrint(tenant, order, "bill");
+          }
+        }}
+      />
       {printTarget && (
         <PrintTargetChooser
           order={printTarget.order}

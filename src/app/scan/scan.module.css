@@ -346,6 +346,27 @@
   gap: 0.6rem;
 }
 
+.installRow .install {
+  margin: 0;
+}
+
+.installHint {
+  color: var(--guest-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0 0 0.6rem;
+}
+
+.installHint strong {
+  color: var(--guest-text);
+}
+
+@media (max-width: 480px) {
+  .installRow {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---- Paste form ---- */
 .form {
   display: grid;

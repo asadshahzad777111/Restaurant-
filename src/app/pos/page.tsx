@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { AppShell } from "@/components/AppShell";
 import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
@@ -49,6 +50,7 @@ export default function PosPage() {
   const [modItem, setModItem] = useState<MenuItem | null>(null);
   const [modSel, setModSel] = useState<Record<string, string[]>>({});
   const [printKind, setPrintKind] = useState<"bill" | "kitchen" | null>(null);
+  const [lastBillOrder, setLastBillOrder] = useState<Order | null>(null);
   const [cat, setCat] = useState("All");
   const [posSearch, setPosSearch] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -236,6 +238,7 @@ export default function PosPage() {
         setBridgeNote("");
       } else {
         await executeLocalPrint(tenant, order, "bill");
+        setLastBillOrder(order);
         setKotAsk({ order, via: "local" });
       }
     } catch (e) {
@@ -253,6 +256,7 @@ export default function PosPage() {
       setBridgeNote("");
       setPrintChooser(false);
       setPendingOrder(null);
+      setLastBillOrder(order);
       setKotAsk({ order, via: "android" });
     } catch {
       setBridgeNote("Could not queue the slip — print here or check the network.");
@@ -265,6 +269,7 @@ export default function PosPage() {
     setPendingOrder(null);
     if (!order || !tenant) return;
     await executeLocalPrint(tenant, order, "bill");
+    setLastBillOrder(order);
     setKotAsk({ order, via: "local" });
   }
 
@@ -316,7 +321,22 @@ export default function PosPage() {
 
   return (
     <AppShell title="POS">
-      <PrintSuccess kind={printKind} onDone={dismissPrint} />
+      <PrintSuccess
+        kind={printKind}
+        tenant={tenant}
+        order={lastBillOrder}
+        onDone={dismissPrint}
+        onPrintAgain={async (order) => {
+          if (!tenant) return;
+          if (androidOnline || (await shouldOpenPrintChooser())) {
+            setPendingOrder(order);
+            setPrintChooser(true);
+            setBridgeNote("");
+          } else {
+            await executeLocalPrint(tenant, order, "bill");
+          }
+        }}
+      />
       {printChooser && pendingOrder && (
         <PrintTargetChooser
           order={pendingOrder}
@@ -336,7 +356,9 @@ export default function PosPage() {
       )}
       <div className={styles.page}>
         <PrintBridgeBar />
-        <PosPrinterPanel compact />
+        <div className={styles.posPrinterBlock}>
+          <PosPrinterPanel compact />
+        </div>
         {lowStock.length > 0 && (
           <div className={styles.card} style={{ marginBottom: "0.75rem", borderColor: "#ffb020" }}>
             <strong>Low stock warning</strong>
@@ -441,7 +463,7 @@ export default function PosPage() {
                           }}
                         >
                           {o.name}
-                          {o.priceDelta ? ` +${o.priceDelta}` : ""}
+                          {o.priceDelta ? ` ${o.priceDelta > 0 ? "+" : ""}${o.priceDelta}` : ""}
                         </button>
                       ))}
                     </div>
@@ -514,25 +536,43 @@ export default function PosPage() {
               ))}
             </ul>
             {fees && tenant && (
-              <div>
-                <p className={styles.muted}>Subtotal {money(tenant.shop.currency, fees.subtotal)}</p>
+              <div className={styles.posTotals}>
+                <div className={styles.posTotalsRow}>
+                  <span className={styles.muted}>Subtotal</span>
+                  <span>{money(tenant.shop.currency, fees.subtotal)}</span>
+                </div>
                 {fees.serviceCharge > 0 && (
-                  <p className={styles.muted}>
-                    Service {money(tenant.shop.currency, fees.serviceCharge)}
-                  </p>
+                  <div className={styles.posTotalsRow}>
+                    <span className={styles.muted}>Service</span>
+                    <span>{money(tenant.shop.currency, fees.serviceCharge)}</span>
+                  </div>
                 )}
                 {fees.tax > 0 && (
-                  <p className={styles.muted}>Tax {money(tenant.shop.currency, fees.tax)}</p>
+                  <div className={styles.posTotalsRow}>
+                    <span className={styles.muted}>Tax</span>
+                    <span>{money(tenant.shop.currency, fees.tax)}</span>
+                  </div>
                 )}
                 {discount > 0 && (
-                  <p className={styles.muted}>Discount {money(tenant.shop.currency, discount)}</p>
+                  <div className={styles.posTotalsRow}>
+                    <span className={styles.muted}>Discount</span>
+                    <span>−{money(tenant.shop.currency, discount)}</span>
+                  </div>
                 )}
-                <p>
-                  <strong>{money(tenant.shop.currency, billTotal)}</strong>
-                </p>
+                <div className={styles.posGrandTotal}>
+                  <span>Total due</span>
+                  <motion.strong
+                    key={billTotal}
+                    initial={{ opacity: 0.4, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    {money(tenant.shop.currency, billTotal)}
+                  </motion.strong>
+                </div>
               </div>
             )}
-            <div className={styles.row}>
+            <div className={styles.posPayRow}>
               {(["cash", "card", "wallet"] as PaymentMethod[]).map((p) => (
                 <button
                   key={p}

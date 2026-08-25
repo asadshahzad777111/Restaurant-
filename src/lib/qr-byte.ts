@@ -325,18 +325,18 @@ export function encodeQrMatrix(text: string): BitGrid {
 
 /** 58mm @ ~203 dpi. Target QR ~40–50% of paper (~160–200 dots). */
 export const RECEIPT_PAPER_DOTS = 384;
-export const RECEIPT_QR_TARGET_DOTS = 184;
+export const RECEIPT_QR_TARGET_DOTS = 300;
 export const RECEIPT_QR_PRINT_MM = 42;
 
 /** Module scale so the raster QR lands around 160–200 dots, flush left. */
 export function qrScaleFor58mm(matrixModules: number, quiet = 2): number {
   const cells = matrixModules + quiet * 2;
-  let best = 5;
+  let best = 6;
   let bestScore = Infinity;
-  for (let s = 5; s <= 7; s++) {
+  for (let s = 5; s <= 10; s++) {
     const dim = cells * s;
     if (dim > RECEIPT_PAPER_DOTS) continue;
-    const inRange = dim >= 160 && dim <= 200;
+    const inRange = dim >= 240 && dim <= 340;
     const score = Math.abs(dim - RECEIPT_QR_TARGET_DOTS) + (inRange ? 0 : 80);
     if (score < bestScore) {
       bestScore = score;
@@ -418,20 +418,23 @@ export function qrSvgMarkup(text: string, mm = 22): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dim} ${dim}" width="${mm}mm" height="${mm}mm" shape-rendering="crispEdges" aria-hidden="true"><rect width="${dim}" height="${dim}" fill="#fff"/>${dark}</svg>`;
 }
 
-/** ESC/POS raster (GS v 0) — left-aligned, ~160–200 dots on 384-dot 58mm. */
+/** ESC/POS raster (GS v 0) — centred on 384-dot 58mm, scaled bigger. */
 export function qrEscPosRaster(text: string, scale?: number, quiet = 2): number[] {
   const m = encodeQrMatrix(text);
   const n = m.length;
   const s = scale && scale > 0 ? scale : qrScaleFor58mm(n, quiet);
   const dim = (n + quiet * 2) * s;
   const byteW = Math.ceil(dim / 8);
-  const bytes = new Array(byteW * dim).fill(0);
+  const rowBytes = RECEIPT_PAPER_DOTS >> 3; // 48 bytes = full 384-dot width
+  const leftPad = Math.max(0, Math.floor((rowBytes - byteW) / 2));
+  const out = new Array(rowBytes * dim).fill(0);
   for (let y = 0; y < dim; y++) {
     const my = Math.floor(y / s) - quiet;
+    const dst = y * rowBytes + leftPad;
     for (let x = 0; x < dim; x++) {
       const mx = Math.floor(x / s) - quiet;
       const on = mx >= 0 && my >= 0 && mx < n && my < n && m[my][mx];
-      if (on) bytes[y * byteW + (x >> 3)] |= 0x80 >> (x & 7);
+      if (on) out[dst + (x >> 3)] |= 0x80 >> (x & 7);
     }
   }
   return [
@@ -442,11 +445,11 @@ export function qrEscPosRaster(text: string, scale?: number, quiet = 2): number[
     0x76,
     0x30,
     0x00,
-    byteW & 0xff,
-    (byteW >> 8) & 0xff,
+    rowBytes & 0xff,
+    (rowBytes >> 8) & 0xff,
     dim & 0xff,
     (dim >> 8) & 0xff,
-    ...bytes,
+    ...out,
     0x0a,
     0x1b,
     0x61,

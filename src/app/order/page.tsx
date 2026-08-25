@@ -1432,7 +1432,7 @@ function OrderInner() {
                           }}
                         >
                           {o.name}
-                          {o.priceDelta ? ` +${o.priceDelta}` : ""}
+                          {o.priceDelta ? ` ${o.priceDelta > 0 ? "+" : ""}${o.priceDelta}` : ""}
                         </button>
                       );
                     })}

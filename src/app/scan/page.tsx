@@ -58,6 +58,7 @@ export default function ScanPage() {
   const [manual, setManual] = useState("");
   const [recent, setRecent] = useState<RecentKitchen[]>([]);
   const [opening, setOpening] = useState<string | null>(null);
+  const [activeTenant, setActiveTenant] = useState<string>("");
   const lock = useRef(false);
   const openingRef = useRef<string | null>(null);
   const reduced = usePrefersReducedMotion();
@@ -75,6 +76,7 @@ export default function ScanPage() {
       if (openingRef.current) return;
       openingRef.current = tenant;
       setOpening(tenant);
+      setActiveTenant(tenant);
       setStatus(`Opening ${tenant}…`);
       localStorage.setItem(LAST_GUEST_TENANT_KEY, tenant);
       rememberKitchen(tenant);
@@ -167,6 +169,7 @@ export default function ScanPage() {
     }
     localStorage.setItem(LAST_GUEST_TENANT_KEY, parsed.tenant);
     rememberKitchen(parsed.tenant);
+    setActiveTenant(parsed.tenant);
     router.push(guestOrderPath(parsed));
   }
 
@@ -269,22 +272,46 @@ export default function ScanPage() {
 
         <motion.div className={styles.installGroup} variants={item} initial="hidden" animate="show">
           <div className={styles.installHead}>📲 Get ORDO on your phone</div>
-          <div className={styles.installRow}>
-            <motion.a
-              className={styles.install}
-              href="https://github.com/asadshahzad777111/Restaurant-/releases/download/ordo-apps-v1/ORDO-Staff.apk"
-              download
-            >
-              🧑‍🍳 Staff app
-            </motion.a>
-            <motion.a
-              className={styles.install}
-              href="https://github.com/asadshahzad777111/Restaurant-/releases/download/ordo-apps-v1/ORDO-Customer.apk"
-              download
-            >
-              🍽️ Customer app
-            </motion.a>
-          </div>
+          {activeTenant ? (
+            <>
+              <p className={styles.installHint}>
+                Installing the app now links it to <strong>{activeTenant}</strong> — it opens this
+                restaurant&apos;s menu directly. Tap an option after you install and it stays merged.
+              </p>
+              <div className={styles.installRow}>
+                <motion.a
+                  className={styles.install}
+                  href={`${typeof window !== "undefined" ? window.location.origin : ""}/guest?app=customer&tenant=${encodeURIComponent(activeTenant)}`}
+                >
+                  🍽️ Customer app · {activeTenant}
+                </motion.a>
+                <motion.a
+                  className={styles.install}
+                  href={`${typeof window !== "undefined" ? window.location.origin : ""}/login?app=staff&tenant=${encodeURIComponent(activeTenant)}`}
+                >
+                  🧑‍🍳 Staff app · {activeTenant}
+                </motion.a>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className={styles.installHint}>
+                Scan a table QR first — the app link then opens that restaurant automatically. Or pick a
+                recent kitchen below.
+              </p>
+              <div className={styles.installRow}>
+                <motion.a
+                  className={styles.install}
+                  href="/guest?app=customer"
+                >
+                  🍽️ Customer app
+                </motion.a>
+                <motion.a className={styles.install} href="/login?app=staff">
+                  🧑‍🍳 Staff app
+                </motion.a>
+              </div>
+            </>
+          )}
         </motion.div>
 
         {recent.length > 0 && (
