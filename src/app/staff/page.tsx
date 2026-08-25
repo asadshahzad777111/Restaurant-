@@ -36,6 +36,7 @@ const STATION_PRESETS: Record<string, { roleLabel: string; permissions: Permissi
 export default function StaffPage() {
   const { tenant, user, api, applyTenant } = useStore();
   const [msg, setMsg] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState({
     username: "",
     password: "",
@@ -46,7 +47,7 @@ export default function StaffPage() {
 
   const canManage = user?.role === "admin" || user?.permissions.includes("staff");
 
-  async function saveUsers(users: TenantUser[]) {
+  async function saveUsers(users: TenantUser[]): Promise<boolean> {
     const res = await api("/api/admin", {
       method: "PUT",
       body: JSON.stringify({ action: "staff", users }),
@@ -54,19 +55,68 @@ export default function StaffPage() {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       setMsg((data as { error?: string }).error || "Failed");
-      return;
+      return false;
     }
     if ((data as { tenant?: typeof tenant }).tenant) {
       applyTenant((data as { tenant: NonNullable<typeof tenant> }).tenant);
     }
     setMsg("Saved");
+    return true;
+  }
+
+  function startEdit(u: TenantUser) {
+    setEditingId(u.id);
+    setDraft({
+      username: u.username,
+      password: "",
+      email: u.email || "",
+      roleLabel: u.roleLabel || "Staff",
+      permissions: [...(u.permissions || [])],
+    });
+    setMsg("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function resetDraft() {
+    setEditingId(null);
+    setDraft({
+      username: "",
+      password: "",
+      email: "",
+      roleLabel: "Cashier",
+      permissions: ["home", "pos", "orders"],
+    });
   }
 
   async function addStaff(e: React.FormEvent) {
     e.preventDefault();
     if (!tenant || !canManage) return;
-    if (tenant.users.some((u) => u.username.toLowerCase() === draft.username.trim().toLowerCase())) {
+    if (tenant.users.some((u) => u.id !== editingId && u.username.toLowerCase() === draft.username.trim().toLowerCase())) {
       setMsg("Username already exists on this kitchen");
+      return;
+    }
+    if (editingId) {
+      const existing = tenant.users.find((u) => u.id === editingId);
+      if (!existing) return;
+      const ok = await saveUsers(
+        tenant.users.map((u) =>
+          u.id === editingId
+            ? {
+                ...u,
+                username: draft.username.trim() || u.username,
+                password: draft.password ? draft.password : u.password,
+                email: draft.email.trim() || undefined,
+                roleLabel: draft.roleLabel.trim() || u.roleLabel,
+                permissions: draft.permissions,
+              }
+            : u,
+        ),
+      );
+      if (ok) resetDraft();
+      return;
+    }
+    if (draft.password.length < 6) {
+      setMsg("Password must be at least 6 characters");
       return;
     }
     const next: TenantUser = {
@@ -79,14 +129,8 @@ export default function StaffPage() {
       permissions: draft.permissions,
       active: true,
     };
-    await saveUsers([...tenant.users, next]);
-    setDraft({
-      username: "",
-      password: "",
-      email: "",
-      roleLabel: "Cashier",
-      permissions: ["home", "pos", "orders"],
-    });
+    const ok = await saveUsers([...tenant.users, next]);
+    if (ok) resetDraft();
   }
 
   async function toggleActive(id: string) {
@@ -95,6 +139,7 @@ export default function StaffPage() {
       setMsg("You cannot disable your own login");
       return;
     }
+    if (tenant.users.find((u) => u.id === id)?.active && !window.confirm("Disable this staff login?")) return;
     await saveUsers(tenant.users.map((u) => (u.id === id ? { ...u, active: !u.active } : u)));
   }
 
@@ -116,7 +161,12 @@ export default function StaffPage() {
 
         {canManage && (
           <form className={styles.form} onSubmit={(e) => void addStaff(e)}>
-            <h3 style={{ margin: 0 }}>Add staff</h3>
+            <h3 style={{ margin: 0 }}>{editingId ? "Edit staff" : "Add staff"}</h3>
+            {editingId && (
+              <p className={styles.muted}>
+                Leave password empty to keep the current one.
+              </p>
+            )}
             <p className={styles.muted}>Station presets (AsFix Counter / Kitchen)</p>
             <div className={styles.row}>
               {Object.entries(STATION_PRESETS).map(([id, preset]) => (
@@ -144,12 +194,12 @@ export default function StaffPage() {
               autoComplete="off"
             />
             <input
-              required
               type="password"
-              placeholder="Password (min 6)"
-              minLength={6}
+              placeholder={editingId ? "New password (leave empty to keep)" : "Password (min 6)"}
+              minLength={editingId ? undefined : 6}
               value={draft.password}
               onChange={(e) => setDraft({ ...draft, password: e.target.value })}
+              autoComplete="off"
             />
             <input
               type="email"
@@ -175,9 +225,16 @@ export default function StaffPage() {
                 </label>
               ))}
             </div>
-            <button type="submit" className={styles.btn}>
-              Add to this kitchen
-            </button>
+            <div className={styles.row}>
+              <button type="submit" className={styles.btn}>
+                {editingId ? "Save changes" : "Add to this kitchen"}
+              </button>
+              {editingId && (
+                <button type="button" className={styles.btnGhost} onClick={resetDraft}>
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
         )}
 
@@ -189,10 +246,19 @@ export default function StaffPage() {
                 {u.roleLabel} · {u.role} · {u.active ? "active" : "off"}
                 {u.email ? ` · ${u.email}` : ""}
               </p>
-              {canManage && u.id !== user?.id && (
-                <button type="button" className={styles.btnGhost} onClick={() => void toggleActive(u.id)}>
-                  {u.active ? "Disable" : "Enable"}
-                </button>
+              {canManage && (
+                <div className={styles.cardActions}>
+                  {u.id !== user?.id && (
+                    <button type="button" className={styles.btnGhost} onClick={() => startEdit(u)}>
+                      Edit
+                    </button>
+                  )}
+                  {u.id !== user?.id && (
+                    <button type="button" className={styles.btnGhost} onClick={() => void toggleActive(u.id)}>
+                      {u.active ? "Disable" : "Enable"}
+                    </button>
+                  )}
+                </div>
               )}
             </li>
           ))}
@@ -216,10 +282,19 @@ export default function StaffPage() {
                   <td>{(u.permissions || []).join(", ")}</td>
                   <td>{u.active ? "active" : "off"}</td>
                   <td>
-                    {canManage && u.id !== user?.id ? (
-                      <button type="button" className={styles.btnGhost} onClick={() => void toggleActive(u.id)}>
-                        {u.active ? "Disable" : "Enable"}
-                      </button>
+                    {canManage ? (
+                      <div className={styles.cardActions}>
+                        {u.id !== user?.id && (
+                          <button type="button" className={styles.btnGhost} onClick={() => startEdit(u)}>
+                            Edit
+                          </button>
+                        )}
+                        {u.id !== user?.id && (
+                          <button type="button" className={styles.btnGhost} onClick={() => void toggleActive(u.id)}>
+                            {u.active ? "Disable" : "Enable"}
+                          </button>
+                        )}
+                      </div>
                     ) : null}
                   </td>
                 </tr>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PrintSuccess } from "@/components/PrintSuccess";
 import { useStore } from "@/lib/store";
@@ -230,6 +230,16 @@ export default function OrdersPage() {
   }
 
   const dismissPrint = useCallback(() => setPrintKind(null), []);
+
+  // Close the "More" menu on Escape.
+  useEffect(() => {
+    if (!openMore) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenMore(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [openMore]);
 
   function openCancel(orderId: string) {
     setCancelId(orderId);

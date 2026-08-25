@@ -92,6 +92,28 @@ export default function SettingsPage() {
     }
   }
 
+  async function saveAppToggles(e: React.FormEvent) {
+    e.preventDefault();
+    const res = await api("/api/admin", {
+      method: "PUT",
+      body: JSON.stringify({
+        action: "branding",
+        branding: {
+          allowApk: Boolean(branding.allowApk),
+          scanOrderQr: Boolean(branding.scanOrderQr),
+        },
+        shop: {
+          deliveryEnabled: Boolean(branding.deliveryEnabled),
+        },
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setMsg(res.ok ? "App settings saved" : "Failed");
+    if (res.ok && (data as { tenant?: typeof tenant }).tenant) {
+      applyTenant((data as { tenant: NonNullable<typeof tenant> }).tenant);
+    }
+  }
+
   async function saveFees(e: React.FormEvent) {
     e.preventDefault();
     const res = await api("/api/admin", {
@@ -275,7 +297,7 @@ export default function SettingsPage() {
           </button>
         </form>
 
-        <form className={styles.form} onSubmit={saveBranding}>
+        <form className={styles.form} onSubmit={saveAppToggles}>
           <h3 style={{ margin: 0 }}>📱 Mobile App (per restaurant)</h3>
           <label className={styles.rowCheck}>
             <input
