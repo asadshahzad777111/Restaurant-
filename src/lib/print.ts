@@ -1,7 +1,8 @@
 import type { Order, TenantState } from "./tenant-types";
 import { tryNativeThermalPrint } from "./thermal/nativePosPrint";
-import { qrPrintImgMarkup } from "./qr-byte";
+import { qrPrintImgMarkup, RECEIPT_QR_PRINT_MM } from "./qr-byte";
 import { buildSlipEscPos, bytesToBase64 } from "./escpos-receipt";
+import { rasterizeLogoForEscPos } from "./receipt-logo";
 import {
   billKindLine,
   billStamp,
@@ -11,6 +12,8 @@ import {
   printableShopAddress,
   printableShopPhone,
   printedGrandTotal,
+  RECEIPT_QR_CAPTION,
+  receiptLogoUrl,
   shouldPrintGst,
 } from "./receipt-layout";
 
@@ -52,7 +55,7 @@ html, body {
   background: #fff;
 }
 .shop { text-align: center; margin-bottom: 2px; }
-.logo { display: block; width: 26mm; max-width: 26mm; height: auto; margin: 0 auto 2px; }
+.logo { display: block; width: 48mm; max-width: 48mm; max-height: 22mm; height: auto; margin: 0 auto 3px; object-fit: contain; }
 .name {
   display: block;
   font-size: 12px;
@@ -65,8 +68,9 @@ html, body {
 .rule { border: 0; border-top: 1px dashed #111; margin: 3px 0; }
 .meta { display: grid; gap: 1px; margin: 3px 0; font-size: 9.5px; }
 .cols { display: flex; justify-content: space-between; gap: 8px; font-size: 9.5px; font-weight: 700; }
-.qr { text-align: center; margin: 4px 0 2mm; }
-.qr svg, .qr .qr-img { width: 22mm; height: 22mm; display: block; margin: 0 auto; image-rendering: pixelated; }
+.qr { text-align: left; margin: 4px 0 4mm; }
+.qr svg, .qr .qr-img { width: ${RECEIPT_QR_PRINT_MM}mm; height: ${RECEIPT_QR_PRINT_MM}mm; display: block; margin: 0; image-rendering: pixelated; }
+.qr-cap { text-align: left; margin: 2px 0 0; font-size: 9px; font-weight: 700; }
 .item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -126,9 +130,8 @@ function itemRows(order: Order, withPrices: boolean) {
 }
 
 export function customerReceiptHtml(tenant: TenantState, order: Order) {
-  const printLogo = tenant.shop.printLogoOnBill !== false;
-  const logoSrc = tenant.branding.logoUrl || "/ordo-icon.svg";
-  const logo = printLogo ? `<img class="logo" src="${escapeHtml(logoSrc)}" alt="" />` : "";
+  const logoSrc = receiptLogoUrl(tenant);
+  const logo = logoSrc ? `<img class="logo" src="${escapeHtml(logoSrc)}" alt="" />` : "";
   const stamp = billStamp(order.createdAt);
   const f = order.fees;
   const phone = printableShopPhone(tenant.shop.phone);
@@ -176,7 +179,7 @@ export function customerReceiptHtml(tenant: TenantState, order: Order) {
   <p class="thanks">Thank you</p>
   <p class="visit">Visit again</p>
   ${extraFooter ? `<p class="center">${escapeHtml(extraFooter)}</p>` : ""}
-  <div class="qr">${qrPrintImgMarkup(qrUrl, 22)}<p class="center">Scan to order</p></div>
+  <div class="qr">${qrPrintImgMarkup(qrUrl, RECEIPT_QR_PRINT_MM)}<p class="qr-cap">${escapeHtml(RECEIPT_QR_CAPTION[0])}</p><p class="qr-cap">${escapeHtml(RECEIPT_QR_CAPTION[1])}</p></div>
 </main>
 </body></html>`;
 }
@@ -375,7 +378,7 @@ export function printHtml(html: string): Promise<boolean> {
   });
 }
 
-async function tryOptInBridge(text: string, qrUrl?: string | null): Promise<boolean> {
+async function tryOptInBridge(text: string, qrUrl?: string | null, logoRaster?: number[] | null): Promise<boolean> {
   if (typeof window === "undefined") return false;
   try {
     if (window.localStorage.getItem("ordo_thermal_bridge") !== "1") return false;
@@ -387,7 +390,7 @@ async function tryOptInBridge(text: string, qrUrl?: string | null): Promise<bool
   try {
     const payload: { text: string; data_base64?: string } = { text };
     try {
-      payload.data_base64 = bytesToBase64(buildSlipEscPos(text, qrUrl));
+      payload.data_base64 = bytesToBase64(buildSlipEscPos(text, qrUrl, logoRaster));
     } catch {
       /* text-only still useful */
     }
@@ -414,9 +417,18 @@ export async function printCustomerReceipt(tenant: TenantState, order: Order) {
   }
   const qrUrl = guestOrderPageUrl(tenant.code);
   const text = customerReceiptText(tenant, order);
-  const native = await tryNativeThermalPrint(text, { qrUrl });
+  const logoUrl = receiptLogoUrl(tenant);
+  let logoRaster: number[] | null = null;
+  if (logoUrl) {
+    try {
+      logoRaster = await rasterizeLogoForEscPos(logoUrl);
+    } catch {
+      logoRaster = null;
+    }
+  }
+  const native = await tryNativeThermalPrint(text, { qrUrl, logoRaster, logoUrl });
   if (native.ok) return true;
-  const bridged = await tryOptInBridge(text, qrUrl);
+  const bridged = await tryOptInBridge(text, qrUrl, logoRaster);
   if (bridged) return true;
   return printHtml(customerReceiptHtml(tenant, order));
 }

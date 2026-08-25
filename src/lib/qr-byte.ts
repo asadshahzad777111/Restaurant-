@@ -323,6 +323,34 @@ export function encodeQrMatrix(text: string): BitGrid {
   return best;
 }
 
+/** 58mm @ ~203 dpi. Target QR ~40–50% of paper (~160–200 dots). */
+export const RECEIPT_PAPER_DOTS = 384;
+export const RECEIPT_QR_TARGET_DOTS = 184;
+export const RECEIPT_QR_PRINT_MM = 28;
+
+/** Module scale so the raster QR lands around 160–200 dots, flush left. */
+export function qrScaleFor58mm(matrixModules: number, quiet = 2): number {
+  const cells = matrixModules + quiet * 2;
+  let best = 5;
+  let bestScore = Infinity;
+  for (let s = 5; s <= 7; s++) {
+    const dim = cells * s;
+    if (dim > RECEIPT_PAPER_DOTS) continue;
+    const inRange = dim >= 160 && dim <= 200;
+    const score = Math.abs(dim - RECEIPT_QR_TARGET_DOTS) + (inRange ? 0 : 80);
+    if (score < bestScore) {
+      bestScore = score;
+      best = s;
+    }
+  }
+  return best;
+}
+
+export function qrRasterDotSize(text: string, quiet = 2): number {
+  const n = encodeQrMatrix(text).length;
+  return (n + quiet * 2) * qrScaleFor58mm(n, quiet);
+}
+
 /** 1-bit BMP data URL — Windows POS-58 drivers often skip SVG; they do print images. */
 export function qrBmpDataUrl(text: string, scale = 4): string {
   const m = encodeQrMatrix(text);
@@ -370,8 +398,9 @@ export function qrBmpDataUrl(text: string, scale = 4): string {
   return `data:image/bmp;base64,${btoa(bin)}`;
 }
 
-export function qrPrintImgMarkup(text: string, mm = 22): string {
-  const src = qrBmpDataUrl(text, 4);
+export function qrPrintImgMarkup(text: string, mm = RECEIPT_QR_PRINT_MM): string {
+  const n = encodeQrMatrix(text).length;
+  const src = qrBmpDataUrl(text, qrScaleFor58mm(n));
   return `<img class="qr-img" alt="" width="${mm}mm" height="${mm}mm" src="${src}"/>`;
 }
 
@@ -389,17 +418,18 @@ export function qrSvgMarkup(text: string, mm = 22): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dim} ${dim}" width="${mm}mm" height="${mm}mm" shape-rendering="crispEdges" aria-hidden="true"><rect width="${dim}" height="${dim}" fill="#fff"/>${dark}</svg>`;
 }
 
-/** ESC/POS raster (GS v 0) — works on cheap 58mm printers without native QR firmware. */
-export function qrEscPosRaster(text: string, scale = 3, quiet = 2): number[] {
+/** ESC/POS raster (GS v 0) — left-aligned, ~160–200 dots on 384-dot 58mm. */
+export function qrEscPosRaster(text: string, scale?: number, quiet = 2): number[] {
   const m = encodeQrMatrix(text);
   const n = m.length;
-  const dim = (n + quiet * 2) * scale;
+  const s = scale && scale > 0 ? scale : qrScaleFor58mm(n, quiet);
+  const dim = (n + quiet * 2) * s;
   const byteW = Math.ceil(dim / 8);
   const bytes = new Array(byteW * dim).fill(0);
   for (let y = 0; y < dim; y++) {
-    const my = Math.floor(y / scale) - quiet;
+    const my = Math.floor(y / s) - quiet;
     for (let x = 0; x < dim; x++) {
-      const mx = Math.floor(x / scale) - quiet;
+      const mx = Math.floor(x / s) - quiet;
       const on = mx >= 0 && my >= 0 && mx < n && my < n && m[my][mx];
       if (on) bytes[y * byteW + (x >> 3)] |= 0x80 >> (x & 7);
     }
@@ -407,7 +437,7 @@ export function qrEscPosRaster(text: string, scale = 3, quiet = 2): number[] {
   return [
     0x1b,
     0x61,
-    0x01,
+    0x00,
     0x1d,
     0x76,
     0x30,

@@ -32,7 +32,7 @@ export interface TenantShop {
    * There is no dedicated FBR page — fields stay inside Settings when allowed.
    */
   fbrEnabled?: boolean;
-  /** Print branding logo on 58mm customer bill (AsFix tick-on-print). Default true when logo set. */
+  /** Print branding logo on the 58mm customer bill. Off by default — only when Settings is ticked and a logo is uploaded. */
   printLogoOnBill?: boolean;
   /** Print GST/Tax on the 58mm bill. Off by default — tax is not invented or printed until ticked. */
   printGstOnBill?: boolean;

@@ -146,9 +146,21 @@ export async function connectPrinter(address: string) {
   return plugin.connect({ address });
 }
 
+async function logoBytes(opts?: { logoRaster?: ArrayLike<number> | null; logoUrl?: string | null }) {
+  if (opts?.logoRaster && opts.logoRaster.length) return Array.from(opts.logoRaster);
+  const url = String(opts?.logoUrl || "").trim();
+  if (!url) return null;
+  try {
+    const { rasterizeLogoForEscPos } = await import("../receipt-logo");
+    return await rasterizeLogoForEscPos(url);
+  } catch {
+    return null;
+  }
+}
+
 export async function nativePrintText(
   text: string,
-  opts?: { address?: string; qrUrl?: string | null },
+  opts?: { address?: string; qrUrl?: string | null; logoRaster?: ArrayLike<number> | null; logoUrl?: string | null },
 ): Promise<NativePrintResult> {
   if (!isNativeStaffApp()) return { ok: false, reason: "not_native" };
   const plugin = getPlugin();
@@ -157,12 +169,13 @@ export async function nativePrintText(
   const address = opts?.address || saved?.address;
   if (!address) return { ok: false, reason: "no_printer", message: "Tap Printer, then Use this" };
   const qrUrl = opts?.qrUrl?.trim() || "";
+  const logoRaster = await logoBytes(opts);
   const padded = `\n\n\n${String(text || "").replace(/^\n+/, "")}`;
   try {
     await requestThermalPrintPermissions();
     await plugin.connect({ address });
     if (plugin.printEscPos) {
-      const bytes = buildSlipEscPos(text, qrUrl || null);
+      const bytes = buildSlipEscPos(text, qrUrl || null, logoRaster);
       await plugin.printEscPos({ dataBase64: bytesToBase64(bytes), address });
       return { ok: true };
     }
@@ -171,7 +184,7 @@ export async function nativePrintText(
   } catch (err) {
     try {
       if (plugin.printEscPos) {
-        const bytes = buildSlipEscPos(text, qrUrl || null);
+        const bytes = buildSlipEscPos(text, qrUrl || null, logoRaster);
         await plugin.printEscPos({ dataBase64: bytesToBase64(bytes), address });
         return { ok: true };
       }
@@ -190,10 +203,15 @@ export async function nativePrintText(
 /** Prefer native Bluetooth when in Staff APK + saved printer; else caller falls back to HTML print. */
 export async function tryNativeThermalPrint(
   receiptText: string,
-  opts?: { qrUrl?: string | null },
+  opts?: { qrUrl?: string | null; logoRaster?: ArrayLike<number> | null; logoUrl?: string | null },
 ): Promise<NativePrintResult> {
   if (!isNativeStaffApp()) return { ok: false, reason: "not_native" };
   const saved = await getSavedPrinter();
   if (!saved?.address) return { ok: false, reason: "no_printer" };
-  return nativePrintText(receiptText, { address: saved.address, qrUrl: opts?.qrUrl });
+  return nativePrintText(receiptText, {
+    address: saved.address,
+    qrUrl: opts?.qrUrl,
+    logoRaster: opts?.logoRaster,
+    logoUrl: opts?.logoUrl,
+  });
 }

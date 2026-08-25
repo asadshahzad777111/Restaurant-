@@ -18,7 +18,7 @@ import { useMongo } from "./env";
 import { getDb } from "./mongo";
 import { customerReceiptText, kitchenTicketText } from "./print";
 import type { Order, TenantState } from "./tenant-types";
-import { guestOrderPageUrl, sanitizeGuestOrderQrUrl } from "./receipt-layout";
+import { guestOrderPageUrl, receiptLogoUrl, sanitizeGuestOrderQrUrl, sanitizeReceiptLogoUrl } from "./receipt-layout";
 
 export type PrintJobKind = "bill" | "kitchen";
 export type PrintJobStatus = "queued" | "printing" | "done" | "failed";
@@ -31,6 +31,8 @@ export type PrintJob = {
   html?: string;
   /** Guest order URL for this kitchen — Staff APK prints a compact QR under the bill. */
   qrUrl?: string | null;
+  /** Shop logo URL when Settings "Print logo on bill" is on. */
+  logoUrl?: string | null;
   orderId?: string | null;
   orderRef?: string | null;
   createdAt: string;
@@ -266,6 +268,7 @@ export async function createPrintJob(
     text?: string;
     html?: string;
     qrUrl?: string | null;
+    logoUrl?: string | null;
     orderId?: string | null;
     orderRef?: string | null;
   },
@@ -279,6 +282,7 @@ export async function createPrintJob(
     text: typeof input.text === "string" ? input.text : "",
     html: typeof input.html === "string" ? input.html : undefined,
     qrUrl: sanitizeGuestOrderQrUrl(typeof input.qrUrl === "string" ? input.qrUrl : null),
+    logoUrl: sanitizeReceiptLogoUrl(typeof input.logoUrl === "string" ? input.logoUrl : null),
     orderId: input.orderId ?? null,
     orderRef: input.orderRef ?? null,
     createdAt: new Date().toISOString(),
@@ -338,6 +342,7 @@ export async function listQueuedPrintJobs(tenantId: string): Promise<PrintJob[]>
       text: String(d.text || ""),
       html: typeof d.html === "string" ? d.html : undefined,
       qrUrl: typeof d.qrUrl === "string" ? d.qrUrl : null,
+      logoUrl: typeof d.logoUrl === "string" ? d.logoUrl : null,
       orderId: (d.orderId as string) ?? null,
       orderRef: (d.orderRef as string) ?? null,
       createdAt: String(d.createdAt),
@@ -387,6 +392,7 @@ export async function updatePrintJob(
       text: String(d.text || ""),
       html: d.html,
       qrUrl: d.qrUrl ?? null,
+      logoUrl: d.logoUrl ?? null,
       orderId: d.orderId ?? null,
       orderRef: d.orderRef ?? null,
       createdAt: String(d.createdAt),
@@ -422,6 +428,7 @@ export async function enqueueOrderSlip(
     kind,
     text,
     qrUrl: kind === "bill" ? guestOrderPageUrl(tenant.code) : null,
+    logoUrl: kind === "bill" ? receiptLogoUrl(tenant) : null,
     orderId: order.id,
     orderRef: `#${order.number}`,
   });

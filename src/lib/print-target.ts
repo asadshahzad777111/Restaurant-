@@ -22,12 +22,13 @@ export async function fetchBridgeStatus(): Promise<PrintBridgeStatus> {
 
 export async function enqueueSlip(tenant: TenantState, order: Order, kind: "bill" | "kitchen") {
   const { customerReceiptText, kitchenTicketText } = await import("@/lib/print");
-  const { guestOrderPageUrl } = await import("@/lib/receipt-layout");
+  const { guestOrderPageUrl, receiptLogoUrl } = await import("@/lib/receipt-layout");
   const text = kind === "kitchen" ? kitchenTicketText(tenant, order) : customerReceiptText(tenant, order);
   await printApi.createPrintJob({
     kind,
     text,
     qrUrl: kind === "bill" ? guestOrderPageUrl(tenant.code) : null,
+    logoUrl: kind === "bill" ? receiptLogoUrl(tenant) : null,
     orderId: order.id,
     orderRef: `#${order.number}`,
   });

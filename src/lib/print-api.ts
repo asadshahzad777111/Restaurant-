@@ -61,6 +61,7 @@ export type BridgePrintJob = {
   text: string;
   html?: string;
   qrUrl?: string | null;
+  logoUrl?: string | null;
   orderId?: string | null;
   orderRef?: string | null;
   status: string;
@@ -72,6 +73,7 @@ export const printApi = {
     text?: string;
     html?: string;
     qrUrl?: string | null;
+    logoUrl?: string | null;
     orderId?: string;
     orderRef?: string;
     target?: string;

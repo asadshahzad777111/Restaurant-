@@ -1,11 +1,15 @@
 /** ESC/POS bytes for a 58mm bill: UTF-8 text + QR (Zijiang ESC Z + raster). No Buffer. */
 
 import { qrEscPosRaster } from "./qr-byte";
+import { RECEIPT_QR_CAPTION } from "./receipt-layout";
 
 /** Cheap 58mm printers clip ~8–12mm after a cut — feed before the shop name. */
 const TOP_FEED = [0x0a, 0x0a, 0x0a, 0x0a];
-/** Extra feed so the QR is not in the blade zone. */
-const BOTTOM_FEED = [0x0a, 0x0a, 0x0a, 0x0a];
+/** Extra feed so the bigger QR is not in the blade zone. */
+const BOTTOM_FEED = [0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a];
+/** Zijiang module size — mag 6 ≈ 170–200 dots on typical guest-order URLs. */
+export const ZIJIANG_QR_MAG = 6;
+const ALIGN_LEFT = [0x1b, 0x61, 0x00];
 
 function utf8(str: string): number[] {
   const out: number[] = [];
@@ -47,16 +51,15 @@ export function bytesToBase64(bytes: Uint8Array): string {
 }
 
 /**
- * Zijiang / POS-58 native QR (this kit): ESC Z v ecc mag nL nH data.
- * Mag 4 stays compact on 384-dot 58mm. Printers without ESC Z still get the raster below.
+ * Zijiang / POS-58 native QR: ESC Z v ecc mag nL nH data.
+ * Mag 6 is scannable on 384-dot 58mm. Left-aligned (not centered).
+ * Printers without ESC Z still get the raster below.
  */
-export function escPosQrZijiang(url: string, mag = 4): number[] {
+export function escPosQrZijiang(url: string, mag = ZIJIANG_QR_MAG): number[] {
   const data = utf8(url);
   const size = Math.max(3, Math.min(8, mag));
   return [
-    0x1b,
-    0x61,
-    0x01,
+    ...ALIGN_LEFT,
     0x1b,
     0x5a,
     0x00,
@@ -69,15 +72,27 @@ export function escPosQrZijiang(url: string, mag = 4): number[] {
   ];
 }
 
-/** Full slip: init, top feed, body, QR, bottom feed, partial cut (GS V 1). */
-export function buildSlipEscPos(text: string, qrUrl?: string | null): Uint8Array {
+function qrCaptionBytes(): number[] {
+  return [...ALIGN_LEFT, ...utf8(RECEIPT_QR_CAPTION[0]), 0x0a, ...utf8(RECEIPT_QR_CAPTION[1]), 0x0a];
+}
+
+/** Full slip: init, optional logo, top feed, body, left QR, captions, bottom feed, partial cut (GS V 1). */
+export function buildSlipEscPos(
+  text: string,
+  qrUrl?: string | null,
+  logoRaster?: ArrayLike<number> | null,
+): Uint8Array {
   const body = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/^\n+/, "");
-  const parts: number[][] = [[0x1b, 0x40], [0x1b, 0x61, 0x00], TOP_FEED, utf8(body), [0x0a, 0x0a]];
+  const parts: number[][] = [[0x1b, 0x40], ALIGN_LEFT, TOP_FEED];
+  if (logoRaster && logoRaster.length) {
+    parts.push(Array.from(logoRaster), [0x0a]);
+  }
+  parts.push(utf8(body), [0x0a, 0x0a]);
   const url = String(qrUrl || "").trim();
   if (url) {
-    parts.push(escPosQrZijiang(url, 4));
-    parts.push(qrEscPosRaster(url, 3, 2));
-    parts.push([0x1b, 0x61, 0x01], utf8("Scan to order"), [0x0a, 0x1b, 0x61, 0x00]);
+    parts.push(escPosQrZijiang(url, ZIJIANG_QR_MAG));
+    parts.push(qrEscPosRaster(url));
+    parts.push(qrCaptionBytes());
   }
   parts.push(BOTTOM_FEED, [0x1d, 0x56, 0x01]);
   return concat(parts);

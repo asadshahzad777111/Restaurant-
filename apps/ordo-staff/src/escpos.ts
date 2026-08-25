@@ -88,14 +88,14 @@ export function buildReceiptEscPos(
   return concat(parts);
 }
 
-/** Zijiang / POS-58 native QR: ESC Z v ecc mag nL nH data. */
-export function escPosQrZijiang(url: string, mag = 4): number[] {
+/** Zijiang / POS-58 native QR: ESC Z v ecc mag nL nH data. Left-aligned, mag 6 ≈ scannable on 58mm. */
+export function escPosQrZijiang(url: string, mag = 6): number[] {
   const data = utf8(url);
   const size = Math.max(3, Math.min(8, mag));
   return [
     0x1b,
     0x61,
-    1,
+    0,
     0x1b,
     0x5a,
     0x00,
@@ -108,14 +108,14 @@ export function escPosQrZijiang(url: string, mag = 4): number[] {
   ];
 }
 
-/** GS ( k QR — compact 58mm; printer firmware draws the code. */
-export function escPosQr(url: string, moduleSize = 4): number[] {
+/** GS ( k QR — left-aligned, module size 6 for 58mm scan. */
+export function escPosQr(url: string, moduleSize = 6): number[] {
   const data = utf8(url);
   const storeLen = data.length + 3;
   return [
     0x1b,
     0x61,
-    1,
+    0,
     0x1d,
     0x28,
     0x6b,
@@ -160,6 +160,8 @@ export function escPosQr(url: string, moduleSize = 4): number[] {
     0x30,
     0x0a,
     ...utf8("Scan to order"),
+    0x0a,
+    ...utf8("Open menu"),
     0x0a,
     0x1b,
     0x61,

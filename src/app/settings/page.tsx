@@ -28,7 +28,7 @@ export default function SettingsPage() {
     serviceChargePercent: 0,
     taxRate: 0,
   });
-  const [printLogoOnBill, setPrintLogoOnBill] = useState(true);
+  const [printLogoOnBill, setPrintLogoOnBill] = useState(false);
   const [printGstOnBill, setPrintGstOnBill] = useState(false);
   const [fbrEnabled, setFbrEnabled] = useState(false);
   const [pw, setPw] = useState({ current: "", next: "" });
@@ -50,7 +50,7 @@ export default function SettingsPage() {
       serviceChargePercent: tenant.shop.serviceChargePercent || 0,
       taxRate: tenant.shop.taxRate || 0,
     });
-    setPrintLogoOnBill(tenant.shop.printLogoOnBill !== false);
+    setPrintLogoOnBill(tenant.shop.printLogoOnBill === true);
     setPrintGstOnBill(tenant.shop.printGstOnBill === true);
     setFbrEnabled(Boolean(tenant.shop.fbrEnabled));
     setEmailDraft(user?.email || "");
@@ -72,7 +72,7 @@ export default function SettingsPage() {
           receiptFooter: branding.receiptFooter,
           allowApk: Boolean(branding.allowApk),
         },
-        shop: { address: branding.address, phone: branding.phone },
+        shop: { address: branding.address, phone: branding.phone, printLogoOnBill },
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -88,7 +88,7 @@ export default function SettingsPage() {
       method: "PUT",
       body: JSON.stringify({
         action: "fees",
-        shop: { ...fees, printLogoOnBill, printGstOnBill },
+        shop: { ...fees, printGstOnBill },
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -233,6 +233,17 @@ export default function SettingsPage() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={branding.logoUrl} alt="" style={{ maxWidth: 120, maxHeight: 80, objectFit: "contain" }} />
           ) : null}
+          <label className={styles.rowCheck}>
+            <input
+              type="checkbox"
+              checked={printLogoOnBill}
+              onChange={(e) => setPrintLogoOnBill(e.target.checked)}
+            />
+            Print logo on bill
+          </label>
+          <p className={styles.muted} style={{ margin: 0 }}>
+            Off by default. Tick this after you upload a logo — it prints at the top of the 58mm bill.
+          </p>
           <textarea
             value={branding.receiptFooter}
             onChange={(e) => setBranding({ ...branding, receiptFooter: e.target.value })}
@@ -317,14 +328,6 @@ export default function SettingsPage() {
           <p className={styles.muted} style={{ margin: 0 }}>
             Off by default. GST/Tax is not printed (and not added) until this is ticked.
           </p>
-          <label className={styles.muted}>
-            <input
-              type="checkbox"
-              checked={printLogoOnBill}
-              onChange={(e) => setPrintLogoOnBill(e.target.checked)}
-            />{" "}
-            Print logo on 58mm customer bill (AsFix tick-on-print)
-          </label>
           <button type="submit" className={styles.btn}>
             Save fees
           </button>

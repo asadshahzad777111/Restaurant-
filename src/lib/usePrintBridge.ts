@@ -66,6 +66,7 @@ function usePrintBridgeState(): PrintBridgeHook {
           const out = await nativePrintText(job.text, {
             address: printer.address,
             qrUrl: job.kind === "bill" ? job.qrUrl || null : null,
+            logoUrl: job.kind === "bill" ? job.logoUrl || null : null,
           });
           await printApi.ack(job.id, {
             status: out.ok ? "done" : "failed",

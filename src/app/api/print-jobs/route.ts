@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
       kind: body.kind === "kitchen" ? "kitchen" : "bill",
       text: typeof body.text === "string" ? body.text : "",
       qrUrl: typeof body.qrUrl === "string" ? body.qrUrl : undefined,
+      logoUrl: typeof body.logoUrl === "string" ? body.logoUrl : undefined,
       orderId: (body.orderId as string) ?? (body.order_id as string) ?? null,
       orderRef: (body.orderRef as string) ?? (body.order_ref as string) ?? null,
     });

@@ -54,6 +54,39 @@ export function shouldPrintGst(shop?: { printGstOnBill?: boolean } | null): bool
   return shop?.printGstOnBill === true;
 }
 
+/** 58mm QR caption — short so it does not wrap. Same copy on ESC/POS and HTML. */
+export const RECEIPT_QR_CAPTION = ["Scan to order", "Open menu"] as const;
+
+/** Print the uploaded shop logo on the bill only when the admin ticks Settings. Off by default. */
+export function shouldPrintLogoOnBill(tenant?: {
+  shop?: { printLogoOnBill?: boolean } | null;
+  branding?: { logoUrl?: string } | null;
+} | null): boolean {
+  if (tenant?.shop?.printLogoOnBill !== true) return false;
+  return Boolean(String(tenant.branding?.logoUrl || "").trim());
+}
+
+export function receiptLogoUrl(tenant?: {
+  shop?: { printLogoOnBill?: boolean } | null;
+  branding?: { logoUrl?: string } | null;
+} | null): string | null {
+  if (!shouldPrintLogoOnBill(tenant)) return null;
+  return String(tenant?.branding?.logoUrl || "").trim() || null;
+}
+
+export function sanitizeReceiptLogoUrl(raw?: string | null): string | null {
+  const s = String(raw || "").trim();
+  if (!s) return null;
+  if (s.startsWith("/") && !s.startsWith("//")) return s.slice(0, 500);
+  try {
+    const u = new URL(s);
+    if (u.protocol === "https:" || u.protocol === "http:") return s.slice(0, 500);
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
 export function printedGrandTotal(order: Order, printGst: boolean): number {
   const tax = Number(order.fees?.tax) || 0;
   const total = Number(order.total) || 0;

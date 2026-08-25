@@ -155,10 +155,10 @@ export async function printOrder(
   const code = (opts?.tenantCode || "").trim().toUpperCase();
   if (code) {
     const url = `https://ordo.asfins.com/order?tenant=${encodeURIComponent(code)}`;
-    tail.push(...escPosQrZijiang(url, 4));
-    tail.push(...escPosQr(url, 4));
+    tail.push(...escPosQrZijiang(url, 6));
+    tail.push(...escPosQr(url, 6));
   }
-  tail.push(0x0a, 0x0a, 0x0a, 0x0a, 0x1d, 0x56, 0x00);
+  tail.push(0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x1d, 0x56, 0x00);
   const out = new Uint8Array(bytes.length + tail.length);
   out.set(bytes);
   out.set(tail, bytes.length);

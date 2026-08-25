@@ -52,6 +52,7 @@ function normalizeTenant(raw: TenantState): TenantState {
       serviceChargePercent: raw.shop?.serviceChargePercent ?? 0,
       taxRate: raw.shop?.taxRate ?? 0,
       printGstOnBill: raw.shop?.printGstOnBill === true,
+      printLogoOnBill: raw.shop?.printLogoOnBill === true,
     },
     payments: normalizeTenantPayments(raw.payments),
     specialOffer: normalizeSpecialOffer(raw.specialOffer),
