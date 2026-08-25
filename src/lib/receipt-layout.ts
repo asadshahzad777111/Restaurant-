@@ -131,14 +131,53 @@ export function serviceCompact(order: Order): string {
   return bits.join(" · ");
 }
 
-export function billStamp(iso: string): { date: string; time: string; line: string } {
-  const d = new Date(iso);
+/** Lahore / Islamabad — Pakistan Standard Time. Never UTC, never the host TZ. */
+export const RECEIPT_TZ = "Asia/Karachi";
+
+function pkParts(d: Date): Partial<Record<Intl.DateTimeFormatPartTypes, string>> {
+  const fmt = new Intl.DateTimeFormat("en-PK", {
+    timeZone: RECEIPT_TZ,
+    day: "2-digit",
+    month: "2-digit",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+  const bag: Partial<Record<Intl.DateTimeFormatPartTypes, string>> = {};
+  for (const part of fmt.formatToParts(d)) {
+    if (part.type !== "literal") bag[part.type] = part.value;
+  }
+  return bag;
+}
+
+function amPm(d: Date, dayPeriod?: string): "AM" | "PM" {
+  const cleaned = String(dayPeriod || "")
+    .replace(/\./g, "")
+    .replace(/\s/g, "")
+    .toUpperCase();
+  if (cleaned === "AM" || cleaned.startsWith("AM")) return "AM";
+  if (cleaned === "PM" || cleaned.startsWith("PM")) return "PM";
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: RECEIPT_TZ,
+      hour: "2-digit",
+      hourCycle: "h23",
+    }).format(d),
+  );
+  return hour >= 12 ? "PM" : "AM";
+}
+
+/** Compact 58mm stamp: `24/08  6:11 PM` in Pakistan time. Converts ISO/UTC correctly. */
+export function billStamp(iso?: string | null): { date: string; time: string; line: string } {
+  const d = iso ? new Date(iso) : new Date();
   if (Number.isNaN(d.getTime())) return { date: "—", time: "—", line: "—" };
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mi = String(d.getMinutes()).padStart(2, "0");
-  return { date: `${dd}/${mm}`, time: `${hh}:${mi}`, line: `${dd}/${mm} ${hh}:${mi}` };
+  const p = pkParts(d);
+  const date = p.day && p.month ? `${p.day}/${p.month}` : "—";
+  const hourNum = Number(p.hour);
+  const hour = Number.isFinite(hourNum) && hourNum > 0 ? String(hourNum) : p.hour || "12";
+  const minute = String(p.minute || "00").padStart(2, "0");
+  const time = `${hour}:${minute} ${amPm(d, p.dayPeriod)}`;
+  return { date, time, line: `${date}  ${time}` };
 }
 
 /** Line 2: Cash - Counter — skip redundant “cash sale” / POS. */

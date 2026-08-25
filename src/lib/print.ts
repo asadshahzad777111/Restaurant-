@@ -437,7 +437,7 @@ export async function printCustomerReceipt(tenant: TenantState, order: Order) {
 
 export async function printTestSlip(tenant: TenantState) {
   const name = tenant.branding.name || "ORDO";
-  const when = new Date().toLocaleString("en-PK");
+  const when = billStamp().line;
   const text = `${name}\nTEST PRINT\n${when}\nPrinter OK\n\n\n`;
   const native = await tryNativeThermalPrint(text);
   if (native.ok) return true;

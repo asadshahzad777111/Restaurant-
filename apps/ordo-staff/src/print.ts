@@ -2,6 +2,43 @@ import { buildReceiptEscPos, receiptRows, escPosQr, escPosQrZijiang } from "./es
 import { getPrinter, type PrinterConfig } from "./printerStorage";
 import type { Order } from "./types";
 
+const RECEIPT_TZ = "Asia/Karachi";
+
+/** Compact 58mm stamp: `24/08  6:11 PM` in Pakistan time. Converts ISO/UTC correctly. */
+function pkBillStamp(iso?: string | null): string {
+  const d = iso ? new Date(iso) : new Date();
+  if (Number.isNaN(d.getTime())) return "—";
+  const fmt = new Intl.DateTimeFormat("en-PK", {
+    timeZone: RECEIPT_TZ,
+    day: "2-digit",
+    month: "2-digit",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+  const bag: Record<string, string> = {};
+  for (const part of fmt.formatToParts(d)) {
+    if (part.type !== "literal") bag[part.type] = part.value;
+  }
+  const period = String(bag.dayPeriod || "")
+    .replace(/\./g, "")
+    .replace(/\s/g, "")
+    .toUpperCase();
+  let ampm: "AM" | "PM";
+  if (period.startsWith("PM")) ampm = "PM";
+  else if (period.startsWith("AM")) ampm = "AM";
+  else {
+    const h = Number(
+      new Intl.DateTimeFormat("en-GB", { timeZone: RECEIPT_TZ, hour: "2-digit", hourCycle: "h23" }).format(d),
+    );
+    ampm = h >= 12 ? "PM" : "AM";
+  }
+  const hourNum = Number(bag.hour);
+  const hour = Number.isFinite(hourNum) && hourNum > 0 ? String(hourNum) : bag.hour || "12";
+  const minute = String(bag.minute || "00").padStart(2, "0");
+  return `${bag.day}/${bag.month}  ${hour}:${minute} ${ampm}`;
+}
+
 function toBase64(bytes: Uint8Array): string {
   let bin = "";
   for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
@@ -118,8 +155,7 @@ export async function printOrder(
   opts?: { tenantCode?: string; printGst?: boolean },
 ): Promise<boolean> {
   const printer = await getPrinter();
-  const d = new Date(order.createdAt);
-  const stamp = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const stamp = pkBillStamp(order.createdAt);
   const pay = (order.paymentMethod || "cash").toLowerCase().replace(/[_-]+/g, " ");
   const payLabel = !pay || pay === "cash" || pay === "cash sale" ? "Cash" : pay;
   const svc = (order.serviceType || "counter").replace(/[_-]+/g, " ");
@@ -171,7 +207,7 @@ export async function printTestSlip(): Promise<boolean> {
   const rows = receiptRows({
     shop: "ORDO PRINT TEST",
     billNo: "#TEST",
-    date: new Date().toLocaleString(),
+    date: pkBillStamp(),
     lines: [{ name: "Test slip", qty: 1, amount: "OK" }],
     total: "0",
     footer: printer ? `Printer: ${printer.name} ${printer.mac ? printer.mac : printer.ip || ""}` : "Ready",
