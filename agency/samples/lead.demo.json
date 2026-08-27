@@ -1,0 +1,18 @@
+{
+  "business_name": "Lahore Grill House",
+  "city": "Lahore",
+  "category": "restaurant",
+  "phone": "+92-300-0000000",
+  "email": "owner@example.com",
+  "whatsapp": "+923000000000",
+  "address": "MM Alam Road, Lahore",
+  "tagline": "Charcoal grills, late nights, family tables",
+  "highlights": [
+    "Open till 2am",
+    "Family seating",
+    "Live BBQ counter"
+  ],
+  "missing_website": true,
+  "notes": "Mock lead for dry-run — replace with consented CRM export",
+  "preferred_plan": "pro"
+}
