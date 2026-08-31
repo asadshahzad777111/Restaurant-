@@ -176,9 +176,49 @@ export function StaffAlerts() {
       }
     }
 
-    // New orders reach /kitchen + /orders fast: poll every 3s, and the instant the
-    // staff tab regains focus (browser throttles timers in background tabs).
+    // Live SSE push (order-events bus) — instant updates, no waiting for the poll.
+    // Polling stays below as the fallback when the stream drops or is unsupported.
+    let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+    let streamClosed = false;
+
+    async function openStream() {
+      try {
+        const res = await api("/api/orders/stream");
+        if (!res.ok || !res.body || cancelled) return;
+        reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        // The route never sends terminal data; parse `data: …` lines as they arrive.
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done || cancelled) break;
+          const text = decoder.decode(value, { stream: true });
+          if (text.includes("data:")) {
+            // Any event for this tenant = orders changed → refresh immediately.
+            void tick();
+          }
+        }
+      } catch {
+        /* stream dropped — polling covers us */
+      } finally {
+        if (!cancelled) {
+          // Reconnect with backoff so transient blips self-heal.
+          streamClosed = true;
+        }
+      }
+    }
+
     const id = window.setInterval(() => void tick(), 3000);
+    let retry = 0;
+    const reconnectTimer = window.setInterval(() => {
+      if (cancelled) return;
+      if (streamClosed) {
+        streamClosed = false;
+        retry = Math.min(retry + 1, 6);
+        void openStream();
+      }
+    }, 5000 * (retry + 1));
+    void openStream();
+
     const onFocus = () => {
       void tick();
       resumeStaffAlertAudioIfNeeded();
@@ -193,7 +233,9 @@ export function StaffAlerts() {
     document.addEventListener("visibilitychange", onVis);
     return () => {
       cancelled = true;
+      if (reader) void reader.cancel().catch(() => undefined);
       window.clearInterval(id);
+      window.clearInterval(reconnectTimer);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVis);
     };

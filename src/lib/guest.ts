@@ -1,5 +1,6 @@
 import type { PaymentMethod, ServiceType } from "./types";
 import { paymentChoicesFor } from "./payments";
+import { CANONICAL_LIFECYCLE } from "./order-machine";
 
 export type GuestMode = "table" | "pickup" | "delivery";
 
@@ -85,9 +86,9 @@ export function isTenantCode(value: string) {
 
 export function trackSteps(serviceType: string): string[] {
   if (serviceType === "delivery") {
-    return ["placed", "accepted", "preparing", "ready", "out_for_delivery", "completed"];
+    return [...CANONICAL_LIFECYCLE]; // placed → … → out_for_delivery → completed
   }
-  return ["placed", "accepted", "preparing", "ready", "completed"];
+  return CANONICAL_LIFECYCLE.filter((s) => s !== "out_for_delivery");
 }
 
 export function modeLabel(mode: ServiceType | string) {

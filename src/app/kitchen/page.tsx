@@ -7,15 +7,13 @@ import { useStore } from "@/lib/store";
 import { PrintTargetChooser } from "@/components/PrintTargetChooser";
 import { PrintBridgeBar } from "@/components/PrintBridgeBar";
 import { enqueueSlip, executeLocalPrint, shouldOpenPrintChooser } from "@/lib/print-target";
+import { PRIMARY_NEXT } from "@/lib/order-machine";
 import type { OrderStatus } from "@/lib/types";
 import type { Order } from "@/lib/tenant-types";
 import styles from "../staff.module.css";
 
-const KITCHEN_NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
-  placed: "accepted",
-  accepted: "preparing",
-  preparing: "ready",
-};
+/** Single source of truth from the order state machine (lib/order-machine). */
+const KITCHEN_NEXT = PRIMARY_NEXT;
 
 const LANES: { status: OrderStatus; title: string }[] = [
   { status: "placed", title: "New" },

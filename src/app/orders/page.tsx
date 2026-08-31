@@ -9,19 +9,15 @@ import { PrintTargetChooser } from "@/components/PrintTargetChooser";
 import { PrintBridgeBar } from "@/components/PrintBridgeBar";
 import { enqueueSlip, executeLocalPrint, shouldOpenPrintChooser } from "@/lib/print-target";
 import { copyText, statusMessage, whatsappShareUrl } from "@/lib/status-messages";
+import { PRIMARY_NEXT, ACTIVE_STATUSES } from "@/lib/order-machine";
 import type { DiningTable, Order } from "@/lib/tenant-types";
 import type { OrderStatus } from "@/lib/types";
 import styles from "./orders.module.css";
 
-const NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
-  placed: "accepted",
-  accepted: "preparing",
-  preparing: "ready",
-  ready: "completed",
-  out_for_delivery: "completed",
-};
+/** Single source of truth from the order state machine (lib/order-machine). */
+const NEXT = PRIMARY_NEXT;
 
-const ACTIVE: OrderStatus[] = ["placed", "accepted", "preparing", "ready", "out_for_delivery"];
+const ACTIVE: OrderStatus[] = [...ACTIVE_STATUSES];
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   placed: "Placed",

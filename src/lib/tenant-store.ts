@@ -12,6 +12,9 @@ import type {
   TenantPayments,
   TenantSpecialOffer,
 } from "./tenant-types";
+import type { Rider } from "./rider-types";
+import type { DispatchOffer } from "./rider-types";
+import type { Promo, PromoUsage } from "./promo";
 import { ensureBootstrap } from "./bootstrap";
 import { normalizeSpecialOffer, normalizeTenantPayments } from "./payments";
 import { printableShopPhone } from "./receipt-layout";
@@ -451,4 +454,148 @@ export function addReview(tenantId: string, review: Omit<Review, "id" | "created
   t.reviews.unshift(full);
   writeTenant(t);
   return full;
+}
+
+/* ---------- Riders (Phase 2 delivery) ---------- */
+
+function ridersOf(t: TenantState): Rider[] {
+  return t.riders ?? [];
+}
+
+export function listRiders(tenantId: string): Rider[] {
+  return ridersOf(readTenant(tenantId));
+}
+
+/** Create or update a rider by id (idempotent upsert). */
+export function upsertRider(tenantId: string, rider: Rider): Rider {
+  const t = readTenant(tenantId);
+  const riders = ridersOf(t);
+  const idx = riders.findIndex((r) => r.id === rider.id);
+  const stamped: Rider = { ...rider, updatedAt: new Date().toISOString() };
+  if (idx >= 0) riders[idx] = stamped;
+  else riders.push(stamped);
+  t.riders = riders;
+  writeTenant(t);
+  return stamped;
+}
+
+/** Set a rider's online/offline state + optional location ping. */
+export function updateRiderPresence(
+  tenantId: string,
+  riderId: string,
+  input: { online?: boolean; lat?: number; lng?: number },
+): Rider | null {
+  const t = readTenant(tenantId);
+  const riders = ridersOf(t);
+  const idx = riders.findIndex((r) => r.id === riderId);
+  if (idx < 0) return null;
+  const cur = riders[idx];
+  const next: Rider = {
+    ...cur,
+    online: input.online ?? cur.online,
+    lastLocation: input.lat != null && input.lng != null
+      ? { lat: input.lat, lng: input.lng, at: new Date().toISOString() }
+      : cur.lastLocation,
+    updatedAt: new Date().toISOString(),
+  };
+  riders[idx] = next;
+  t.riders = riders;
+  writeTenant(t);
+  return next;
+}
+
+/** Assign a rider to an order (or release on activeOrderId = undefined). */
+export function setRiderActiveOrder(
+  tenantId: string,
+  riderId: string,
+  activeOrderId: string | undefined,
+): Rider | null {
+  const t = readTenant(tenantId);
+  const riders = ridersOf(t);
+  const idx = riders.findIndex((r) => r.id === riderId);
+  if (idx < 0) return null;
+  riders[idx] = {
+    ...riders[idx],
+    activeOrderId,
+    load: activeOrderId ? riders[idx].load + 1 : Math.max(0, riders[idx].load - 1),
+    updatedAt: new Date().toISOString(),
+  };
+  t.riders = riders;
+  writeTenant(t);
+  return riders[idx];
+}
+
+/* ---------- Dispatch offers (Phase 2 async accept/decline) ---------- */
+
+export function listDispatchOffers(tenantId: string): DispatchOffer[] {
+  return readTenant(tenantId).dispatchOffers ?? [];
+}
+
+/** Create or update a dispatch offer by id (idempotent upsert). */
+export function upsertDispatchOffer(tenantId: string, offer: DispatchOffer): DispatchOffer {
+  const t = readTenant(tenantId);
+  const offers = t.dispatchOffers ?? [];
+  const idx = offers.findIndex((o) => o.id === offer.id);
+  if (idx >= 0) offers[idx] = offer;
+  else offers.push(offer);
+  t.dispatchOffers = offers;
+  writeTenant(t);
+  return offer;
+}
+
+/** Mark an offer decided (accepted / declined / expired). */
+export function decideDispatchOffer(
+  tenantId: string,
+  offerId: string,
+  status: "accepted" | "declined" | "expired",
+): DispatchOffer | null {
+  const t = readTenant(tenantId);
+  const offers = t.dispatchOffers ?? [];
+  const idx = offers.findIndex((o) => o.id === offerId);
+  if (idx < 0) return null;
+  offers[idx] = { ...offers[idx], status, decidedAt: new Date().toISOString() };
+  t.dispatchOffers = offers;
+  writeTenant(t);
+  return offers[idx];
+}
+
+/* ---------- Promos (Phase 3) ---------- */
+
+export function listPromos(tenantId: string): Promo[] {
+  return readTenant(tenantId).promos ?? [];
+}
+
+/** Upsert a promo by id (create + update share one path). */
+export function upsertPromo(tenantId: string, promo: Promo): Promo {
+  const t = readTenant(tenantId);
+  const promos = t.promos ?? [];
+  const idx = promos.findIndex((p) => p.id === promo.id);
+  if (idx >= 0) promos[idx] = promo;
+  else promos.push(promo);
+  t.promos = promos;
+  writeTenant(t);
+  return promo;
+}
+
+export function deletePromo(tenantId: string, promoId: string): boolean {
+  const t = readTenant(tenantId);
+  const promos = t.promos ?? [];
+  const idx = promos.findIndex((p) => p.id === promoId);
+  if (idx < 0) return false;
+  promos.splice(idx, 1);
+  t.promos = promos;
+  writeTenant(t);
+  return true;
+}
+
+/** Redemption ledger — every apply appends here (fraud/limits enforced). */
+export function listPromoUsage(tenantId: string): PromoUsage[] {
+  return readTenant(tenantId).promoUsage ?? [];
+}
+
+export function recordPromoUsage(tenantId: string, usage: PromoUsage): PromoUsage {
+  const t = readTenant(tenantId);
+  t.promoUsage = [usage, ...(t.promoUsage ?? [])];
+  writeTenant(t);
+  return usage;
 }

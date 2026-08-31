@@ -29,6 +29,37 @@ type SalesPayload = {
   topItems: Array<{ name: string; qty: number; revenue: number; cost: number; margin: number }>;
 };
 
+type AnalyticsPayload = {
+  report: {
+    volume: Array<{ date: string; orders: number; gross: number }>;
+    avgFulfillmentMinutes: number | null;
+    cancellationRate: number;
+    riderUtilization: {
+      totalRiders: number;
+      onlineRiders: number;
+      busyRiders: number;
+      utilizationPct: number;
+    };
+    avgDeliveryOrderValue: number;
+    deliveryOrderCount: number;
+  };
+};
+
+type PayoutPayload = {
+  summary: {
+    from: string;
+    to: string;
+    currency: string;
+    commissionPct: number;
+    gross: number;
+    commission: number;
+    codCollected: number;
+    netPayout: number;
+    orderCount: number;
+    deliveryCount: number;
+  };
+};
+
 function daysAgoIso(days: number) {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 }
@@ -37,6 +68,8 @@ export default function SalesPage() {
   const { api, tenant } = useStore();
   const [range, setRange] = useState<"1" | "7" | "30">("7");
   const [data, setData] = useState<SalesPayload | null>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsPayload | null>(null);
+  const [payout, setPayout] = useState<PayoutPayload | null>(null);
   const [error, setError] = useState("");
   const cur = tenant?.shop.currency || "PKR";
 
@@ -70,6 +103,19 @@ export default function SalesPage() {
       }
       setError("");
       setData(json as SalesPayload);
+      // Admin analytics (Phase 3) — best-effort secondary fetch.
+      try {
+        const ares = await api(`/api/analytics?days=${days}`, { signal });
+        if (ares.ok) setAnalytics((await ares.json()) as AnalyticsPayload);
+      } catch {
+        /* analytics are optional */
+      }
+      try {
+        const pres = await api(`/api/payouts?days=${days}`, { signal });
+        if (pres.ok) setPayout((await pres.json()) as PayoutPayload);
+      } catch {
+        /* payouts are optional */
+      }
     } catch (e) {
       if ((e as Error)?.name === "AbortError") return;
       setError("Could not load sales — check the connection and retry.");
@@ -267,6 +313,73 @@ export default function SalesPage() {
                 </div>
               </div>
 
+              {analytics && (
+                <div className={styles.card}>
+                  <h3 style={{ marginTop: 0 }}>Operations analytics</h3>
+                  <div className={styles.statGrid}>
+                    <article className={styles.statCard}>
+                      <span>Avg fulfillment</span>
+                      <strong suppressHydrationWarning>
+                        {analytics.report.avgFulfillmentMinutes != null
+                          ? `${analytics.report.avgFulfillmentMinutes} min`
+                          : "—"}
+                      </strong>
+                      <em>placed → completed</em>
+                    </article>
+                    <article className={styles.statCard}>
+                      <span>Cancellation rate</span>
+                      <strong suppressHydrationWarning>
+                        {Math.round(analytics.report.cancellationRate * 100)}%
+                      </strong>
+                      <em>of all orders</em>
+                    </article>
+                    <article className={styles.statCard}>
+                      <span>Rider utilization</span>
+                      <strong suppressHydrationWarning>
+                        {analytics.report.riderUtilization.utilizationPct}%
+                      </strong>
+                      <em>
+                        {analytics.report.riderUtilization.busyRiders} busy ·{" "}
+                        {analytics.report.riderUtilization.onlineRiders} online
+                      </em>
+                    </article>
+                    <article className={styles.statCard}>
+                      <span>Avg delivery order</span>
+                      <strong suppressHydrationWarning>
+                        {money(cur, analytics.report.avgDeliveryOrderValue)}
+                      </strong>
+                      <em>{analytics.report.deliveryOrderCount} deliveries</em>
+                    </article>
+                  </div>
+                  <h4>Order volume by day</h4>
+                  <div className={styles.barList}>
+                    {analytics.report.volume.map((v) => {
+                      const max = Math.max(1, ...analytics.report.volume.map((x) => x.orders));
+                      const pct = Math.round((v.orders / max) * 100);
+                      return (
+                        <div key={v.date} className={styles.barRow}>
+                          <div className={styles.barMeta}>
+                            <span suppressHydrationWarning>
+                              {new Date(`${v.date}T00:00:00`).toLocaleDateString(undefined, {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </span>
+                            <strong suppressHydrationWarning>
+                              {v.orders} · {money(cur, v.gross)}
+                            </strong>
+                          </div>
+                          <div className={styles.barTrack} aria-hidden>
+                            <div className={styles.barFill} style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className={styles.card}>
                 <h3 style={{ marginTop: 0 }}>Top items</h3>
                 <div className={styles.tableScroll}>
@@ -299,6 +412,42 @@ export default function SalesPage() {
                   </table>
                 </div>
               </div>
+
+              {payout && (
+                <div className={styles.card}>
+                  <h3 style={{ marginTop: 0 }}>
+                    Payout · {payout.summary.commissionPct}% platform commission
+                  </h3>
+                  <p className={styles.muted}>
+                    Clear breakdown — order total, platform commission, rider COD
+                    already banked, and what this kitchen is paid.
+                  </p>
+                  <div className={styles.statGrid}>
+                    <article className={styles.statCard}>
+                      <span>Gross sales</span>
+                      <strong suppressHydrationWarning>{money(cur, payout.summary.gross)}</strong>
+                      <em>{payout.summary.orderCount} orders</em>
+                    </article>
+                    <article className={styles.statCard}>
+                      <span>Platform commission</span>
+                      <strong suppressHydrationWarning>{money(cur, payout.summary.commission)}</strong>
+                      <em>{payout.summary.commissionPct}% of gross</em>
+                    </article>
+                    <article className={styles.statCard}>
+                      <span>Rider COD banked</span>
+                      <strong suppressHydrationWarning>{money(cur, payout.summary.codCollected)}</strong>
+                      <em>cash already collected</em>
+                    </article>
+                    <article className={styles.statCard}>
+                      <span>Net payout</span>
+                      <strong className={styles.statValue} suppressHydrationWarning>
+                        {money(cur, payout.summary.netPayout)}
+                      </strong>
+                      <em>gross − commission − COD</em>
+                    </article>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>

@@ -10,6 +10,9 @@ import type {
   TenantPayments,
   TenantSpecialOffer,
 } from "../tenant-types";
+import type { Rider } from "../rider-types";
+import type { DispatchOffer } from "../rider-types";
+import type { Promo, PromoUsage } from "../promo";
 import type { Permission } from "../types";
 import { getDb } from "../mongo";
 import { ensureMongoBootstrap } from "./mongo-platform";
@@ -519,6 +522,153 @@ export async function addReviewMongo(tenantId: string, review: Omit<Review, "id"
   t.reviews.unshift(full);
   await writeTenantMongo(t);
   return full;
+}
+
+/* ---------- Riders (Phase 2 delivery) ---------- */
+
+function ridersOfMongo(t: TenantState): Rider[] {
+  return t.riders ?? [];
+}
+
+export async function listRidersMongo(tenantId: string): Promise<Rider[]> {
+  const t = await readTenantMongo(tenantId);
+  return ridersOfMongo(t);
+}
+
+export async function upsertRiderMongo(tenantId: string, rider: Rider): Promise<Rider> {
+  const t = await readTenantMongo(tenantId);
+  const riders = ridersOfMongo(t);
+  const idx = riders.findIndex((r) => r.id === rider.id);
+  const stamped: Rider = { ...rider, updatedAt: new Date().toISOString() };
+  if (idx >= 0) riders[idx] = stamped;
+  else riders.push(stamped);
+  t.riders = riders;
+  await writeTenantMongo(t);
+  return stamped;
+}
+
+export async function updateRiderPresenceMongo(
+  tenantId: string,
+  riderId: string,
+  input: { online?: boolean; lat?: number; lng?: number },
+): Promise<Rider | null> {
+  const t = await readTenantMongo(tenantId);
+  const riders = ridersOfMongo(t);
+  const idx = riders.findIndex((r) => r.id === riderId);
+  if (idx < 0) return null;
+  const cur = riders[idx];
+  const next: Rider = {
+    ...cur,
+    online: input.online ?? cur.online,
+    lastLocation: input.lat != null && input.lng != null
+      ? { lat: input.lat, lng: input.lng, at: new Date().toISOString() }
+      : cur.lastLocation,
+    updatedAt: new Date().toISOString(),
+  };
+  riders[idx] = next;
+  t.riders = riders;
+  await writeTenantMongo(t);
+  return next;
+}
+
+export async function setRiderActiveOrderMongo(
+  tenantId: string,
+  riderId: string,
+  activeOrderId: string | undefined,
+): Promise<Rider | null> {
+  const t = await readTenantMongo(tenantId);
+  const riders = ridersOfMongo(t);
+  const idx = riders.findIndex((r) => r.id === riderId);
+  if (idx < 0) return null;
+  riders[idx] = {
+    ...riders[idx],
+    activeOrderId,
+    load: activeOrderId ? riders[idx].load + 1 : Math.max(0, riders[idx].load - 1),
+    updatedAt: new Date().toISOString(),
+  };
+  t.riders = riders;
+  await writeTenantMongo(t);
+  return riders[idx];
+}
+
+/* ---------- Dispatch offers (Phase 2 async accept/decline) ---------- */
+
+export async function listDispatchOffersMongo(tenantId: string): Promise<DispatchOffer[]> {
+  const t = await readTenantMongo(tenantId);
+  return t.dispatchOffers ?? [];
+}
+
+export async function upsertDispatchOfferMongo(
+  tenantId: string,
+  offer: DispatchOffer,
+): Promise<DispatchOffer> {
+  const t = await readTenantMongo(tenantId);
+  const offers = t.dispatchOffers ?? [];
+  const idx = offers.findIndex((o) => o.id === offer.id);
+  if (idx >= 0) offers[idx] = offer;
+  else offers.push(offer);
+  t.dispatchOffers = offers;
+  await writeTenantMongo(t);
+  return offer;
+}
+
+export async function decideDispatchOfferMongo(
+  tenantId: string,
+  offerId: string,
+  status: "accepted" | "declined" | "expired",
+): Promise<DispatchOffer | null> {
+  const t = await readTenantMongo(tenantId);
+  const offers = t.dispatchOffers ?? [];
+  const idx = offers.findIndex((o) => o.id === offerId);
+  if (idx < 0) return null;
+  offers[idx] = { ...offers[idx], status, decidedAt: new Date().toISOString() };
+  t.dispatchOffers = offers;
+  await writeTenantMongo(t);
+  return offers[idx];
+}
+
+/* ---------- Promos (Phase 3) ---------- */
+
+export async function listPromosMongo(tenantId: string): Promise<Promo[]> {
+  const t = await readTenantMongo(tenantId);
+  return t.promos ?? [];
+}
+
+export async function upsertPromoMongo(tenantId: string, promo: Promo): Promise<Promo> {
+  const t = await readTenantMongo(tenantId);
+  const promos = t.promos ?? [];
+  const idx = promos.findIndex((p) => p.id === promo.id);
+  if (idx >= 0) promos[idx] = promo;
+  else promos.push(promo);
+  t.promos = promos;
+  await writeTenantMongo(t);
+  return promo;
+}
+
+export async function deletePromoMongo(tenantId: string, promoId: string): Promise<boolean> {
+  const t = await readTenantMongo(tenantId);
+  const promos = t.promos ?? [];
+  const idx = promos.findIndex((p) => p.id === promoId);
+  if (idx < 0) return false;
+  promos.splice(idx, 1);
+  t.promos = promos;
+  await writeTenantMongo(t);
+  return true;
+}
+
+export async function listPromoUsageMongo(tenantId: string): Promise<PromoUsage[]> {
+  const t = await readTenantMongo(tenantId);
+  return t.promoUsage ?? [];
+}
+
+export async function recordPromoUsageMongo(
+  tenantId: string,
+  usage: PromoUsage,
+): Promise<PromoUsage> {
+  const t = await readTenantMongo(tenantId);
+  t.promoUsage = [usage, ...(t.promoUsage ?? [])];
+  await writeTenantMongo(t);
+  return usage;
 }
 
 export async function readTenantSafeMongo(tenantId: string) {

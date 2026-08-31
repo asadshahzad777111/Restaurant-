@@ -33,7 +33,7 @@ interface TrackData {
     tableNumber?: string;
     note?: string;
   };
-  review: { rating: number; comment: string } | null;
+  review: { rating: number; deliveryRating?: number; comment: string } | null;
   canReview: boolean;
 }
 
@@ -56,7 +56,8 @@ export default function TrackPage() {
   const token = params.token;
   const [data, setData] = useState<TrackData | null>(null);
   const [error, setError] = useState("");
-  const [rating, setRating] = useState(5);
+  const [foodRating, setFoodRating] = useState(5);
+  const [deliveryRating, setDeliveryRating] = useState(5);
   const [comment, setComment] = useState("");
   const [sent, setSent] = useState(false);
   const [reviewError, setReviewError] = useState("");
@@ -90,6 +91,16 @@ export default function TrackPage() {
     void load();
     const id = setInterval(() => void load(), 4000);
     return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, stopped]);
+
+  // Live status via SSE (order-events bus). Polling above stays as a fallback:
+  // if the stream drops or isn't supported, updates keep arriving every 4s.
+  useEffect(() => {
+    if (stopped || typeof window === "undefined" || !("EventSource" in window)) return;
+    const es = new EventSource(`/api/track/${encodeURIComponent(token)}/stream`);
+    es.addEventListener("message", () => void load());
+    return () => es.close();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, stopped]);
 
@@ -132,7 +143,12 @@ export default function TrackPage() {
     const res = await fetch("/api/reviews", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ trackToken: token, rating, comment }),
+      body: JSON.stringify({
+        trackToken: token,
+        foodRating,
+        deliveryRating: data?.order.serviceType === "delivery" ? deliveryRating : undefined,
+        comment,
+      }),
     });
     const json = await res.json();
     if (!res.ok) {
@@ -298,20 +314,40 @@ export default function TrackPage() {
       {data.canReview && !sent && (
         <form className={styles.review} onSubmit={(e) => void submitReview(e)}>
           <h2>How was your meal?</h2>
-          <p className={styles.muted}>Reviews unlock after staff marks the order completed.</p>
+          <p className={styles.muted}>
+            Food rating goes to the restaurant; delivery rating goes to the rider.
+          </p>
           <div className={styles.stars}>
             {[1, 2, 3, 4, 5].map((n) => (
               <button
                 key={n}
                 type="button"
-                className={n <= rating ? styles.starOn : styles.star}
-                onClick={() => setRating(n)}
-                aria-label={`${n} star${n === 1 ? "" : "s"}`}
+                className={n <= foodRating ? styles.starOn : styles.star}
+                onClick={() => setFoodRating(n)}
+                aria-label={`Food ${n} star${n === 1 ? "" : "s"}`}
               >
                 ★
               </button>
             ))}
           </div>
+          {data.order.serviceType === "delivery" && (
+            <>
+              <p className={styles.muted}>Delivery rating</p>
+              <div className={styles.stars}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    className={n <= deliveryRating ? styles.starOn : styles.star}
+                    onClick={() => setDeliveryRating(n)}
+                    aria-label={`Delivery ${n} star${n === 1 ? "" : "s"}`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
           <textarea
             placeholder="Optional comment"
             value={comment}
@@ -324,7 +360,10 @@ export default function TrackPage() {
       )}
 
       {(data.review || sent) && (
-        <p className={styles.thanks}>Thanks for the {data.review?.rating || rating}★ review.</p>
+        <p className={styles.thanks}>
+          Thanks for the {data.review?.rating || foodRating}★ food
+          {data.review?.deliveryRating ? ` · ${data.review.deliveryRating}★ delivery` : ""} review.
+        </p>
       )}
 
       <GuestCoverQr tenantCode={data.code} restaurantName={data.branding.name} />

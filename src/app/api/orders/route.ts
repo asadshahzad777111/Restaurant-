@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureStore, addOrder, readTenant, findTenantMetaByCode, findTenantMetaById, updateStock } from "@/lib/db";
+import {
+  ensureStore,
+  addOrder,
+  readTenant,
+  findTenantMetaByCode,
+  findTenantMetaById,
+  updateStock,
+  listPromos,
+  listPromoUsage,
+  recordPromoUsage,
+} from "@/lib/db";
 import { AuthError, hasAnyPermission, hasPermission, requireTenantSession } from "@/lib/session";
 import { assertOrderRules } from "@/lib/guest";
 import { assertGuestPaymentAllowed } from "@/lib/payments";
-import { computeFees, lineUnitPrice } from "@/lib/fees";
+import { computeFees, lineUnitPrice, linesSubtotal } from "@/lib/fees";
 import { applyStockMovement } from "@/lib/stock";
+import { emitOrderEvent } from "@/lib/order-events";
+import { normalizeCode, validatePromo } from "@/lib/promo";
 import type { LineModifier, OrderLine } from "@/lib/tenant-types";
 import type { AdvanceRail, PaymentMethod, PaymentStatus, ServiceType } from "@/lib/types";
 import { sendNewOrderEmail, sendOrderWhatsapp, tenantAdminEmails } from "@/lib/notify";
@@ -73,6 +85,7 @@ export async function POST(req: NextRequest) {
       advanceRail,
       paymentProofUrl,
       discount: rawDiscount,
+      promoCode: rawPromoCode,
     } = body as {
       tenantCode?: string;
       channel: "guest" | "pos";
@@ -96,6 +109,7 @@ export async function POST(req: NextRequest) {
       advanceRail?: AdvanceRail;
       paymentProofUrl?: string;
       discount?: number;
+      promoCode?: string;
     };
 
     if (!rawLines?.length) {
@@ -212,7 +226,35 @@ export async function POST(req: NextRequest) {
       };
     });
 
-    const fees = computeFees(tenant.shop, serviceType, lines, rawDiscount && channel === "pos" ? Math.round(Number(rawDiscount)) : 0);
+    // Promo code (Phase 3): validate before order creation; discount applies to
+    // guest checkouts. POS keeps its own flat discount field.
+    let promoValid: { code: string; discount: number; promoId: string } | null = null;
+    const subtotalForPromo = linesSubtotal(lines);
+    const posDiscount = rawDiscount && channel === "pos" ? Math.round(Number(rawDiscount)) : 0;
+    if (channel === "guest" && rawPromoCode?.trim()) {
+      const promos = await listPromos(tenantId);
+      const usage = await listPromoUsage(tenantId);
+      const promo = promos.find((p) => p.code === normalizeCode(rawPromoCode));
+      const result = validatePromo(promo, usage, {
+        subtotal: subtotalForPromo,
+        userKey: customerPhone?.trim() || customerName?.trim() || undefined,
+      });
+      if (!result.ok || !promo) {
+        return NextResponse.json(
+          { error: `Invalid promo code (${result.reason})` },
+          { status: 400 },
+        );
+      }
+      promoValid = { code: promo.code, discount: result.discount ?? 0, promoId: promo.id };
+    }
+
+    // Fees include the promo discount for guest orders (POS discount unchanged).
+    const fees = computeFees(
+      tenant.shop,
+      serviceType,
+      lines,
+      posDiscount + (promoValid?.discount ?? 0),
+    );
     const discount = fees.discount;
     const total = fees.total;
     const now = new Date().toISOString();
@@ -260,6 +302,8 @@ export async function POST(req: NextRequest) {
       status: "placed",
       statusHistory: [{ status: "placed", at: now }],
       trackToken: trackToken(),
+      // Promo discount is part of the order's discount (audit-friendly).
+      ...(rawPromoCode?.trim() ? { promoCode: normalizeCode(rawPromoCode) } : {}),
       fees: {
         subtotal: fees.subtotal,
         deliveryFee: fees.deliveryFee,
@@ -270,6 +314,26 @@ export async function POST(req: NextRequest) {
       subtotal: fees.subtotal,
       total,
       discount: discount || undefined,
+    });
+
+    // Record the promo redemption against the real order id (fraud/limits ledger).
+    if (promoValid) {
+      await recordPromoUsage(tenantId, {
+        userKey: customerPhone?.trim() || customerName?.trim() || "guest",
+        promoId: promoValid.promoId,
+        orderId: order.id,
+        discount: promoValid.discount,
+        at: now,
+      });
+    }
+
+    // Real-time: broadcast order.created via the isolated event service.
+    emitOrderEvent({
+      type: "order.created",
+      tenantId,
+      orderId: order.id,
+      orderNumber: order.number,
+      at: now,
     });
 
     if (shouldAutoPrintGuestOrder(order)) {

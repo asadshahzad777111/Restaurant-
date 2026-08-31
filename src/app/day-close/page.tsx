@@ -16,6 +16,8 @@ interface Preview {
   completedCount: number;
   grossTotal: number;
   byPayment: Record<string, number>;
+  codCollectedTotal?: number;
+  codPendingTotal?: number;
 }
 
 export default function DayClosePage() {
@@ -103,6 +105,21 @@ export default function DayClosePage() {
                   <li className={styles.muted}>No sales in window</li>
                 )}
               </ul>
+              {typeof preview.codCollectedTotal === "number" || typeof preview.codPendingTotal === "number" ? (
+                <>
+                  <h4>COD reconciliation</h4>
+                  <ul className={styles.reportList}>
+                    <li>
+                      <span>Collected (rider cash-in)</span>
+                      <strong>{money(cur, preview.codCollectedTotal ?? 0)}</strong>
+                    </li>
+                    <li>
+                      <span>Pending (not yet collected)</span>
+                      <strong>{money(cur, preview.codPendingTotal ?? 0)}</strong>
+                    </li>
+                  </ul>
+                </>
+              ) : null}
               <div className={styles.row}>
                 <button type="button" className={styles.btn} disabled={closing} onClick={() => void closeShift()}>
                   {closing ? "Closing…" : "Close shift & print"}

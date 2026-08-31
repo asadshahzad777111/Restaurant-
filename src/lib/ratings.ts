@@ -24,10 +24,13 @@ export function itemRatings(orders: Order[], reviews: Review[]): Record<string, 
 
   for (const r of reviews) {
     const itemIds = orderItems.get(r.orderId);
-    if (!itemIds || !Number.isFinite(r.rating)) continue;
+    // Food rating feeds item stars (delivery rating belongs to the rider and is
+    // never conflated into food/item ratings).
+    const value = Number.isFinite(r.rating) ? r.rating : 0;
+    if (!itemIds || !value) continue;
     for (const itemId of itemIds) {
       const s = sums[itemId] || { total: 0, count: 0 };
-      s.total += r.rating;
+      s.total += value;
       s.count += 1;
       sums[itemId] = s;
     }

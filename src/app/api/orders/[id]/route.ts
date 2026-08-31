@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { ensureStore, patchOrder, readTenant, updateStock } from "@/lib/db";
 import { AuthError, hasPermission, requireTenantSession } from "@/lib/session";
 import { applyStockMovement } from "@/lib/stock";
+import { transition } from "@/lib/order-machine";
+import { emitStatusChange } from "@/lib/order-events";
 import type { OrderStatus, PaymentStatus } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -43,6 +45,23 @@ export async function PATCH(
 
     const tenantBefore = await readTenant(session.tenantId!);
     const prevOrder = tenantBefore.orders.find((o) => o.id === id);
+    if (!prevOrder) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // State machine: reject illegal transitions before touching the store.
+    // Same-state patches are idempotent no-ops (webhook/retry safe).
+    const actor = `${session.userId ?? session.role ?? "system"}`;
+    if (patch.status) {
+      const result = transition(prevOrder.status, patch.status, {
+        actor,
+        note: patch.note,
+      });
+      if (!result.changed) {
+        delete patch.status; // leave the order untouched
+      }
+    }
+
     const order = await patchOrder(session.tenantId!, id, patch);
 
     // Restore stock when an order is cancelled (best-effort). Only restore once —
@@ -64,11 +83,26 @@ export async function PATCH(
       }
     }
 
+    // Real-time: broadcast the status change via the isolated event service.
+    if (patch.status && order.status !== prevOrder.status) {
+      emitStatusChange({
+        tenantId: session.tenantId!,
+        orderId: order.id,
+        orderNumber: order.number,
+        from: prevOrder.status,
+        to: order.status,
+        actor,
+      });
+    }
+
     const tenant = await readTenant(session.tenantId!);
     return NextResponse.json({ order, tables: tenant.tables });
   } catch (e) {
     if (e instanceof AuthError) {
       return NextResponse.json({ error: e.message }, { status: e.status });
+    }
+    if (e instanceof Error && /Order cannot move/.test(e.message)) {
+      return NextResponse.json({ error: e.message }, { status: 400 });
     }
     const message = e instanceof Error ? e.message : "Failed";
     return NextResponse.json({ error: message }, { status: 500 });

@@ -27,6 +27,8 @@ export async function GET(req: NextRequest) {
     let grossTotal = 0;
     let cancelledCount = 0;
     let completedCount = 0;
+    let codCollectedTotal = 0;
+    let codPendingTotal = 0;
     for (const o of slice) {
       if (o.status === "cancelled") {
         cancelledCount += 1;
@@ -35,6 +37,14 @@ export async function GET(req: NextRequest) {
       if (o.status === "completed") completedCount += 1;
       grossTotal += o.total;
       byPayment[o.paymentMethod] = (byPayment[o.paymentMethod] || 0) + o.total;
+      // COD reconciliation: collected (rider marked paid) vs still pending.
+      if (o.paymentMethod === "cod") {
+        if (o.paymentStatus === "paid" || o.paymentStatus === "verified") {
+          codCollectedTotal += o.total;
+        } else {
+          codPendingTotal += o.total;
+        }
+      }
     }
 
     return NextResponse.json({
@@ -46,6 +56,8 @@ export async function GET(req: NextRequest) {
         completedCount,
         grossTotal,
         byPayment,
+        codCollectedTotal,
+        codPendingTotal,
       },
       history: tenant.dayCloses || [],
     });
@@ -78,6 +90,8 @@ export async function POST(req: NextRequest) {
     let grossTotal = 0;
     let cancelledCount = 0;
     let completedCount = 0;
+    let codCollectedTotal = 0;
+    let codPendingTotal = 0;
     for (const o of slice) {
       if (o.status === "cancelled") {
         cancelledCount += 1;
@@ -86,6 +100,13 @@ export async function POST(req: NextRequest) {
       if (o.status === "completed") completedCount += 1;
       grossTotal += o.total;
       byPayment[o.paymentMethod] = (byPayment[o.paymentMethod] || 0) + o.total;
+      if (o.paymentMethod === "cod") {
+        if (o.paymentStatus === "paid" || o.paymentStatus === "verified") {
+          codCollectedTotal += o.total;
+        } else {
+          codPendingTotal += o.total;
+        }
+      }
     }
     const summary = await addDayClose(session.tenantId!, {
       closedAt: new Date().toISOString(),
@@ -97,6 +118,8 @@ export async function POST(req: NextRequest) {
       completedCount,
       grossTotal,
       byPayment,
+      codCollectedTotal,
+      codPendingTotal,
       note: body.note,
     });
     return NextResponse.json({ summary });

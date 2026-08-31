@@ -21,6 +21,9 @@ import type {
   DiningTable,
   DayCloseSummary,
 } from "../tenant-types";
+import type { Rider } from "../rider-types";
+import type { DispatchOffer } from "../rider-types";
+import type { Promo, PromoUsage } from "../promo";
 
 export async function ensureStore() {
   if (useMongo()) await mongoPlatform.ensureMongoBootstrap();
@@ -392,6 +395,112 @@ export async function countArchivedOrders(tenantId: string): Promise<number> {
   return useMongo()
     ? mongoArchive.countArchivedOrdersMongo(tenantId)
     : fileArchive.countArchivedOrdersFile(tenantId);
+}
+
+// ---- Riders (Phase 2 delivery) ----
+
+export async function listRiders(tenantId: string): Promise<Rider[]> {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.listRidersMongo(tenantId)
+    : fileTenant.listRiders(tenantId);
+}
+
+export async function upsertRider(tenantId: string, rider: Rider): Promise<Rider> {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.upsertRiderMongo(tenantId, rider)
+    : fileTenant.upsertRider(tenantId, rider);
+}
+
+export async function updateRiderPresence(
+  tenantId: string,
+  riderId: string,
+  input: { online?: boolean; lat?: number; lng?: number },
+): Promise<Rider | null> {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.updateRiderPresenceMongo(tenantId, riderId, input)
+    : fileTenant.updateRiderPresence(tenantId, riderId, input);
+}
+
+export async function setRiderActiveOrder(
+  tenantId: string,
+  riderId: string,
+  activeOrderId: string | undefined,
+): Promise<Rider | null> {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.setRiderActiveOrderMongo(tenantId, riderId, activeOrderId)
+    : fileTenant.setRiderActiveOrder(tenantId, riderId, activeOrderId);
+}
+
+export async function listDispatchOffers(tenantId: string): Promise<DispatchOffer[]> {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.listDispatchOffersMongo(tenantId)
+    : fileTenant.listDispatchOffers(tenantId);
+}
+
+export async function upsertDispatchOffer(
+  tenantId: string,
+  offer: DispatchOffer,
+): Promise<DispatchOffer> {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.upsertDispatchOfferMongo(tenantId, offer)
+    : fileTenant.upsertDispatchOffer(tenantId, offer);
+}
+
+export async function decideDispatchOffer(
+  tenantId: string,
+  offerId: string,
+  status: "accepted" | "declined" | "expired",
+): Promise<DispatchOffer | null> {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.decideDispatchOfferMongo(tenantId, offerId, status)
+    : fileTenant.decideDispatchOffer(tenantId, offerId, status);
+}
+
+// ---- Promos (Phase 3) ----
+
+export async function listPromos(tenantId: string): Promise<Promo[]> {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.listPromosMongo(tenantId)
+    : fileTenant.listPromos(tenantId);
+}
+
+export async function upsertPromo(tenantId: string, promo: Promo): Promise<Promo> {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.upsertPromoMongo(tenantId, promo)
+    : fileTenant.upsertPromo(tenantId, promo);
+}
+
+export async function deletePromo(tenantId: string, promoId: string): Promise<boolean> {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.deletePromoMongo(tenantId, promoId)
+    : fileTenant.deletePromo(tenantId, promoId);
+}
+
+export async function listPromoUsage(tenantId: string): Promise<PromoUsage[]> {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.listPromoUsageMongo(tenantId)
+    : fileTenant.listPromoUsage(tenantId);
+}
+
+export async function recordPromoUsage(
+  tenantId: string,
+  usage: PromoUsage,
+): Promise<PromoUsage> {
+  await ensureStore();
+  return useMongo()
+    ? mongoTenant.recordPromoUsageMongo(tenantId, usage)
+    : fileTenant.recordPromoUsage(tenantId, usage);
 }
 
 export { useMongo, storageMode } from "../env";

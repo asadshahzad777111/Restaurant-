@@ -6,6 +6,9 @@ import type {
   Permission,
   ServiceType,
 } from "./types";
+import type { Rider } from "./rider-types";
+import type { DispatchOffer } from "./rider-types";
+import type { Promo, PromoUsage } from "./promo";
 
 export interface TenantBranding {
   name: string;
@@ -19,6 +22,9 @@ export interface TenantBranding {
 
 export interface TenantShop {
   address: string;
+  /** Shop coordinates for rider dispatch (Phase 2). Optional until set. */
+  lat?: number;
+  lng?: number;
   phone: string;
   whatsapp: string;
   currency: string;
@@ -31,6 +37,12 @@ export interface TenantShop {
   deliveryEnabled?: boolean;
   /** Service charge % of subtotal */
   serviceChargePercent: number;
+  /**
+   * Platform commission % on gross (Phase 3 payout transparency). Default 10.
+   * Shown in the Sales & Profit payout card — commission transparency reduces
+   * vendor churn (prompt section 5).
+   */
+  commissionPct?: number;
   /**
    * Kitchen opt-in. Only meaningful when Super enables platform.features.fbrOptional.
    * There is no dedicated FBR page — fields stay inside Settings when allowed.
@@ -173,6 +185,9 @@ export interface Order {
   /** Screenshot URL of transfer (JazzCash / bank / EasyPaisa) */
   paymentProofUrl?: string;
   paymentStatus: PaymentStatus;
+  /** COD reconciliation (Phase 2): when the rider collected cash + who. */
+  codCollectedAt?: string;
+  codCollectedBy?: string;
   status: OrderStatus;
   statusHistory: StatusEvent[];
   trackToken: string;
@@ -183,6 +198,8 @@ export interface Order {
   total: number;
   /** POS-only PKR off the bill. Optional. */
   discount?: number;
+  /** Promo code used (Phase 3) — audit + fraud checks. */
+  promoCode?: string;
   cancelReason?: string;
 }
 
@@ -253,6 +270,9 @@ export interface DayCloseSummary {
   completedCount: number;
   grossTotal: number;
   byPayment: Record<string, number>;
+  /** COD reconciliation — cash collected by riders vs still pending. */
+  codCollectedTotal?: number;
+  codPendingTotal?: number;
   note?: string;
 }
 
@@ -290,6 +310,14 @@ export interface TenantState {
   tables: DiningTable[];
   /** Google-registered diners for this kitchen only */
   guestClients?: GuestClient[];
+  /** Delivery riders (Phase 2) — same tenant isolation as users/staff. */
+  riders?: Rider[];
+  /** Outstanding dispatch offers (Phase 2) — rider app accepts/declines async. */
+  dispatchOffers?: DispatchOffer[];
+  /** Promo codes (Phase 3) — admin-managed, fraud-checked. */
+  promos?: Promo[];
+  /** Promo redemption ledger (Phase 3) — MAX_USES/PER_USER enforced from this. */
+  promoUsage?: PromoUsage[];
   dayCloses: DayCloseSummary[];
   nextOrderNumber: number;
   /** Set by order archiving runs — when terminal orders moved to orders-archive.json. */
