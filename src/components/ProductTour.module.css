@@ -43,6 +43,7 @@
 .stage {
   --tour-card-w: clamp(240px, 26vw, 330px);
   --tour-gap: 1.4rem;
+  position: relative;
   margin-top: 2.4rem;
   height: clamp(340px, 60vh, 540px);
   display: flex;
@@ -51,6 +52,16 @@
   border-radius: 1.25rem;
   border: 1px solid var(--m-line);
   background: color-mix(in srgb, var(--m-bg) 62%, transparent);
+}
+
+/* Role-tinted wash behind the cards — GSAP shifts its background color. */
+.tourTint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  will-change: background-color;
 }
 
 .track {
@@ -62,19 +73,48 @@
   will-change: transform;
 }
 
+/* GSAP animates this wrapper (scale/opacity/glow) — the visible face is .cardInner. */
 .card {
   flex: 0 0 var(--tour-card-w);
   width: var(--tour-card-w);
-  padding: 1.9rem 1.7rem;
-  border-radius: 1.15rem;
-  border: 1px solid var(--m-line);
-  background: var(--m-elevated);
-  color: var(--m-ink);
   /* Same two-shadow structure as the GSAP active state, so scrub interpolates cleanly. */
   box-shadow:
     0 0 0 0 rgba(255, 133, 0, 0),
     0 24px 60px -20px rgba(255, 133, 0, 0);
   will-change: transform;
+}
+
+/* Tilt face — 3D hover tilt lives here, composes with the GSAP wrapper above. */
+.cardInner {
+  padding: 1.9rem 1.7rem;
+  border-radius: 1.15rem;
+  border: 1px solid var(--m-line);
+  background: var(--m-elevated);
+  color: var(--m-ink);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+}
+
+/* Progress rail — 4 dots, the active one lights up via GSAP. */
+.tourProgress {
+  position: absolute;
+  left: 50%;
+  bottom: 1.35rem;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.55rem;
+  z-index: 2;
+}
+
+.tourDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--m-muted);
+  opacity: 0.35;
+  will-change: transform, background-color;
 }
 
 .cardNo {
@@ -116,7 +156,13 @@
   margin-top: 2.4rem;
 }
 
+/* Grid cards have no GSAP wrapper/tilt — give the article the face styles. */
 .grid .card {
+  padding: 1.9rem 1.7rem;
+  border-radius: 1.15rem;
+  border: 1px solid var(--m-line);
+  background: var(--m-elevated);
+  color: var(--m-ink);
   animation: tourFade 0.5s ease both;
 }
 
@@ -149,6 +195,15 @@
   }
 }
 
+/* Tablet: card size between desktop and mobile. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .stage {
+    --tour-card-w: clamp(220px, 34vw, 300px);
+    --tour-gap: 1.2rem;
+    height: clamp(330px, 56vh, 480px);
+  }
+}
+
 @media (max-width: 767px) {
   .stage {
     --tour-card-w: min(76vw, 290px);
@@ -156,7 +211,11 @@
     height: clamp(300px, 52vh, 430px);
   }
 
-  .card {
+  .cardInner {
     padding: 1.5rem 1.3rem;
+  }
+
+  .tourProgress {
+    bottom: 1rem;
   }
 }

@@ -48,6 +48,9 @@
   --m-charcoal: #f7f4ef;
   --m-studio: #0e0c0a;
   --m-orange-soft: rgba(255, 133, 0, 0.2);
+  /* Contrast audit (WCAG AA on #211c18): use the lighter orange for text
+     accents — #ff9d2e ≈ 4.6:1, #d96300 ≈ 2.6:1 (too low on dark cards). */
+  --m-orange-deep: #ff9d2e;
   --m-shadow: 0 28px 70px rgba(0, 0, 0, 0.38);
 }
 
@@ -526,6 +529,14 @@
 }
 
 /* Cemio-style orbital ring — slow rotating dashed circle behind the shot */
+.heroOrbitWrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
 .heroOrbit {
   pointer-events: none;
   position: absolute;
@@ -568,10 +579,6 @@
   object-position: center;
   background: #1a1410;
   will-change: transform;
-}
-
-.heroParallaxImg {
-  transform-origin: center center;
 }
 
 .page[data-theme="dark"] .productShot img {
@@ -1270,6 +1277,22 @@
   margin-bottom: 1.15rem;
 }
 
+/* iPad portrait: let the 4-tab bar scroll-snap instead of cramping. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.35rem;
+  }
+
+  .tabs button {
+    scroll-snap-align: start;
+    flex: 0 0 auto;
+  }
+}
+
 .tab,
 .tabActive {
   border: 1px solid var(--m-line);
@@ -1516,6 +1539,12 @@
   width: 100%;
 }
 
+/* Magnetic wrapper around plan CTAs — keeps the flex-card auto margin. */
+.planCtaWrap {
+  display: block;
+  margin-top: auto;
+}
+
 .printBox {
   scroll-margin-top: calc(var(--m-nav) + 0.75rem);
   margin-top: 2rem;
@@ -1726,15 +1755,39 @@
 }
 
 .field {
-  display: grid;
-  gap: 0.4rem;
+  position: relative;
+  display: block;
+  padding-top: 1.05rem;
 }
 
+/* Floating label — rests inside the input, floats up on focus/filled. */
 .field > span {
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  position: absolute;
+  top: 1.75rem;
+  left: 0.95rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--m-muted);
+  pointer-events: none;
+  transform-origin: left top;
+  transition:
+    transform 0.18s var(--ease-primary),
+    color 0.18s ease;
+}
+
+.field input:focus + span,
+.field input:not(:placeholder-shown) + span,
+.field textarea:focus + span,
+.field textarea:not(:placeholder-shown) + span {
+  transform: translateY(-1.05rem) scale(0.8);
+  color: var(--m-orange);
+}
+
+/* Select always holds a value — keep its label floated. */
+.field:has(select) > span {
+  transform: translateY(-1.05rem) scale(0.8);
+  color: var(--m-orange);
 }
 
 .formRow {
@@ -1751,7 +1804,7 @@
   border: 1px solid var(--m-line);
   background: var(--m-bg);
   color: var(--m-ink);
-  padding: 0.8rem 0.95rem;
+  padding: 1.25rem 0.95rem 0.55rem;
   font-weight: 500;
   transition:
     border-color 0.18s ease,
@@ -2221,6 +2274,32 @@
   transition: opacity 0.3s ease;
 }
 
+/* Dim, slower trailing glow on the Plans section — transform-only follow. */
+.plansGlow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 133, 0, 0.05), transparent 62%);
+  transform: translate3d(var(--px, 40%), var(--py, 20%), 0);
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+@media (hover: none) {
+  .plansGlow {
+    display: none;
+  }
+}
+
+/* ORDO OS module cards — tilt wrapper keeps grid item sizing. */
+.moduleTilt {
+  height: 100%;
+}
+
 /* Aurora blobs behind the hero copy */
 .heroGlow1,
 .heroGlow2 {
@@ -2259,6 +2338,15 @@
 }
 
 /* Floating live-order cards on the hero shot */
+.floatLayerA,
+.floatLayerB {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  will-change: transform;
+}
+
 .floatCardA,
 .floatCardB {
   position: absolute;
@@ -2879,7 +2967,72 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tickerTrack {
+  .tickerTrack,
+  .heroOrbit,
+  .floatCardA,
+  .floatCardB,
+  .heroGlow1,
+  .heroGlow2,
+  .railTicket,
+  .planFeatured {
+    animation: none;
+  }
+}
+
+/* --- 2026: native scroll-driven reveals (animation-timeline: view()) ---
+   Simple "fade up on enter" headers run off the main thread in supporting
+   browsers (Chrome 115+, Firefox 128+, Safari 26+). Unsupported browsers
+   simply show the content statically — graceful, zero-JS degradation. */
+
+@supports (animation-timeline: view()) {
+  /* Plain section header blocks (kicker + h2 + lead) — blur-crossfade + rise. */
+  .sdaHeader {
+    animation: sdaHeaderReveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 30%;
+  }
+
+  /* Every section h2 — subtle letter-spacing tighten while entering. */
+  .section h2,
+  .sectionSoft h2,
+  .shopCopy h2,
+  .gallery h2 {
+    animation: sdaHeaderTighten linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 26%;
+  }
+}
+
+@keyframes sdaHeaderReveal {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes sdaHeaderTighten {
+  from {
+    opacity: 0.25;
+    letter-spacing: 0.06em;
+  }
+  to {
+    opacity: 1;
+    letter-spacing: -0.035em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sdaHeader,
+  .section h2,
+  .sectionSoft h2,
+  .shopCopy h2,
+  .gallery h2 {
     animation: none;
   }
 }

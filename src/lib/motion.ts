@@ -40,6 +40,28 @@ export function useIsCoarsePointer(): boolean {
   return coarse;
 }
 
+/**
+ * True only when the device has both a hover-capable and fine pointer
+ * (laptops / desktops with a mouse/trackpad). Gate hover-only effects
+ * (magnetic buttons, 3D tilt, cursor glow) on this — never on screen width,
+ * because iPads with a trackpad are both touch AND fine-pointer.
+ */
+export function useFinePointer(): boolean {
+  const [fine, setFine] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const sync = () => setFine(mq.matches);
+    sync();
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", sync);
+      return () => mq.removeEventListener("change", sync);
+    }
+    mq.addListener(sync);
+    return () => mq.removeListener(sync);
+  }, []);
+  return fine;
+}
+
 export function pageEnter(reduced: boolean, coarse: boolean): Variants {
   if (reduced) {
     return {

@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion, useInView } from "framer-motion";
+import { AnimatePresence, motion, useInView, useTransform } from "framer-motion";
 import { controlUrl } from "@/lib/urls";
 import { useCountUp } from "@/lib/use-count-up";
 import { useLang } from "@/lib/lang-context";
+import { useParallax } from "@/lib/use-parallax";
 import {
   listContainer,
   listItem,
@@ -15,6 +16,9 @@ import {
   usePrefersReducedMotion,
   viewOnce,
 } from "@/lib/motion";
+import MagneticButton from "@/components/MagneticButton";
+import KineticHeading from "@/components/KineticHeading";
+import TiltCard from "@/components/TiltCard";
 import styles from "./marketing.module.css";
 import ProductTour from "@/components/ProductTour";
 
@@ -299,7 +303,14 @@ export function MarketingHome() {
   const { lang, toggle, t } = useLang();
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("owner");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  // Dark is the default identity in 2026. Order: explicit localStorage choice
+  // > OS prefers-color-scheme > dark fallback.
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window === "undefined") return "dark";
+    const saved = window.localStorage.getItem("ordo-marketing-theme");
+    if (saved === "dark" || saved === "light") return saved;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "dark";
+  });
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
   const [whatsapp, setWhatsapp] = useState("+923039227000");
   const [sent, setSent] = useState(false);
@@ -317,10 +328,25 @@ export function MarketingHome() {
   const section = sectionEnter(reduced);
   const item = listItem(reduced, coarse);
 
-  useEffect(() => {
-    const saved = window.localStorage.getItem("ordo-marketing-theme");
-    if (saved === "dark" || saved === "light") setTheme(saved);
-  }, []);
+  // Hero scroll-linked parallax — scoped to the hero section only.
+  // Ranges are halved on coarse pointers (mobile) to avoid jank, and the
+  // whole effect is disabled under prefers-reduced-motion.
+  const heroRef = useRef<HTMLElement>(null);
+  const par = useParallax<HTMLElement>(
+    heroRef,
+    {
+      y: coarse ? [-20, 28] : [-40, 60],
+      scale: coarse ? [1, 1.04] : [1, 1.08],
+      rotate: coarse ? [0, 12] : [0, 24],
+    },
+    !reduced,
+  );
+  const photoY = par.y;
+  const photoScale = par.scale;
+  const orbitRot = useTransform(par.scrollYProgress, [0, 1], coarse ? [0, 14] : [0, 28]);
+  const cardAY = useTransform(par.scrollYProgress, [0, 1], coarse ? [0, -18] : [0, -40]);
+  const cardBY = useTransform(par.scrollYProgress, [0, 1], coarse ? [0, -28] : [0, -64]);
+  const cardFade = useTransform(par.scrollYProgress, [0, 1], [1, 0.35]);
 
   useEffect(() => {
     void fetch("/api/leads")
@@ -396,6 +422,17 @@ export function MarketingHome() {
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
     el.style.setProperty("--mx", `${e.clientX - r.left}px`);
     el.style.setProperty("--my", `${e.clientY - r.top}px`);
+  }, []);
+
+  // Dim, slower trailing glow on the Plans section (fine pointers only).
+  const plansRef = useRef<HTMLElement>(null);
+  const plansGlowRef = useRef<HTMLDivElement>(null);
+  const onPlansMove = useCallback((e: React.MouseEvent) => {
+    const el = plansGlowRef.current;
+    if (!el) return;
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    el.style.setProperty("--px", `${e.clientX - r.left - 150}px`);
+    el.style.setProperty("--py", `${e.clientY - r.top - 150}px`);
   }, []);
 
   // Hide the WhatsApp float while the contact section is on screen
@@ -538,7 +575,7 @@ export function MarketingHome() {
         </AnimatePresence>
       </header>
 
-      <section className={styles.hero}>
+      <section className={styles.hero} ref={heroRef}>
         <div className={styles.heroGlow1} aria-hidden />
         <div className={styles.heroGlow2} aria-hidden />
         <motion.div
@@ -548,30 +585,38 @@ export function MarketingHome() {
           animate="show"
         >
           <p className={styles.eyebrow}>Modern tech for premium hospitality</p>
-          <h1 className={styles.heroTitle}>
-            {(() => {
-              const parts = t("heroTitle").split("—");
-              return (
-                <>
-                  {parts[0]}
-                  {parts.length > 1 && <em>—{parts.slice(1).join("—")}</em>}
-                </>
-              );
-            })()}
-          </h1>
+          {(() => {
+            const parts = t("heroTitle").split("—");
+            return (
+              <KineticHeading
+                text={parts[0]}
+                accent={parts.length > 1 ? `—${parts.slice(1).join("—")}` : undefined}
+                className={styles.heroTitle}
+                level="h1"
+                animate="mount"
+                aria-label={t("heroTitle")}
+              />
+            );
+          })()}
           <p className={styles.heroSub}>
             {t("heroSub")}
           </p>
           <div className={styles.heroCtas}>
-            <Link href="/order?tenant=DEMO" className={styles.primary}>
-              {t("openDemo")}
-            </Link>
-            <Link href="/scan" className={styles.secondary}>
-              {t("scanTable")}
-            </Link>
-            <a href="#shop" className={styles.ghost}>
-              {t("fromPrice")}
-            </a>
+            <MagneticButton>
+              <Link href="/order?tenant=DEMO" className={styles.primary}>
+                {t("openDemo")}
+              </Link>
+            </MagneticButton>
+            <MagneticButton>
+              <Link href="/scan" className={styles.secondary}>
+                {t("scanTable")}
+              </Link>
+            </MagneticButton>
+            <MagneticButton>
+              <a href="#shop" className={styles.ghost}>
+                {t("fromPrice")}
+              </a>
+            </MagneticButton>
           </div>
           <ul className={styles.chips}>
             <li>Live on the floor</li>
@@ -596,8 +641,24 @@ export function MarketingHome() {
           animate="show"
           transition={{ delay: reduced || coarse ? 0 : 0.06 }}
         >
-          <div className={styles.heroOrbit} aria-hidden />
-          <figure className={styles.productShot}>
+          {/* Orbit: ambient spin (CSS) + scroll-linked rotate offset layered on top */}
+          <motion.div
+            className={styles.heroOrbitWrap}
+            style={!reduced ? { rotate: orbitRot } : undefined}
+            aria-hidden
+          >
+            <div className={styles.heroOrbit} />
+          </motion.div>
+
+          {/* Product photo: scroll parallax (moves slower than the page) */}
+          <motion.figure
+            className={styles.productShot}
+            style={
+              !reduced
+                ? { y: photoY, scale: photoScale, willChange: "transform" }
+                : undefined
+            }
+          >
             <picture>
               <source srcSet="/ordo-lifestyle-hero.webp" type="image/webp" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -608,37 +669,37 @@ export function MarketingHome() {
                 height={1067}
                 decoding="async"
                 fetchPriority="high"
-                className={styles.heroParallaxImg}
-                style={
-                  reduced
-                    ? undefined
-                    : {
-                        transform: `translate3d(0, ${Math.min(56, scrollY * 0.14)}px, 0) scale(1.08)`,
-                      }
-                }
               />
             </picture>
-          </figure>
+          </motion.figure>
 
-          {/* Floating live-order cards — real POS feel */}
-          <div
-            className={styles.floatCardA}
+          {/* Floating live-order cards — ambient float (CSS) + scroll drift up */}
+          <motion.div
+            className={styles.floatLayerA}
+            style={
+              !reduced ? { y: cardAY, opacity: cardFade, willChange: "transform" } : undefined
+            }
             aria-hidden
-            style={reduced ? undefined : { transform: `translate3d(0, ${-Math.min(28, scrollY * 0.08)}px, 0)` }}
           >
-            <span className={styles.floatLive}>● LIVE</span>
-            <strong>Order #1042</strong>
-            <em>Karahi ₨890 · Naan ×2 ₨160</em>
-            <b>TOTAL ₨1,130</b>
-          </div>
-          <div
-            className={styles.floatCardB}
+            <div className={styles.floatCardA}>
+              <span className={styles.floatLive}>● LIVE</span>
+              <strong>Order #1042</strong>
+              <em>Karahi ₨890 · Naan ×2 ₨160</em>
+              <b>TOTAL ₨1,130</b>
+            </div>
+          </motion.div>
+          <motion.div
+            className={styles.floatLayerB}
+            style={
+              !reduced ? { y: cardBY, opacity: cardFade, willChange: "transform" } : undefined
+            }
             aria-hidden
-            style={reduced ? undefined : { transform: `translate3d(0, ${-Math.min(20, scrollY * 0.05)}px, 0)` }}
           >
-            <span>✓ 58mm bill printed</span>
-            <em>Guest track open</em>
-          </div>
+            <div className={styles.floatCardB}>
+              <span>✓ 58mm bill printed</span>
+              <em>Guest track open</em>
+            </div>
+          </motion.div>
           <p className={styles.productCaption}>ORDO OS · live dashboard · ticket in hand</p>
         </motion.div>
       </section>
@@ -665,11 +726,11 @@ export function MarketingHome() {
 
       <section className={styles.gallery} aria-label="How ORDO works">
         <div className={styles.wrap}>
-          <motion.div variants={section} initial="hidden" whileInView="show" viewport={viewOnce}>
+          <div className={styles.sdaHeader}>
             <p className={styles.kicker}>{t("galleryKicker")}</p>
             <h2>{t("galleryTitle")}</h2>
             <p className={styles.leadWide}>{t("galleryLead")}</p>
-          </motion.div>
+          </div>
           <motion.div
             className={styles.stills}
             variants={listContainer(0.06)}
@@ -857,11 +918,13 @@ export function MarketingHome() {
 
       <section className={styles.section} id="company">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>{t("companyKicker")}</p>
-          <h2>{t("companyTitle")}</h2>
-          <p className={styles.leadWide}>
-            Phone, printer, aur aaj ke numbers — ek system, ek kitchen at a time.
-          </p>
+          <div className={styles.sdaHeader}>
+            <p className={styles.kicker}>{t("companyKicker")}</p>
+            <h2>{t("companyTitle")}</h2>
+            <p className={styles.leadWide}>
+              Phone, printer, aur aaj ke numbers — ek system, ek kitchen at a time.
+            </p>
+          </div>
           <div className={styles.principles}>
             {PRINCIPLES.map((item) => (
               <article key={item.n}>
@@ -876,12 +939,14 @@ export function MarketingHome() {
 
       <section className={styles.sectionSoft} id="products">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>{t("productsKicker")}</p>
-          <h2>{t("productsTitle")}</h2>
-          <p className={styles.lead}>
-            ORDO OS is our live flagship. The company can grow without turning ORDO itself into the name of a
-            single button on a till.
-          </p>
+          <div className={styles.sdaHeader}>
+            <p className={styles.kicker}>{t("productsKicker")}</p>
+            <h2>{t("productsTitle")}</h2>
+            <p className={styles.lead}>
+              ORDO OS is our live flagship. The company can grow without turning ORDO itself into the name of a
+              single button on a till.
+            </p>
+          </div>
           <article className={styles.flagship}>
             <div>
               <p className={styles.kicker}>Live flagship product</p>
@@ -907,10 +972,12 @@ export function MarketingHome() {
             </div>
             <div className={styles.modules}>
               {MODULES.map((m) => (
-                <article key={m.title}>
-                  <h3>{m.title}</h3>
-                  <p>{m.body}</p>
-                </article>
+                <TiltCard key={m.title} className={styles.moduleTilt}>
+                  <article>
+                    <h3>{m.title}</h3>
+                    <p>{m.body}</p>
+                  </article>
+                </TiltCard>
               ))}
             </div>
           </article>
@@ -919,12 +986,14 @@ export function MarketingHome() {
 
       <section className={styles.section} id="os">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>{t("osKicker")}</p>
-          <h2>{t("osTitle")}</h2>
-          <p className={styles.lead}>
-            Owner, kitchen, inventory, and counter see one queue. Guests never see cost price or another
-            restaurant’s logo.
-          </p>
+          <div className={styles.sdaHeader}>
+            <p className={styles.kicker}>{t("osKicker")}</p>
+            <h2>{t("osTitle")}</h2>
+            <p className={styles.lead}>
+              Owner, kitchen, inventory, and counter see one queue. Guests never see cost price or another
+              restaurant’s logo.
+            </p>
+          </div>
           <div className={styles.tabs}>
             {TABS.map((t) => (
               <button
@@ -1017,14 +1086,22 @@ export function MarketingHome() {
         </div>
       </section>
 
-      <section className={styles.sectionSoft} id="plans">
+      <section
+        className={styles.sectionSoft}
+        id="plans"
+        ref={plansRef}
+        onMouseMove={onPlansMove}
+      >
         <div className={styles.wrap}>
-          <p className={styles.kicker}>{t("plansKicker")}</p>
-          <h2>{t("plansTitle")}</h2>
-          <p className={styles.lead}>
-            Same three prices on every quote. Hardware is extra and confirmed in the WhatsApp thread — not a
-            surprise checkout on this site.
-          </p>
+          <div className={styles.plansGlow} ref={plansGlowRef} aria-hidden />
+          <div className={styles.sdaHeader}>
+            <p className={styles.kicker}>{t("plansKicker")}</p>
+            <h2>{t("plansTitle")}</h2>
+            <p className={styles.lead}>
+              Same three prices on every quote. Hardware is extra and confirmed in the WhatsApp thread — not a
+              surprise checkout on this site.
+            </p>
+          </div>
           <div className={styles.billingToggle} role="group" aria-label="Billing period">
             <span className={billing === "monthly" ? styles.billingOn : undefined}>Monthly</span>
             <button
@@ -1070,9 +1147,11 @@ export function MarketingHome() {
                       <li key={f}>{f}</li>
                     ))}
                   </ul>
-                  <a href="#contact" className={styles.planCta} onClick={() => pickPlan(p.id)}>
-                    Request {p.name}
-                  </a>
+                  <MagneticButton block className={styles.planCtaWrap}>
+                    <a href="#contact" className={styles.planCta} onClick={() => pickPlan(p.id)}>
+                      Request {p.name}
+                    </a>
+                  </MagneticButton>
                 </motion.article>
               );
             })}
@@ -1099,12 +1178,14 @@ export function MarketingHome() {
 
       <section className={styles.section}>
         <div className={styles.wrap}>
-          <p className={styles.kicker}>ORDO vs the old way</p>
-          <h2>WhatsApp + register se ORDO tak — same kaam, zero jhanjhat.</h2>
-          <p className={styles.lead}>
-            Jo kaam aaj phone calls, register, aur chhote kaghaz par hota hai — wohi sab ek screen par,
-            ek truth ke sath.
-          </p>
+          <div className={styles.sdaHeader}>
+            <p className={styles.kicker}>ORDO vs the old way</p>
+            <h2>WhatsApp + register se ORDO tak — same kaam, zero jhanjhat.</h2>
+            <p className={styles.lead}>
+              Jo kaam aaj phone calls, register, aur chhote kaghaz par hota hai — wohi sab ek screen par,
+              ek truth ke sath.
+            </p>
+          </div>
           <div className={styles.compare}>
             <table>
               <thead>
@@ -1140,11 +1221,13 @@ export function MarketingHome() {
 
       <section className={styles.section}>
         <div className={styles.wrap}>
-          <p className={styles.kicker}>{t("flowKicker")}</p>
-          <h2>One order becomes one continuous kitchen record.</h2>
-          <p className={styles.lead}>
-            ORDO OS is not only a POS interface. Each operational stage updates the next part of the workflow.
-          </p>
+          <div className={styles.sdaHeader}>
+            <p className={styles.kicker}>{t("flowKicker")}</p>
+            <h2>One order becomes one continuous kitchen record.</h2>
+            <p className={styles.lead}>
+              ORDO OS is not only a POS interface. Each operational stage updates the next part of the workflow.
+            </p>
+          </div>
           <ol className={styles.timeline}>
             {FLOW.map((f) => (
               <li key={f.step}>
@@ -1159,8 +1242,10 @@ export function MarketingHome() {
 
       <section className={styles.sectionSoft}>
         <div className={styles.wrap}>
-          <p className={styles.kicker}>Why the system matters</p>
-          <h2>Designed around outcomes, not a list of buttons.</h2>
+          <div className={styles.sdaHeader}>
+            <p className={styles.kicker}>Why the system matters</p>
+            <h2>Designed around outcomes, not a list of buttons.</h2>
+          </div>
           <div className={styles.outcomes}>
             {OUTCOMES.map((item) => (
               <article key={item.kicker}>
@@ -1175,8 +1260,10 @@ export function MarketingHome() {
 
       <section className={styles.sectionSoft} id="kitchens">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>From real kitchens</p>
-          <h2>Jo owners ORDO chala rahe hain, wohi sab se behtar batate hain.</h2>
+          <div className={styles.sdaHeader}>
+            <p className={styles.kicker}>From real kitchens</p>
+            <h2>Jo owners ORDO chala rahe hain, wohi sab se behtar batate hain.</h2>
+          </div>
           <motion.div
             className={styles.testimonials}
             variants={listContainer(0.08)}
@@ -1205,11 +1292,13 @@ export function MarketingHome() {
 
       <section className={styles.section} id="pakistan">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>{t("pakKicker")}</p>
-          <h2>{t("pakTitle")}</h2>
-          <p className={styles.leadWide}>
-            Practical devices, internet, PKR — local workflows ke liye.
-          </p>
+          <div className={styles.sdaHeader}>
+            <p className={styles.kicker}>{t("pakKicker")}</p>
+            <h2>{t("pakTitle")}</h2>
+            <p className={styles.leadWide}>
+              Practical devices, internet, PKR — local workflows ke liye.
+            </p>
+          </div>
           <ul className={styles.localList}>
             <li>
               <strong>Use familiar devices</strong>
@@ -1233,11 +1322,13 @@ export function MarketingHome() {
 
       <section className={styles.sectionSoft} id="insights">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>{t("insightsKicker")}</p>
-          <h2>{t("insightsTitle")}</h2>
-          <p className={styles.lead}>
-            Clear first-party answers help kitchens — and search — understand exactly what ORDO builds.
-          </p>
+          <div className={styles.sdaHeader}>
+            <p className={styles.kicker}>{t("insightsKicker")}</p>
+            <h2>{t("insightsTitle")}</h2>
+            <p className={styles.lead}>
+              Clear first-party answers help kitchens — and search — understand exactly what ORDO builds.
+            </p>
+          </div>
           <div className={styles.explore}>
             <a href="#os">
               <span>ORDO OS</span>
@@ -1269,11 +1360,13 @@ export function MarketingHome() {
 
       <section className={styles.section} id="about">
         <div className={styles.wrap}>
-          <p className={styles.kicker}>{t("aboutKicker")}</p>
-          <h2>{t("aboutTitle")}</h2>
-          <p className={styles.leadWide}>
-            Restaurants ke liye jo dining, takeaway, delivery chalaate hain. Public site guest path ka demo hai.
-          </p>
+          <div className={styles.sdaHeader}>
+            <p className={styles.kicker}>{t("aboutKicker")}</p>
+            <h2>{t("aboutTitle")}</h2>
+            <p className={styles.leadWide}>
+              Restaurants ke liye jo dining, takeaway, delivery chalaate hain. Public site guest path ka demo hai.
+            </p>
+          </div>
           <div className={styles.aboutGrid}>
             <article>
               <span>Brand</span>
@@ -1301,14 +1394,14 @@ export function MarketingHome() {
 
       <section ref={contactRef} className={`${styles.sectionSoft} ${styles.contactSection}`} id="contact">
         <div className={styles.wrap}>
-          <motion.div variants={section} initial="hidden" whileInView="show" viewport={viewOnce}>
+          <div className={styles.sdaHeader}>
             <p className={styles.kicker}>Start a conversation</p>
             <h2>Talk to ORDO</h2>
             <p className={styles.lead}>
               Kitchen shuru karni hai, demo dekhna hai, ya 58mm printer ka quote chahiye? Ek message —
               hum batayen ge.
             </p>
-          </motion.div>
+          </div>
 
           <motion.div
             className={styles.contactCard}
@@ -1317,79 +1410,109 @@ export function MarketingHome() {
             whileInView="show"
             viewport={viewOnce}
           >
-            {sent ? (
-              <motion.div className={styles.successCard} variants={item}>
-                <span className={styles.successCheck} aria-hidden>
-                  ✓
-                </span>
-                <h3>Request received</h3>
-                <p>Hum Super ke inbox mein dekh lein ge — WhatsApp ya email par jald wapis aayen ge.</p>
-                <Link href="/order?tenant=DEMO" className={styles.secondary}>
-                  Open the demo meanwhile
-                </Link>
-              </motion.div>
-            ) : (
-              <motion.form className={styles.form} variants={item} onSubmit={submit}>
-                <h3 className={styles.formTitle}>Kitchen details</h3>
-                <label className={styles.field}>
-                  <span>Your name</span>
-                  <input
-                    required
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="e.g. Usman"
-                  />
-                </label>
-                <label className={styles.field}>
-                  <span>Email</span>
-                  <input
-                    required
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="you@kitchen.pk"
-                  />
-                </label>
-                <div className={styles.formRow}>
+            <AnimatePresence mode="wait">
+              {sent ? (
+                <motion.div
+                  key="success"
+                  layoutId="contact-card"
+                  className={styles.successCard}
+                  variants={item}
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <span className={styles.successCheck} aria-hidden>
+                    ✓
+                  </span>
+                  <h3>Request received</h3>
+                  <p>Hum Super ke inbox mein dekh lein ge — WhatsApp ya email par jald wapis aayen ge.</p>
+                  <Link href="/order?tenant=DEMO" className={styles.secondary}>
+                    Open the demo meanwhile
+                  </Link>
+                </motion.div>
+              ) : (
+                <motion.form
+                  key="form"
+                  layoutId="contact-card"
+                  className={styles.form}
+                  variants={item}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0, scale: 0.97 }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                  onSubmit={submit}
+                >
+                  <h3 className={styles.formTitle}>Kitchen details</h3>
                   <label className={styles.field}>
-                    <span>Phone / WhatsApp</span>
                     <input
-                      value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      placeholder="03xx xxxxxxx"
+                      required
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      placeholder=" "
+                      aria-label="Your name"
                     />
+                    <span>Your name</span>
                   </label>
                   <label className={styles.field}>
-                    <span>Restaurant name</span>
                     <input
-                      value={form.restaurantName}
-                      onChange={(e) => setForm({ ...form, restaurantName: e.target.value })}
-                      placeholder="Karahi House"
+                      required
+                      type="email"
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      placeholder=" "
+                      aria-label="Email"
                     />
+                    <span>Email</span>
                   </label>
-                </div>
-                <label className={styles.field}>
-                  <span>Plan</span>
-                  <select value={form.planId} onChange={(e) => setForm({ ...form, planId: e.target.value })}>
-                    <option value="starter">Starter · ₨999</option>
-                    <option value="pro">Pro · ₨1,999</option>
-                    <option value="enterprise">Enterprise · ₨4,499</option>
-                  </select>
-                </label>
-                <label className={styles.field}>
-                  <span>Message</span>
-                  <textarea
-                    rows={3}
-                    value={form.message}
-                    onChange={(e) => setForm({ ...form, message: e.target.value })}
-                    placeholder="City, dine-in / takeaway / delivery, printer yes or no"
-                  />
-                </label>
-                <button type="submit" className={styles.cta}>
-                  Send request <span aria-hidden>→</span>
-                </button>
-              </motion.form>
-            )}
+                  <div className={styles.formRow}>
+                    <label className={styles.field}>
+                      <input
+                        value={form.phone}
+                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        placeholder=" "
+                        aria-label="Phone / WhatsApp"
+                      />
+                      <span>Phone / WhatsApp</span>
+                    </label>
+                    <label className={styles.field}>
+                      <input
+                        value={form.restaurantName}
+                        onChange={(e) => setForm({ ...form, restaurantName: e.target.value })}
+                        placeholder=" "
+                        aria-label="Restaurant name"
+                      />
+                      <span>Restaurant name</span>
+                    </label>
+                  </div>
+                  <label className={styles.field}>
+                    <select
+                      value={form.planId}
+                      onChange={(e) => setForm({ ...form, planId: e.target.value })}
+                      aria-label="Plan"
+                    >
+                      <option value="starter">Starter · ₨999</option>
+                      <option value="pro">Pro · ₨1,999</option>
+                      <option value="enterprise">Enterprise · ₨4,499</option>
+                    </select>
+                    <span>Plan</span>
+                  </label>
+                  <label className={styles.field}>
+                    <textarea
+                      rows={3}
+                      value={form.message}
+                      onChange={(e) => setForm({ ...form, message: e.target.value })}
+                      placeholder=" "
+                      aria-label="Message"
+                    />
+                    <span>Message</span>
+                  </label>
+                  <button type="submit" className={styles.cta}>
+                    Send request <span aria-hidden>→</span>
+                  </button>
+                </motion.form>
+              )}
+            </AnimatePresence>
 
             <motion.aside className={styles.contactAside} variants={item}>
               <div className={styles.asideInner}>
@@ -1435,13 +1558,7 @@ export function MarketingHome() {
 
       <footer className={styles.footer}>
         <div className={styles.wrap}>
-          <motion.div
-            className={styles.footerCta}
-            variants={section}
-            initial="hidden"
-            whileInView="show"
-            viewport={viewOnce}
-          >
+          <div className={`${styles.footerCta} ${styles.sdaHeader}`}>
             <div>
               <h2>Ready to modernize your kitchen?</h2>
               <p>Guest QR, counter POS, 58mm receipts — ek hi system mein. Demo dekho ya baat karo.</p>
@@ -1454,7 +1571,7 @@ export function MarketingHome() {
                 Talk to ORDO
               </a>
             </div>
-          </motion.div>
+          </div>
 
           <div className={styles.footerInner}>
             <div className={styles.footerBrand}>
