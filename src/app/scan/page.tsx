@@ -280,20 +280,14 @@ export default function ScanPage() {
         </motion.section>
 
         <motion.div className={styles.installGroup} variants={item} initial="hidden" animate="show">
-          <div className={styles.installHead}>📲 Get ORDO on your phone</div>
+          <div className={styles.installHead}>📲 Staff app on Android</div>
           {activeTenant ? (
             <>
               <p className={styles.installHint}>
-                Installing the app now links it to <strong>{activeTenant}</strong> — it opens this
-                restaurant&apos;s menu directly. Tap an option after you install and it stays merged.
+                Team APK / staff login links to <strong>{activeTenant}</strong>. Guests keep using this
+                page or a table QR — there is no Customer APK.
               </p>
               <div className={styles.installRow}>
-                <motion.a
-                  className={styles.install}
-                  href={`${typeof window !== "undefined" ? window.location.origin : ""}/guest?app=customer&tenant=${encodeURIComponent(activeTenant)}`}
-                >
-                  🍽️ Customer app · {activeTenant}
-                </motion.a>
                 <motion.a
                   className={styles.install}
                   href={`${typeof window !== "undefined" ? window.location.origin : ""}/login?app=staff&tenant=${encodeURIComponent(activeTenant)}`}
@@ -305,16 +299,10 @@ export default function ScanPage() {
           ) : (
             <>
               <p className={styles.installHint}>
-                Scan a table QR first — the app link then opens that restaurant automatically. Or pick a
-                recent kitchen below.
+                Scan a table QR for the guest menu. Staff sign in with the kitchen code — Android Staff
+                APK is optional.
               </p>
               <div className={styles.installRow}>
-                <motion.a
-                  className={styles.install}
-                  href="/guest?app=customer"
-                >
-                  🍽️ Customer app
-                </motion.a>
                 <motion.a className={styles.install} href="/login?app=staff">
                   🧑‍🍳 Staff app
                 </motion.a>

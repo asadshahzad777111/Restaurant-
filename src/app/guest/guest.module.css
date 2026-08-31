@@ -115,6 +115,15 @@
   border: 1px solid var(--guest-line);
   border-radius: var(--radius-lg);
   background: var(--guest-elevated);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+  transition: border-color 0.2s var(--ease-primary), transform 0.2s var(--ease-primary),
+    box-shadow 0.2s var(--ease-primary);
+}
+
+.card:focus-within,
+.paste:focus-within {
+  border-color: rgba(255, 133, 0, 0.45);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
 }
 
 .paste {
@@ -151,10 +160,13 @@
 .primary {
   background: var(--ember);
   color: var(--ember-ink);
+  transition: background 0.16s ease, transform 0.14s ease, box-shadow 0.16s ease;
 }
 
 .primary:hover {
   background: var(--ember-bright);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(255, 133, 0, 0.25);
 }
 
 .secondary {

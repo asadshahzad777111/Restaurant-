@@ -333,12 +333,12 @@ export default function SettingsPage() {
                   setBranding({ ...branding, allowApk: e.target.checked });
                 }}
               />
-              Allow this kitchen's own APK download (Staff + Customer)
+              Allow this kitchen&apos;s Staff APK download (Android team app)
             </label>
           ) : (
             <p className={styles.muted} style={{ margin: 0 }}>
-              Customer &amp; Staff app is a <strong>Pro</strong> feature (₨1,999/mo). Upgrade to publish
-              your own APK for this kitchen.
+              Staff Android app is a <strong>Pro</strong> feature (₨1,999/mo). Upgrade to publish
+              a Staff APK for this kitchen. Guests always order on the web.
             </p>
           )}
           <label className={styles.rowCheck}>
@@ -365,9 +365,8 @@ export default function SettingsPage() {
           {branding.allowApk && planAllows(planId, "apk") && tenant && (
             <div className={styles.apkLinks}>
               <a className={styles.btn} href={`/apk/install/${tenant.code}/staff`} download>🧑‍🍳 Staff APK</a>
-              <a className={styles.btn} href={`/apk/install/${tenant.code}/customer`} download>🍽️ Customer APK</a>
               <span className={styles.muted}>
-                Staff + Customer APKs for this kitchen only — Super HQ is never included.
+                Staff APK for this kitchen only. Guests use QR / web — no Customer APK.
               </span>
             </div>
           )}

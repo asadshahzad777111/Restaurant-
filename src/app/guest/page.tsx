@@ -208,8 +208,7 @@ function GuestInner() {
             <p className={styles.kicker}>Your restaurant app</p>
             <h1>{brand.name}</h1>
             <p className={styles.lead}>
-              Opening this kitchen’s menu only — code {preset || code}. Other restaurants cannot open inside this
-              Customer app / Home Screen shortcut.
+              Opening this kitchen’s menu only — code {preset || code}. Other restaurants cannot open here.
             </p>
             {brand.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element

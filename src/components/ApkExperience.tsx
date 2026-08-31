@@ -114,7 +114,7 @@ export function ApkExperience() {
             role="dialog"
             aria-labelledby="apk-notify-title"
           >
-            <p className={styles.kicker}>{shell === "customer" ? "Customer app" : "Staff app"}</p>
+            <p className={styles.kicker}>{shell === "customer" ? "Guest kitchen" : "Staff app"}</p>
             <h2 id="apk-notify-title">Allow notifications?</h2>
             <p>
               {shell === "customer"

@@ -68,10 +68,10 @@ export const CANONICAL_PLANS: Plan[] = [
     name: "Pro",
     pricePkr: 1999,
     maxStaff: 15,
-    description: "Most popular — customer app + stock + reviews",
+    description: "Most popular — staff roles + stock + reviews",
     features: [
       "Everything in Starter",
-      "Customer app (APK) for your restaurant",
+      "Staff APK (Android) for POS / kitchen",
       "WhatsApp order alerts to your phone",
       "Staff roles & permissions",
       "Stock alerts + sales & profit reports",
@@ -111,7 +111,7 @@ export function planAllows(
 
 export function upgradeHint(planId: PlanId | string | null | undefined): string {
   if (planId === "starter") {
-    return "Pro (₨1,999) adds your customer app, WhatsApp order alerts, stock & sales reports, and receipt branding.";
+    return "Pro (₨1,999) adds Staff APK, WhatsApp order alerts, stock & sales reports, and receipt branding.";
   }
   if (planId === "pro") {
     return "Need more kitchens or a thermal printer package? Talk to ORDO about Enterprise.";

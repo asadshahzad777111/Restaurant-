@@ -349,6 +349,7 @@ export function MarketingHome() {
   const [progress, setProgress] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const [showTop, setShowTop] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
   useEffect(() => {
     let raf = 0;
     const onScroll = () => {
@@ -358,6 +359,7 @@ export function MarketingHome() {
         setProgress(max > 0 ? Math.min(1, window.scrollY / max) : 0);
         setScrolled(window.scrollY > 10);
         setShowTop(window.scrollY > 700);
+        setScrollY(window.scrollY);
       });
     };
     onScroll();
@@ -605,18 +607,34 @@ export function MarketingHome() {
                 height={1067}
                 decoding="async"
                 fetchPriority="high"
+                className={styles.heroParallaxImg}
+                style={
+                  reduced
+                    ? undefined
+                    : {
+                        transform: `translate3d(0, ${Math.min(56, scrollY * 0.14)}px, 0) scale(1.08)`,
+                      }
+                }
               />
             </picture>
           </figure>
 
           {/* Floating live-order cards — real POS feel */}
-          <div className={styles.floatCardA} aria-hidden>
+          <div
+            className={styles.floatCardA}
+            aria-hidden
+            style={reduced ? undefined : { transform: `translate3d(0, ${-Math.min(28, scrollY * 0.08)}px, 0)` }}
+          >
             <span className={styles.floatLive}>● LIVE</span>
             <strong>Order #1042</strong>
             <em>Karahi ₨890 · Naan ×2 ₨160</em>
             <b>TOTAL ₨1,130</b>
           </div>
-          <div className={styles.floatCardB} aria-hidden>
+          <div
+            className={styles.floatCardB}
+            aria-hidden
+            style={reduced ? undefined : { transform: `translate3d(0, ${-Math.min(20, scrollY * 0.05)}px, 0)` }}
+          >
             <span>✓ 58mm bill printed</span>
             <em>Guest track open</em>
           </div>
@@ -659,7 +677,11 @@ export function MarketingHome() {
             viewport={viewOnce}
           >
             {/* Guest phone */}
-            <motion.div className={`${styles.still} ${styles.stillPhone}`} variants={item}>
+            <motion.div
+              className={`${styles.still} ${styles.stillPhone}`}
+              variants={item}
+              style={reduced ? undefined : { y: Math.min(18, Math.max(-10, (scrollY - 280) * 0.04)) }}
+            >
               <div className={styles.phoneFrame}>
                 <div className={styles.phoneHeader}>
                   <span className={styles.phoneLive}>● LIVE</span>
@@ -691,7 +713,11 @@ export function MarketingHome() {
             </motion.div>
 
             {/* Kitchen display */}
-            <motion.div className={`${styles.still} ${styles.stillPass}`} variants={item}>
+            <motion.div
+              className={`${styles.still} ${styles.stillPass}`}
+              variants={item}
+              style={reduced ? undefined : { y: Math.min(10, Math.max(-16, (scrollY - 320) * 0.03)) }}
+            >
               <div className={styles.rail}>
                 <article>
                   <span>T7 · Dining</span>
@@ -713,7 +739,11 @@ export function MarketingHome() {
             </motion.div>
 
             {/* 58mm receipt */}
-            <motion.div className={`${styles.still} ${styles.stillTicket}`} variants={item}>
+            <motion.div
+              className={`${styles.still} ${styles.stillTicket}`}
+              variants={item}
+              style={reduced ? undefined : { y: Math.min(22, Math.max(-8, (scrollY - 360) * 0.05)) }}
+            >
               <div className={styles.ticketCard}>
                 <div className={styles.ticketShop}>KARAHI HOUSE</div>
                 <div className={styles.ticketMeta}>Bill #1042 · 12:30</div>
@@ -784,8 +814,8 @@ export function MarketingHome() {
             <div className={styles.appVis}>
               <span className={styles.appIcon}>📱</span>
               <div className={styles.appMeta}>
-                <strong className={styles.appName}>ORDO Staff + Customer apps</strong>
-                <span className={styles.appBadge}>Android · v2 · Staff 62 MB · Customer 61 MB</span>
+                <strong className={styles.appName}>ORDO Staff app</strong>
+                <span className={styles.appBadge}>Android · Staff team · Guests stay on web</span>
               </div>
             </div>
             <div className={styles.appCopy}>
@@ -799,13 +829,6 @@ export function MarketingHome() {
                   download
                 >
                   🧑‍🍳 {t("downloadApk")}
-                </a>
-                <a
-                  className={styles.secondary}
-                  href="https://github.com/asadshahzad777111/Restaurant-/releases/download/ordo-apps-v1/ORDO-Customer.apk"
-                  download
-                >
-                  🍽️ Customer app
                 </a>
                 <Link href="/order?tenant=DEMO" className={styles.secondary}>
                   {t("webDemo")}
@@ -825,8 +848,8 @@ export function MarketingHome() {
             <p className={styles.kicker}>{t("tourKicker")}</p>
             <h2>{t("tourTitle")}</h2>
             <p className={styles.leadWide}>
-              Four stations. One kitchen catalog. Staff and Customer APKs lock to that restaurant code so
-              orders never mix.
+              Four stations. One kitchen catalog. Staff APK locks to that restaurant code. Guests order
+              on the web or table QR — kitchens never mix.
             </p>
           </motion.div>
           <motion.div

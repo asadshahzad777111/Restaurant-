@@ -230,10 +230,16 @@
   font-weight: 600;
   padding: 0.55rem 1rem;
   cursor: pointer;
+  transition: background 0.16s ease, transform 0.14s ease, box-shadow 0.16s ease;
 }
 
 .primaryBtn:hover {
   background: var(--hq-accent-dark);
+  box-shadow: 0 8px 18px rgba(196, 92, 38, 0.25);
+}
+
+.primaryBtn:active {
+  transform: scale(0.98);
 }
 
 .tableWrap {

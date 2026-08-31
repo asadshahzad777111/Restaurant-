@@ -192,7 +192,7 @@ export default function ControlPage() {
       });
       if (!res.ok) return;
       const data = (await res.json()) as { apps?: ApkRow[] };
-      setApkRows(data.apps || []);
+      setApkRows((data.apps || []).filter((a) => a.id === "staff"));
     },
     [token],
   );
@@ -472,6 +472,7 @@ export default function ControlPage() {
   }
 
   async function uploadApk(slot: "staff" | "customer", file: File) {
+    if (slot !== "staff") return;
     if (!apkTenantId) {
       window.alert("Select a restaurant first");
       return;
@@ -637,7 +638,7 @@ export default function ControlPage() {
             <section>
               <h1>Home</h1>
               <p className={styles.lead}>
-                Manage restaurants, billing, and per-kitchen Staff + Customer APKs here. Staff and guests
+                Manage restaurants, billing, and per-kitchen Staff APKs here. Staff and guests
                 use ordo.asfins.com — this panel never becomes their Admin login.
               </p>
               <div className={styles.how}>
@@ -651,8 +652,8 @@ export default function ControlPage() {
                   <li>They sign in at ordo.asfins.com/login with that code — they cannot open HQ.</li>
                   <li>Guests order with /order?tenant=CODE or table QR for that kitchen only.</li>
                   <li>
-                    Upload named Staff + Customer APKs under Apps — each binary is locked to that
-                    restaurant code so kitchens never mix.
+                    Upload a named Staff APK under Apps — locked to that restaurant code so kitchens
+                    never mix. Guests order on the web / table QR (no Customer APK).
                   </li>
                   <li>
                     <em>Open Admin (no password)</em> is Help mode into their panel. Yellow banner +
@@ -957,9 +958,10 @@ export default function ControlPage() {
             <section>
               <h1>Apps · per restaurant</h1>
               <p className={styles.lead}>
-                Every kitchen gets its own Staff + Customer apps (unique package id, baked tenant code — no
-                mix-up). <strong>.apk</strong> = WhatsApp/sideload for Admin → diners.{" "}
-                <strong>.aab</strong> = Google Play Console upload. Build release:{" "}
+                Every kitchen can have its own Staff Android app (unique package id, baked tenant
+                code). Guests order on the web or table QR — there is no Customer APK.{" "}
+                <strong>.apk</strong> = sideload for the team. <strong>.aab</strong> = Google Play
+                Console. Build:{" "}
                 <code>
                   node scripts/build-tenant-apks.cjs --code=CODE --name=&quot;Kitchen&quot; --release
                 </code>{" "}
@@ -982,15 +984,12 @@ export default function ControlPage() {
                 {selectedTenant && (
                   <p className={styles.muted} style={{ marginTop: "0.75rem" }}>
                     Staff opens{" "}
-                    <code>/login?app=staff&amp;tenant={selectedTenant.code}</code> · Customer opens{" "}
-                    <code>/guest?app=customer&amp;tenant={selectedTenant.code}</code>
+                    <code>/login?app=staff&amp;tenant={selectedTenant.code}</code>
+                    . Guests open{" "}
+                    <code>/order?tenant={selectedTenant.code}</code>
+                    {" "}or a table QR.
                     <br />
-                    Play packages:{" "}
-                    <code>
-                      com.ordo.customer.
-                      {selectedTenant.code.toLowerCase().replace(/[^a-z0-9]/g, "")}
-                    </code>{" "}
-                    ·{" "}
+                    Play package:{" "}
                     <code>
                       com.ordo.staff.
                       {selectedTenant.code.toLowerCase().replace(/[^a-z0-9]/g, "")}
@@ -1002,7 +1001,9 @@ export default function ControlPage() {
 
               {selectedTenant && (
                 <div className={styles.planGrid}>
-                  {apkRows.map((app) => (
+                  {apkRows
+                    .filter((app) => app.id === "staff")
+                    .map((app) => (
                     <article key={app.id}>
                       <h3>{app.title}</h3>
                       <p className={styles.muted}>{app.note}</p>
@@ -1206,11 +1207,11 @@ export default function ControlPage() {
                 </p>
                 <strong>Android apps</strong>
                 <p>
-                  Upload finished Staff and Customer APKs under the Apps tab — one pair per restaurant,
-                  named <code>ORDO-CODE-Staff.apk</code> / <code>ORDO-CODE-Customer.apk</code>, labels{" "}
-                  <em>Restaurant Staff</em> / <em>Restaurant Order</em>. Build on a machine with Android
-                  SDK: <code>node scripts/build-tenant-apks.cjs --code=CODE --name=&quot;Name&quot;</code>.
-                  Download stays hidden until a real file exists. APKs never open /super or /control.
+                  Upload a finished Staff APK under the Apps tab — named{" "}
+                  <code>ORDO-CODE-Staff.apk</code>, label <em>Restaurant Staff</em>. Guests stay on the
+                  web menu (no Customer APK). Build:{" "}
+                  <code>node scripts/build-tenant-apks.cjs --code=CODE --name=&quot;Name&quot;</code>.
+                  Download stays hidden until a real file exists. Staff APK never opens /super or /control.
                 </p>
               </div>
             </section>

@@ -96,8 +96,8 @@ export const dict = {
   talkOrdo: { en: "Talk to ORDO", ur: "ORDO se baat karo" },
   appTitle: { en: "ORDO ko phone mein try karein.", ur: "ORDO ko phone mein try karein." },
   appBody: {
-    en: "POS, orders, kitchen, aur 58mm Bluetooth thermal print. Demo build — full branded per-kitchen app Super se upload hoti hai.",
-    ur: "POS, orders, kitchen, aur 58mm Bluetooth thermal print. Demo build — full branded per-kitchen app Super se upload hoti hai.",
+    en: "POS, orders, kitchen, aur 58mm Bluetooth thermal print — Staff APK. Guests order on the web / table QR.",
+    ur: "POS, orders, kitchen, aur 58mm Bluetooth thermal print — Staff APK. Guest web / table QR se order karte hain.",
   },
   downloadApk: { en: "Download APK →", ur: "Download APK →" },
   webDemo: { en: "Ya web demo dekhein", ur: "Ya web demo dekhein" },
@@ -140,10 +140,10 @@ export const dict = {
   flowHandoff: { en: "Ready for the pass, pickup shelf, ya delivery run.", ur: "Ready — pass, pickup shelf, ya delivery run." },
   flowRecord: { en: "Pay method ticket par. Stock alerts isi tenant par.", ur: "Pay method ticket par. Stock alerts isi tenant par." },
   flowUnderstand: { en: "Guest tracking live. Completed ticket = review.", ur: "Guest tracking live. Completed ticket = review." },
-  tourGuest: { en: "Scan table QR ya Customer APK — menu, cart, track.", ur: "Table QR scan ya Customer APK — menu, cart, track." },
+  tourGuest: { en: "Scan table QR ya web menu — cart, track, no guest APK needed.", ur: "Table QR ya web menu — cart, track. Guest APK nahi." },
   tourPos: { en: "Staff APK / POS — 58mm print, same catalog. Out-of-stock blocks sale.", ur: "Staff APK / POS — 58mm print, same catalog. Out-of-stock block." },
   tourKitchen: { en: "Tickets placed → preparing → ready. Sound + notify.", ur: "Tickets placed → preparing → ready. Sound + notify." },
-  tourOwner: { en: "Sales & Profit, day close, Super HQ billing, APKs.", ur: "Sales & Profit, day close, Super HQ billing, APKs." },
+  tourOwner: { en: "Sales & Profit, day close, Super HQ billing, Staff APK.", ur: "Sales & Profit, day close, Super HQ billing, Staff APK." },
   footerTag: { en: "Guest QR, counter POS, aur pass — ek system mein.", ur: "Guest QR, counter POS, aur pass — ek system mein." },
   footerIsolated: { en: "Isolated per kitchen · priced in PKR", ur: "Isolated per kitchen · PKR mein pricing" },
 } as const;
