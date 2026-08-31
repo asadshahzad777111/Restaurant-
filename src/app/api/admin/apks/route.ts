@@ -12,8 +12,8 @@ function errorMessage(e: unknown, fallback: string) {
 }
 
 /**
- * Restaurant Admin only — see/download THIS kitchen’s Staff + Customer APK/AAB.
- * Never lists another tenant. Upload stays Super-only.
+ * Restaurant Admin only — download THIS kitchen’s Staff APK/AAB.
+ * Guest ordering is web/QR (no Customer APK). Upload stays Super-only.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -30,7 +30,10 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const slot = url.searchParams.get("download") as ApkId | null;
     const format = parseApkFormat(url.searchParams.get("format"));
-    if (slot === "staff" || slot === "customer") {
+    if (slot === "customer") {
+      return NextResponse.json({ error: "Customer APK is not offered — guests order on the web" }, { status: 404 });
+    }
+    if (slot === "staff") {
       const file = await readTenantApk(meta.id, meta.code, slot, format);
       if (!file) {
         return NextResponse.json(
@@ -53,11 +56,13 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const apps = await listTenantApkStatus({
-      tenantId: meta.id,
-      code: meta.code,
-      name: tenant.branding.name || meta.name,
-    });
+    const apps = (
+      await listTenantApkStatus({
+        tenantId: meta.id,
+        code: meta.code,
+        name: tenant.branding.name || meta.name,
+      })
+    ).filter((app) => app.id === "staff");
     return NextResponse.json({
       restaurant: {
         id: meta.id,
@@ -66,7 +71,7 @@ export async function GET(req: NextRequest) {
         logoUrl: tenant.branding.logoUrl || "",
       },
       apps,
-      note: "Customer APK → diners (WhatsApp). Customer AAB → Google Play upload. Both locked to this code only.",
+      note: "Staff APK → team / POS / kitchen. Guests order on the web (QR or /order). Locked to this kitchen code.",
     });
   } catch (e) {
     if (e instanceof AuthError) {

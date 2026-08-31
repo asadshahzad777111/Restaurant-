@@ -31,7 +31,7 @@ export function AdminApkCard() {
       setError(data.error || "Could not load apps");
       return;
     }
-    setApps(data.apps || []);
+    setApps((data.apps || []).filter((a: ApkInfo) => a.id === "staff"));
     setNote(data.note || "");
     setError("");
   }, [api]);
@@ -40,7 +40,7 @@ export function AdminApkCard() {
     void load();
   }, [load]);
 
-  async function download(slot: "staff" | "customer", filename: string, format: "apk" | "aab") {
+  async function download(slot: "staff", filename: string, format: "apk" | "aab") {
     setBusy(`${slot}-${format}`);
     try {
       const res = await api(`/api/admin/apks?download=${slot}&format=${format}`);
@@ -72,11 +72,11 @@ export function AdminApkCard() {
 
   return (
     <div className={styles.card}>
-      <h3 style={{ marginTop: 0 }}>Your apps — Android APK</h3>
+      <h3 style={{ marginTop: 0 }}>Staff app — Android APK</h3>
       <p className={styles.muted}>
-        <strong>Customer APK</strong> diners (Android) · <strong>Staff APK</strong> team / POS /
-        kitchen. In-app logo & name = Settings. Code <strong>{code || "—"}</strong> locked.{" "}
-        <strong>iPhone</strong> users: see <em>Install on iPhone</em> below (web / Add to Home Screen).
+        <strong>Staff APK</strong> is for your team (POS / kitchen / orders). Guests order on the{" "}
+        <strong>web menu</strong> or table QR — there is no Customer APK (and no iPhone APK). Code{" "}
+        <strong>{code || "—"}</strong> is locked to this kitchen. iPhone staff: Add to Home Screen below.
       </p>
       <div className={styles.row} style={{ alignItems: "center", marginBottom: "0.75rem" }}>
         {logo ? (
@@ -101,7 +101,7 @@ export function AdminApkCard() {
         <div>
           <strong>{name}</strong>
           <p className={styles.muted} style={{ margin: 0 }}>
-            Code {code} · Android APK / Play AAB
+            Code {code} · Staff Android APK / Play AAB
           </p>
         </div>
       </div>
@@ -110,38 +110,38 @@ export function AdminApkCard() {
       {error && <p className={styles.muted}>{error}</p>}
       {apps.map((app) => (
         <div key={app.id} style={{ marginBottom: "1rem" }}>
-          <strong>{app.id === "customer" ? "Customer" : "Staff"}</strong>
+          <strong>Staff</strong>
           <div className={styles.row} style={{ marginTop: "0.35rem" }}>
             <button
               type="button"
-              className={app.id === "customer" ? styles.btn : styles.btnGhost}
+              className={styles.btn}
               disabled={!app.available || busy === `${app.id}-apk` || !token}
-              onClick={() => void download(app.id, app.filename, "apk")}
+              onClick={() => void download("staff", app.filename, "apk")}
             >
               {busy === `${app.id}-apk`
                 ? "Downloading…"
                 : app.available
-                  ? `Download ${app.id === "customer" ? "Customer" : "Staff"} APK`
+                  ? "Download Staff APK"
                   : "APK pending (Super)"}
             </button>
             <button
               type="button"
               className={styles.btnGhost}
               disabled={!app.aabAvailable || busy === `${app.id}-aab` || !token}
-              onClick={() => void download(app.id, app.aabFilename || app.filename.replace(/\.apk$/i, ".aab"), "aab")}
+              onClick={() => void download("staff", app.aabFilename || app.filename.replace(/\.apk$/i, ".aab"), "aab")}
             >
               {busy === `${app.id}-aab`
                 ? "Downloading…"
                 : app.aabAvailable
-                  ? `Download Play Store AAB`
+                  ? "Download Play Store AAB"
                   : "Play AAB pending (Super)"}
             </button>
           </div>
         </div>
       ))}
       <p className={styles.muted} style={{ marginBottom: 0 }}>
-        Play Console (optional): upload <strong>AAB</strong> not APK — docs/PLAY-STORE.md. iPhone:{" "}
-        docs/IOS-PWA-SAFE-PLAN.md.
+        Play Console (optional): upload <strong>Staff AAB</strong> — docs/PLAY-STORE.md. Guests stay on the
+        web menu.
       </p>
     </div>
   );

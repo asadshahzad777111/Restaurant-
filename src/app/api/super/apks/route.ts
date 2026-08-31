@@ -30,11 +30,13 @@ export async function GET(req: NextRequest) {
       const meta = await findTenantMetaById(tenantId);
       if (!meta) return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
       return NextResponse.json({
-        apps: await listTenantApkStatus({ tenantId: meta.id, code: meta.code, name: meta.name }),
+        apps: (await listTenantApkStatus({ tenantId: meta.id, code: meta.code, name: meta.name })).filter(
+          (a) => a.id === "staff",
+        ),
         tenant: meta,
         storage: r2Configured() ? "r2" : "file-store",
         playStoreNote:
-          "Upload .aab for Google Play Console. Upload .apk for Admin → customer sideload. Same kitchen code — no mix-up.",
+          "Upload .aab for Google Play Console. Upload .apk for Staff sideload. Guests order on the web.",
       });
     }
     const tenants = await listTenantsMeta();
@@ -79,6 +81,12 @@ export async function POST(req: NextRequest) {
     const file = form.get("file");
     if (!["staff", "customer"].includes(id)) {
       return NextResponse.json({ error: "Unknown APK" }, { status: 400 });
+    }
+    if (id === "customer") {
+      return NextResponse.json(
+        { error: "Customer APK is retired — guests order on the web. Upload Staff APK only." },
+        { status: 400 },
+      );
     }
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "APK/AAB file required" }, { status: 400 });

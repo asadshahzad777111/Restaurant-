@@ -33,6 +33,18 @@
   backdrop-filter: blur(18px) saturate(1.2);
   -webkit-backdrop-filter: blur(18px) saturate(1.2);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  animation: loginRise 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes loginRise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* One-level back to the marketing home (hidden on the owner desk app) */
@@ -220,10 +232,18 @@
   color: var(--ember-ink);
   font-weight: 700;
   padding: 0.75rem;
+  transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1), background 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
 .submit:hover {
   background: var(--ember-bright);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(255, 133, 0, 0.28);
+}
+
+.submit:active {
+  transform: scale(0.98);
 }
 
 .error {

@@ -29,6 +29,9 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     const url = new URL(req.url);
     const tenantId = url.searchParams.get("tenantId");
     const format = parseApkFormat(url.searchParams.get("format"));
+    if (raw === "customer") {
+      return NextResponse.json({ error: "Customer APK is retired — guests order on the web" }, { status: 404 });
+    }
 
     if (tenantId) {
       const meta = await findTenantMetaById(tenantId);

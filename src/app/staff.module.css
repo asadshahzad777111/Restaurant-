@@ -212,12 +212,20 @@
   border-color: var(--staff-accent);
   color: #fff;
   font-weight: 700;
+  transition: background 0.16s var(--ease-primary),
+    border-color 0.16s var(--ease-primary),
+    box-shadow 0.16s var(--ease-primary),
+    transform 0.14s var(--ease-primary);
 }
 
 .btn:hover {
   background: var(--ember-bright, #ff9d2e);
   border-color: var(--ember-bright, #ff9d2e);
   box-shadow: 0 10px 26px rgba(255, 133, 0, 0.3);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .tableScroll {

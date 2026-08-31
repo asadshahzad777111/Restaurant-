@@ -567,6 +567,11 @@
   object-fit: cover;
   object-position: center;
   background: #1a1410;
+  will-change: transform;
+}
+
+.heroParallaxImg {
+  transform-origin: center center;
 }
 
 .page[data-theme="dark"] .productShot img {
@@ -804,6 +809,8 @@
   overflow: hidden;
   border: 1px solid var(--m-line);
   isolation: isolate;
+  will-change: transform;
+  box-shadow: 0 16px 40px rgba(26, 22, 18, 0.08);
 }
 
 .still:nth-child(2) {
