@@ -1,0 +1,162 @@
+.section {
+  padding: clamp(3.6rem, 7.5vw, 6rem) 0;
+  scroll-margin-top: calc(var(--m-nav) + 0.75rem);
+}
+
+.wrap {
+  width: 100%;
+  max-width: var(--m-max);
+  margin-inline: auto;
+  padding-inline: var(--m-pad);
+}
+
+.kicker {
+  margin: 0 0 0.85rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--m-orange);
+}
+
+.section h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  color: var(--m-charcoal);
+  line-height: 1.05;
+  font-size: clamp(2.05rem, 4.2vw, 3.35rem);
+  max-width: 18ch;
+}
+
+.leadWide {
+  margin: 1.2rem 0 0;
+  color: var(--m-muted);
+  font-size: 1.08rem;
+  line-height: 1.7;
+  max-width: 46rem;
+}
+
+/* --- Scroll-driven horizontal carousel stage --- */
+
+.stage {
+  --tour-card-w: clamp(240px, 26vw, 330px);
+  --tour-gap: 1.4rem;
+  margin-top: 2.4rem;
+  height: clamp(340px, 60vh, 540px);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid var(--m-line);
+  background: color-mix(in srgb, var(--m-bg) 62%, transparent);
+}
+
+.track {
+  display: flex;
+  align-items: center;
+  gap: var(--tour-gap);
+  /* First card starts centered; GSAP translates x per step on scroll. */
+  margin-left: calc(50% - var(--tour-card-w) / 2);
+  will-change: transform;
+}
+
+.card {
+  flex: 0 0 var(--tour-card-w);
+  width: var(--tour-card-w);
+  padding: 1.9rem 1.7rem;
+  border-radius: 1.15rem;
+  border: 1px solid var(--m-line);
+  background: var(--m-elevated);
+  color: var(--m-ink);
+  /* Same two-shadow structure as the GSAP active state, so scrub interpolates cleanly. */
+  box-shadow:
+    0 0 0 0 rgba(255, 133, 0, 0),
+    0 24px 60px -20px rgba(255, 133, 0, 0);
+  will-change: transform;
+}
+
+.cardNo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.15rem;
+  height: 2.15rem;
+  padding: 0 0.5rem;
+  margin-bottom: 1rem;
+  border-radius: 0.65rem;
+  background: var(--m-orange-soft);
+  color: var(--m-orange-deep);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.card h3 {
+  margin: 0 0 0.55rem;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.45rem;
+  color: var(--m-charcoal);
+}
+
+.card p {
+  margin: 0;
+  color: var(--m-muted);
+  font-size: 0.96rem;
+  line-height: 1.6;
+}
+
+/* Reduced-motion fallback: plain grid, no pin, no scrub. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 2.4rem;
+}
+
+.grid .card {
+  animation: tourFade 0.5s ease both;
+}
+
+.grid .card:nth-child(2) {
+  animation-delay: 0.06s;
+}
+
+.grid .card:nth-child(3) {
+  animation-delay: 0.12s;
+}
+
+.grid .card:nth-child(4) {
+  animation-delay: 0.18s;
+}
+
+@keyframes tourFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 960px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .stage {
+    --tour-card-w: min(76vw, 290px);
+    --tour-gap: 1rem;
+    height: clamp(300px, 52vh, 430px);
+  }
+
+  .card {
+    padding: 1.5rem 1.3rem;
+  }
+}

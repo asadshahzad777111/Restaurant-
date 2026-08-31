@@ -16,6 +16,7 @@ import {
   viewOnce,
 } from "@/lib/motion";
 import styles from "./marketing.module.css";
+import ProductTour from "@/components/ProductTour";
 
 /** Animated plan price — counts up when the card scrolls into view. */
 function PlanPrice({ amount, prefix = "₨" }: { amount: number; prefix?: string }) {
@@ -819,50 +820,17 @@ export function MarketingHome() {
         </div>
       </section>
 
-      <section className={styles.section} id="tour">
-        <div className={styles.wrap}>
-          <motion.div variants={section} initial="hidden" whileInView="show" viewport={viewOnce}>
-            <p className={styles.kicker}>{t("tourKicker")}</p>
-            <h2>{t("tourTitle")}</h2>
-            <p className={styles.leadWide}>
-              Four stations. One kitchen catalog. Staff and Customer APKs lock to that restaurant code so
-              orders never mix.
-            </p>
-          </motion.div>
-          <motion.div
-            className={styles.plans}
-            variants={listContainer(0.06)}
-            initial="hidden"
-            whileInView="show"
-            viewport={viewOnce}
-            style={{ marginTop: "1.5rem" }}
-          >
-            {[
-              {
-                t: "1 · Guest",
-                d: t("tourGuest"),
-              },
-              {
-                t: "2 · Counter POS",
-                d: t("tourPos"),
-              },
-              {
-                t: "3 · Kitchen",
-                d: t("tourKitchen"),
-              },
-              {
-                t: "4 · Owner",
-                d: t("tourOwner"),
-              },
-            ].map((step) => (
-              <motion.article key={step.t} className={styles.planCard} variants={listItem(reduced, coarse)}>
-                <h3>{step.t}</h3>
-                <p>{step.d}</p>
-              </motion.article>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+      <ProductTour
+        kicker={t("tourKicker")}
+        title={t("tourTitle")}
+        lead="Four stations. One kitchen catalog. Staff and Customer APKs lock to that restaurant code so orders never mix."
+        steps={[
+          { title: "Guest", body: t("tourGuest") },
+          { title: "Counter POS", body: t("tourPos") },
+          { title: "Kitchen", body: t("tourKitchen") },
+          { title: "Owner", body: t("tourOwner") },
+        ]}
+      />
 
       <section className={styles.section} id="company">
         <div className={styles.wrap}>
