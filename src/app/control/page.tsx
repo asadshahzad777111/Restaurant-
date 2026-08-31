@@ -490,7 +490,7 @@ export default function ControlPage() {
         return;
       }
       const kind = file.name.toLowerCase().endsWith(".aab") ? "Play Store AAB" : "APK";
-      setApkMessage(`${slot === "staff" ? "Staff" : "Customer"} ${kind} uploaded for this restaurant.`);
+      setApkMessage(`Staff ${kind} uploaded for this restaurant.`);
       await loadApks(apkTenantId);
     } catch (e) {
       window.alert(e instanceof Error ? e.message : "Upload failed");
@@ -653,7 +653,7 @@ export default function ControlPage() {
                   <li>Guests order with /order?tenant=CODE or table QR for that kitchen only.</li>
                   <li>
                     Upload a named Staff APK under Apps — locked to that restaurant code so kitchens
-                    never mix. Guests order on the web / table QR (no Customer APK).
+                    never mix. Guests order on the web, table QR, or scanner.
                   </li>
                   <li>
                     <em>Open Admin (no password)</em> is Help mode into their panel. Yellow banner +
@@ -959,7 +959,7 @@ export default function ControlPage() {
               <h1>Apps · per restaurant</h1>
               <p className={styles.lead}>
                 Every kitchen can have its own Staff Android app (unique package id, baked tenant
-                code). Guests order on the web or table QR — there is no Customer APK.{" "}
+                code). Guests order on the web, table QR, or scanner.{" "}
                 <strong>.apk</strong> = sideload for the team. <strong>.aab</strong> = Google Play
                 Console. Build:{" "}
                 <code>
@@ -1209,7 +1209,7 @@ export default function ControlPage() {
                 <p>
                   Upload a finished Staff APK under the Apps tab — named{" "}
                   <code>ORDO-CODE-Staff.apk</code>, label <em>Restaurant Staff</em>. Guests stay on the
-                  web menu (no Customer APK). Build:{" "}
+                  web menu, table QR, or scanner. Build:{" "}
                   <code>node scripts/build-tenant-apks.cjs --code=CODE --name=&quot;Name&quot;</code>.
                   Download stays hidden until a real file exists. Staff APK never opens /super or /control.
                 </p>

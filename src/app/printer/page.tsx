@@ -14,7 +14,7 @@ export default function PrinterPage() {
         <div className={styles.card} style={{ marginTop: "1rem" }}>
           <h3 style={{ marginTop: 0 }}>How to print (AsFix POS style)</h3>
           <ol className={styles.muted} style={{ marginBottom: 0, paddingLeft: "1.2rem" }}>
-            <li>Install this kitchen’s <strong>Staff APK</strong> (not Customer). Super HQ never opens in this app.</li>
+            <li>Install this kitchen’s <strong>Staff APK</strong>. Super HQ never opens in this app.</li>
             <li>Phone Bluetooth → pair the 58mm thermal printer.</li>
             <li>Sign in with the restaurant code → tap <strong>Printer</strong> → <strong>Use this</strong>.</li>
             <li>Staff phone shows <strong>Printer linked</strong>. Laptop / iPhone show <strong>Android printer: connected</strong>.</li>

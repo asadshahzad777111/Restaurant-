@@ -366,7 +366,7 @@ export default function SettingsPage() {
             <div className={styles.apkLinks}>
               <a className={styles.btn} href={`/apk/install/${tenant.code}/staff`} download>🧑‍🍳 Staff APK</a>
               <span className={styles.muted}>
-                Staff APK for this kitchen only. Guests use QR / web — no Customer APK.
+                Staff APK for this kitchen only. Guests use table QR, scanner, or web menu.
               </span>
             </div>
           )}

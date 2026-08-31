@@ -34,12 +34,12 @@ export const APK_APPS: ApkApp[] = [
   },
   {
     id: "customer",
-    title: "ORDO Customer (template)",
+    title: "ORDO Guest (retired)",
     filename: "ORDO-Customer.apk",
-    audience: "Diners — dining, pickup, delivery, COD, QR scan",
+    audience: "Diners — web / table QR / scanner",
     loadsPath: "/guest?app=customer",
     version: "1.0.0",
-    note: "Global template only. Publish a per-restaurant Customer APK locked to that kitchen code.",
+    note: "Retired. Guests order on the web, table QR, or scanner — not a downloadable app.",
   },
 ];
 
@@ -66,7 +66,7 @@ export function tenantApkFilename(code: string, id: ApkId, format: ApkFormat = "
 
 export function tenantApkDisplayTitle(restaurantName: string, id: ApkId) {
   const name = restaurantName.trim() || "Restaurant";
-  return id === "staff" ? `${name} · Staff` : `${name} · Customer`;
+  return id === "staff" ? `${name} · Staff` : `${name} · Guest menu`;
 }
 
 export function apkContentType(format: ApkFormat) {
@@ -174,7 +174,7 @@ export async function listTenantApkStatus(input: {
         note:
           id === "staff"
             ? "APK for staff phones. AAB for Google Play listing. Never opens Super HQ."
-            : "APK for diners (WhatsApp/sideload). AAB for Google Play. Locked to this kitchen only.",
+            : "Guests order on the web, table QR, or scanner — not a downloadable app.",
         format: "apk" as ApkFormat,
         storage: r2 ? ("r2" as const) : ("file-store" as const),
         available: apkMeta.available,

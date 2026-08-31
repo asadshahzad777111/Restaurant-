@@ -846,7 +846,7 @@ export function MarketingHome() {
       <ProductTour
         kicker={t("tourKicker")}
         title={t("tourTitle")}
-        lead="Four stations. One kitchen catalog. Staff APK locks to that restaurant code. Guests order on the web or table QR — kitchens never mix."
+        lead={t("tourLead")}
         steps={[
           { title: "Guest", body: t("tourGuest") },
           { title: "Counter POS", body: t("tourPos") },
