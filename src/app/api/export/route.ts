@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureStore, findSession, readTenant } from "@/lib/db";
+import { ensureStore, findSession, queryArchivedOrders, readTenant } from "@/lib/db";
 import { AuthError, getBearerToken, hasPermission, requireTenantSession } from "@/lib/session";
 
 export const runtime = "nodejs";
@@ -67,10 +67,20 @@ export async function GET(req: NextRequest) {
     if (type === "orders") {
       const fromMs = from ? new Date(from).getTime() : 0;
       const toMs = to ? new Date(to).getTime() : Date.now();
-      const orders = tenant.orders.filter((o) => {
+      const live = tenant.orders.filter((o) => {
         const t = new Date(o.createdAt).getTime();
         return t >= fromMs && t <= toMs;
       });
+      // includeArchived=1 merges orders moved to the archive by retention.
+      let archived: Awaited<ReturnType<typeof queryArchivedOrders>> = [];
+      if (searchParams.get("includeArchived") === "1") {
+        archived = await queryArchivedOrders(tenantId!, {
+          from: from || undefined,
+          to: to || undefined,
+          limit: 5000,
+        });
+      }
+      const orders = [...live, ...archived];
       if (format === "csv") {
         const rows = orders.map((o) => ({
           number: o.number,
@@ -96,6 +106,7 @@ export async function GET(req: NextRequest) {
         to,
         exportedAt: new Date().toISOString(),
         orders,
+        archivedCount: archived.length,
       });
     }
 

@@ -46,6 +46,14 @@ export interface TenantShop {
    * still arrive in-app and via WhatsApp where configured).
    */
   emailOnOrder?: boolean;
+  /**
+   * Auto-archive completed/cancelled orders older than archiveRetentionDays
+   * out of the tenant document into the `order_archive` collection. Protects
+   * the 16MB BSON per-document limit on free Mongo. Default ON (90 days).
+   */
+  archiveOrders?: boolean;
+  /** Days of order history kept inside the tenant doc (default 90). */
+  archiveRetentionDays?: number;
 }
 
 export interface TenantUser {
@@ -252,7 +260,13 @@ export interface Review {
   id: string;
   trackToken: string;
   orderId: string;
+  /**
+   * Food rating (1–5) — goes to the restaurant. Legacy single-rating reviews
+   * only set this; the track page submits both foodRating and deliveryRating.
+   */
   rating: number;
+  /** Delivery rating (1–5) — goes to the rider. Optional for non-delivery orders. */
+  deliveryRating?: number;
   comment: string;
   createdAt: string;
 }
@@ -278,4 +292,6 @@ export interface TenantState {
   guestClients?: GuestClient[];
   dayCloses: DayCloseSummary[];
   nextOrderNumber: number;
+  /** Set by order archiving runs — when terminal orders moved to orders-archive.json. */
+  archivedAt?: string;
 }

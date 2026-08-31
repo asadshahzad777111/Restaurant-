@@ -39,6 +39,10 @@ export default function SettingsPage() {
   const [pinDraft, setPinDraft] = useState({ password: "", pin: "" });
   const [pinMsg, setPinMsg] = useState("");
   const [emailDraft, setEmailDraft] = useState("");
+  const [archiveOn, setArchiveOn] = useState(true);
+  const [archiveDays, setArchiveDays] = useState(90);
+  const [archivedCount, setArchivedCount] = useState<number | null>(null);
+  const [archiveMsg, setArchiveMsg] = useState("");
 
   useEffect(() => {
     if (!tenant) return;
@@ -63,7 +67,63 @@ export default function SettingsPage() {
     setEmailOnOrder(tenant.shop.emailOnOrder === true);
     setFbrEnabled(Boolean(tenant.shop.fbrEnabled));
     setEmailDraft(user?.email || "");
+    setArchiveOn(tenant.shop.archiveOrders !== false);
+    setArchiveDays(tenant.shop.archiveRetentionDays || 90);
   }, [tenant, user]);
+
+  // Load archived-order count once when the card is on screen.
+  useEffect(() => {
+    let cancelled = false;
+    if (!tenant) return;
+    fetch(`/api/archive?count=1`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled && typeof d.count === "number") setArchivedCount(d.count);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [tenant, token]);
+
+  async function saveArchive(e: React.FormEvent) {
+    e.preventDefault();
+    const days = Math.max(7, Math.min(365, Number(archiveDays) || 90));
+    setArchiveMsg("");
+    const res = await api("/api/admin", {
+      method: "PUT",
+      body: JSON.stringify({
+        action: "fees",
+        shop: { archiveOrders: Boolean(archiveOn), archiveRetentionDays: days },
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setArchiveMsg(res.ok ? "Archive settings saved" : (data as { error?: string }).error || "Failed");
+    if (res.ok && (data as { tenant?: typeof tenant }).tenant) {
+      applyTenant((data as { tenant: NonNullable<typeof tenant> }).tenant);
+    }
+  }
+
+  async function archiveNow() {
+    setArchiveMsg("");
+    const res = await api("/api/admin", {
+      method: "PUT",
+      body: JSON.stringify({ action: "archiveNow" }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      setArchiveMsg(`Archived ${(data as { archived?: number }).archived ?? 0} old order(s)`);
+      const c = await fetch(`/api/archive?count=1`, { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => r.json())
+        .catch(() => ({ count: null }));
+      if (typeof c.count === "number") setArchivedCount(c.count);
+      if ((data as { tenant?: typeof tenant }).tenant) {
+        applyTenant((data as { tenant: NonNullable<typeof tenant> }).tenant);
+      }
+    } else {
+      setArchiveMsg((data as { error?: string }).error || "Archive failed");
+    }
+  }
 
   async function saveBranding(e: React.FormEvent) {
     e.preventDefault();
@@ -203,9 +263,9 @@ export default function SettingsPage() {
     }
   }
 
-  async function exportData(type: "menu" | "orders", format: "json" | "csv") {
+  async function exportData(type: "menu" | "orders", format: "json" | "csv", includeArchived = false) {
     const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const url = `/api/export?type=${type}&format=${format}${type === "orders" ? `&from=${encodeURIComponent(from)}` : ""}`;
+    const url = `/api/export?type=${type}&format=${format}${type === "orders" ? `&from=${encodeURIComponent(from)}` : ""}${type === "orders" && includeArchived ? "&includeArchived=1" : ""}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) {
       setMsg("Export failed");
@@ -499,6 +559,49 @@ export default function SettingsPage() {
           {pinMsg && <p className={styles.muted}>{pinMsg}</p>}
         </form>
 
+        <form className={styles.form} onSubmit={(e) => void saveArchive(e)}>
+          <h3 style={{ margin: 0 }}>🗄️ Order archive</h3>
+          <p className={styles.muted}>
+            Old completed / cancelled orders move out of your kitchen document into the archive so the
+            free-plan database stays fast and under its size limit. Nothing is deleted — history stays
+            downloadable.
+          </p>
+          <label className={styles.rowCheck}>
+            <input
+              type="checkbox"
+              checked={archiveOn}
+              onChange={(e) => setArchiveOn(e.target.checked)}
+            />
+            Auto-archive old orders
+          </label>
+          <label className={styles.rowCheck} style={{ display: "grid", gap: "0.35rem", marginTop: "0.4rem" }}>
+            <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>Keep inside (days)</span>
+            <input
+              type="number"
+              min={7}
+              max={365}
+              value={archiveDays}
+              onChange={(e) => setArchiveDays(Number(e.target.value))}
+              disabled={!archiveOn}
+              style={{ maxWidth: 140 }}
+            />
+          </label>
+          <div className={styles.row}>
+            <button type="submit" className={styles.btn}>
+              Save archive settings
+            </button>
+            <button type="button" className={styles.btnGhost} onClick={() => void archiveNow()}>
+              Archive now
+            </button>
+          </div>
+          {archiveMsg && <p className={styles.muted}>{archiveMsg}</p>}
+          {archivedCount !== null && (
+            <p className={styles.muted}>
+              Archived so far: <strong>{archivedCount}</strong> order(s)
+            </p>
+          )}
+        </form>
+
         <form className={styles.form} onSubmit={(e) => void changeEmail(e)}>
           <h3 style={{ margin: 0 }}>Gmail / login email</h3>
           <p className={styles.muted}>
@@ -531,7 +634,17 @@ export default function SettingsPage() {
             <button type="button" className={styles.btnGhost} onClick={() => void exportData("orders", "csv")}>
               Orders CSV (30d)
             </button>
+            <button
+              type="button"
+              className={styles.btnGhost}
+              onClick={() => void exportData("orders", "json", true)}
+            >
+              Orders + archive JSON
+            </button>
           </div>
+          <p className={styles.muted} style={{ marginTop: "0.6rem", marginBottom: 0 }}>
+            "Orders + archive" includes the archived history too — that's your full record.
+          </p>
         </div>
 
         <div className={styles.card}>

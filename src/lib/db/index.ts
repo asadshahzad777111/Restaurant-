@@ -6,8 +6,10 @@ import { useMongo } from "../env";
 import { ensureBootstrap, createEmptyTenant } from "../bootstrap";
 import * as filePlatform from "../platform-store";
 import * as fileTenant from "../tenant-store";
+import * as fileArchive from "./file-archive";
 import * as mongoPlatform from "./mongo-platform";
 import * as mongoTenant from "./mongo-tenant";
+import * as mongoArchive from "./mongo-archive";
 import type { PlatformState, Session, Lead, PlatformTenantMeta, PlanId, TenantStatus } from "../types";
 import type {
   TenantState,
@@ -300,9 +302,33 @@ export async function addOrder(
   order: Omit<Order, "id" | "number" | "createdAt" | "updatedAt">,
 ) {
   await ensureStore();
-  return useMongo()
-    ? mongoTenant.addOrderMongo(tenantId, order)
+  const created = useMongo()
+    ? await mongoTenant.addOrderMongo(tenantId, order)
     : fileTenant.addOrder(tenantId, order);
+  // Lazy auto-archive: after each new order, at most once per tenant per hour,
+  // move terminal orders past the retention window out of the tenant doc.
+  void maybeAutoArchive(tenantId);
+  return created;
+}
+
+// ---- Auto-archive (16MB BSON protection) ----
+
+const lastAutoArchive = new Map<string, number>();
+const AUTO_ARCHIVE_MIN_MS = 60 * 60 * 1000; // once per hour per tenant
+
+async function maybeAutoArchive(tenantId: string) {
+  const now = Date.now();
+  const last = lastAutoArchive.get(tenantId) ?? 0;
+  if (now - last < AUTO_ARCHIVE_MIN_MS) return;
+  lastAutoArchive.set(tenantId, now);
+  try {
+    const t = await readTenant(tenantId);
+    if (t.shop?.archiveOrders === false) return;
+    const days = t.shop?.archiveRetentionDays ?? 90;
+    await archiveOldOrders(tenantId, days);
+  } catch {
+    // Archiving is best-effort; a failure must never break an order.
+  }
 }
 
 export async function patchOrder(tenantId: string, orderId: string, patch: Partial<Order>) {
@@ -331,6 +357,41 @@ export async function addReview(tenantId: string, review: Omit<Review, "id" | "c
   return useMongo()
     ? mongoTenant.addReviewMongo(tenantId, review)
     : fileTenant.addReview(tenantId, review);
+}
+
+/* ---- Order archiving (16MB BSON protection) ---- */
+
+export {
+  DEFAULT_RETENTION_DAYS,
+  type ArchivedOrder,
+  type ArchiveResult,
+} from "./mongo-archive";
+
+export async function archiveOldOrders(
+  tenantId: string,
+  retentionDays?: number,
+): Promise<mongoArchive.ArchiveResult> {
+  await ensureStore();
+  return useMongo()
+    ? mongoArchive.archiveOldOrdersMongo(tenantId, retentionDays)
+    : fileArchive.archiveOldOrdersFile(tenantId, retentionDays);
+}
+
+export async function queryArchivedOrders(
+  tenantId: string,
+  opts: { from?: string; to?: string; limit?: number; offset?: number } = {},
+): Promise<mongoArchive.ArchivedOrder[]> {
+  await ensureStore();
+  return useMongo()
+    ? mongoArchive.queryArchivedOrdersMongo(tenantId, opts)
+    : fileArchive.queryArchivedOrdersFile(tenantId, opts);
+}
+
+export async function countArchivedOrders(tenantId: string): Promise<number> {
+  await ensureStore();
+  return useMongo()
+    ? mongoArchive.countArchivedOrdersMongo(tenantId)
+    : fileArchive.countArchivedOrdersFile(tenantId);
 }
 
 export { useMongo, storageMode } from "../env";

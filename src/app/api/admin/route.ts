@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  archiveOldOrders,
   ensureStore,
   readTenant,
   readTenantStaffView,
@@ -179,6 +180,22 @@ export async function PUT(req: NextRequest) {
       user.email = email;
       await updateUsers(tenantId, t.users);
       return NextResponse.json({ ok: true, email, tenant: await readTenantStaffView(tenantId) });
+    }
+
+    // Run the order-archive sweep now (terminal orders older than the
+    // retention window move to `order_archive` — protects the 16MB BSON cap).
+    if (action === "archiveNow") {
+      if (!(await hasPermission(session, "settings"))) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      const t = await readTenant(tenantId);
+      const days = t.shop?.archiveRetentionDays ?? 90;
+      const result = await archiveOldOrders(tenantId, days);
+      return NextResponse.json({
+        ok: true,
+        archived: result.archived,
+        tenant: await readTenantStaffView(tenantId),
+      });
     }
 
     if (action === "get") {
