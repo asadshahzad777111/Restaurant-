@@ -1048,6 +1048,7 @@ export function MarketingHome() {
                   width={1600}
                   height={1067}
                   decoding="async"
+                  loading="lazy"
                 />
               </picture>
             </figure>
