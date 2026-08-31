@@ -31,7 +31,10 @@ export async function GET(req: NextRequest) {
     const slot = url.searchParams.get("download") as ApkId | null;
     const format = parseApkFormat(url.searchParams.get("format"));
     if (slot === "customer") {
-      return NextResponse.json({ error: "Customer APK is not offered — guests order on the web" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Guest downloads are not offered — guests order on the web, table QR, or scanner" },
+        { status: 404 },
+      );
     }
     if (slot === "staff") {
       const file = await readTenantApk(meta.id, meta.code, slot, format);

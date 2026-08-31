@@ -49,14 +49,15 @@ export function AdminIosInstallCard() {
       <h3 style={{ marginTop: 0 }}>Install on iPhone</h3>
       <p className={styles.muted}>
         Android APKs iPhone pe nahi chalte. Share these <strong>locked</strong> links (
-        <code>tenant={code}</code>) — Customer = diners, Staff = team / POS / Admin. Add to Home
-        Screen se app-like icon. Logo & name = Settings. Dusri kitchen merge nahi hoti.
+        <code>tenant={code}</code>) — Guest menu = diners (web / QR / scanner), Staff = team / POS /
+        Admin. Add to Home Screen se app-like icon. Logo & name = Settings. Dusri kitchen merge nahi
+        hoti.
       </p>
 
       <div style={{ marginBottom: "1rem" }}>
-        <strong>Customer (diners)</strong>
+        <strong>Guest menu (diners)</strong>
         <p className={styles.muted} style={{ margin: "0.25rem 0" }}>
-          Opens {name} menu only.
+          Opens {name} web menu only — table QR / scanner path.
         </p>
         <code style={{ display: "block", wordBreak: "break-all", fontSize: "0.85rem" }}>
           {customerUrl}
@@ -67,7 +68,7 @@ export function AdminIosInstallCard() {
           style={{ marginTop: "0.5rem" }}
           onClick={() => void onCopy("customer", customerUrl)}
         >
-          {copied === "customer" ? "Copied" : "Copy Customer URL"}
+          {copied === "customer" ? "Copied" : "Copy guest menu URL"}
         </button>
       </div>
 
@@ -90,7 +91,7 @@ export function AdminIosInstallCard() {
       </div>
 
       <ol className={styles.muted} style={{ margin: "0 0 0.75rem", paddingLeft: "1.2rem" }}>
-        <li>iPhone pe Customer/Staff link WhatsApp se bhejo (Copy buttons upar).</li>
+        <li>iPhone pe guest menu / Staff link WhatsApp se bhejo (Copy buttons upar).</li>
         <li>
           Link kholte hi <strong>picture guide</strong> aati hai: Share → Add to Home Screen → Add.
         </li>

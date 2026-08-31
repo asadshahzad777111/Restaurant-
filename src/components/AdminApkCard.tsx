@@ -75,7 +75,7 @@ export function AdminApkCard() {
       <h3 style={{ marginTop: 0 }}>Staff app — Android APK</h3>
       <p className={styles.muted}>
         <strong>Staff APK</strong> is for your team (POS / kitchen / orders). Guests order on the{" "}
-        <strong>web menu</strong> or table QR — there is no Customer APK (and no iPhone APK). Code{" "}
+        <strong>web menu</strong>, table QR, or scanner. Code{" "}
         <strong>{code || "—"}</strong> is locked to this kitchen. iPhone staff: Add to Home Screen below.
       </p>
       <div className={styles.row} style={{ alignItems: "center", marginBottom: "0.75rem" }}>

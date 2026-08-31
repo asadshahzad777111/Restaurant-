@@ -36,17 +36,19 @@ export async function GET(req: NextRequest) {
         tenant: meta,
         storage: r2Configured() ? "r2" : "file-store",
         playStoreNote:
-          "Upload .aab for Google Play Console. Upload .apk for Staff sideload. Guests order on the web.",
+          "Upload .aab for Google Play Console. Upload .apk for Staff sideload. Guests order on the web, table QR, or scanner.",
       });
     }
     const tenants = await listTenantsMeta();
     return NextResponse.json({
-      templates: await listApkStatus(),
+      templates: (await listApkStatus()).filter((a) => a.id === "staff"),
       storage: r2Configured() ? "r2" : "file-store",
       restaurants: await Promise.all(
         tenants.map(async (t) => ({
           tenant: t,
-          apps: await listTenantApkStatus({ tenantId: t.id, code: t.code, name: t.name }),
+          apps: (await listTenantApkStatus({ tenantId: t.id, code: t.code, name: t.name })).filter(
+            (a) => a.id === "staff",
+          ),
         })),
       ),
     });
@@ -84,7 +86,7 @@ export async function POST(req: NextRequest) {
     }
     if (id === "customer") {
       return NextResponse.json(
-        { error: "Customer APK is retired — guests order on the web. Upload Staff APK only." },
+        { error: "Guests order on the web, table QR, or scanner. Upload Staff APK only." },
         { status: 400 },
       );
     }

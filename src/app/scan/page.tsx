@@ -285,7 +285,7 @@ export default function ScanPage() {
             <>
               <p className={styles.installHint}>
                 Team APK / staff login links to <strong>{activeTenant}</strong>. Guests keep using this
-                page or a table QR — there is no Customer APK.
+                scanner or a table QR.
               </p>
               <div className={styles.installRow}>
                 <motion.a
