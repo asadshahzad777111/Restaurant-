@@ -630,6 +630,16 @@ function OrderInner() {
 
   // Brief accent flash on the tile right after an item is added
   const [flashId, setFlashId] = useState<string | null>(null);
+  /** Blocks double-fire from nested card/+ clicks and fast double-taps. */
+  const addLockRef = useRef(0);
+  const [modBusy, setModBusy] = useState(false);
+
+  function withAddLock(run: () => void) {
+    const now = Date.now();
+    if (now - addLockRef.current < 320) return;
+    addLockRef.current = now;
+    run();
+  }
 
   function pushLine(item: MenuItem, modifiers: LineModifier[], fromEl?: HTMLElement | null, qty = 1) {
     const unitPrice = lineUnitPrice(item.price, modifiers);
@@ -646,24 +656,39 @@ function OrderInner() {
   }
 
   function addItem(item: MenuItem, fromEl?: HTMLElement | null) {
-    if (!item.available) {
-      setToast(`${item.name} is unavailable (out of stock)`);
-      return;
-    }
-    // Mobile/touch: every item opens the customize popup so the user never has
-    // to scroll down to find the cart. Desktop: modifier items still get the
-    // popup; plain items add straight to the side cart.
-    if (item.modifiers?.length || coarse || (typeof window !== "undefined" && window.innerWidth < 720)) {
-      const init: Record<string, string[]> = {};
-      (item.modifiers || []).forEach((g) => {
-        init[g.id] = g.required && g.options[0] ? [g.options[0].id] : [];
-      });
-      setModSel(init);
-      setModQty(1);
-      setModItem(item);
-      return;
-    }
-    pushLine(item, [], fromEl);
+    withAddLock(() => {
+      if (!item.available) {
+        setToast(`${item.name} is unavailable (out of stock)`);
+        return;
+      }
+      // Already customizing this dish — ignore duplicate card taps.
+      if (modItem?.id === item.id) return;
+      // Mobile/touch: every item opens the customize popup so the user never has
+      // to scroll down to find the cart. Desktop: modifier items still get the
+      // popup; plain items add straight to the side cart.
+      if (item.modifiers?.length || coarse || (typeof window !== "undefined" && window.innerWidth < 720)) {
+        const init: Record<string, string[]> = {};
+        (item.modifiers || []).forEach((g) => {
+          init[g.id] = g.required && g.options[0] ? [g.options[0].id] : [];
+        });
+        setModSel(init);
+        setModQty(1);
+        setModItem(item);
+        return;
+      }
+      pushLine(item, [], fromEl);
+    });
+  }
+
+  function confirmModAdd(openCheckout: boolean) {
+    if (!modItem || modBusy) return;
+    setModBusy(true);
+    withAddLock(() => {
+      pushLine(modItem, toMods(modItem.modifiers || [], modSel), null, modQty);
+      setModItem(null);
+      if (openCheckout) setSheetOpen(true);
+    });
+    window.setTimeout(() => setModBusy(false), 400);
   }
 
   /** Re-add the guest's last order in one tap (returns true if anything was added). */
@@ -1304,8 +1329,14 @@ function OrderInner() {
                         key={d.id}
                         type="button"
                         className={`${styles.deal}${!d.available ? ` ${styles.dealSoldOut}` : ""}`}
-                        onClick={(e) => addItem(d, e.currentTarget)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addItem(d, e.currentTarget);
+                        }}
                         variants={itemVar}
+                        whileHover={reduced || coarse || !d.available ? undefined : { y: -4, scale: 1.015 }}
+                        whileTap={reduced || !d.available ? undefined : { scale: 0.98 }}
+                        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
                       >
                         {!d.available ? (
                           <span className={styles.soldOutBadge} role="status">
@@ -1375,9 +1406,21 @@ function OrderInner() {
                           className={`${styles.tile}${inCart ? ` ${styles.tileInCart}` : ""}${soldOut ? ` ${styles.tileSoldOut}` : ""}${flashId === menuItem.id ? ` ${styles.tileFlash}` : ""}`}
                           variants={itemVar}
                           aria-disabled={soldOut}
-                          onClick={soldOut ? undefined : (e) => addItem(menuItem, e.currentTarget)}
+                          onClick={
+                            soldOut
+                              ? undefined
+                              : (e) => {
+                                  // Qty controls handle their own clicks — never bubble to card add.
+                                  const t = e.target as HTMLElement | null;
+                                  if (t?.closest?.(`.${styles.qty}`)) return;
+                                  addItem(menuItem, e.currentTarget);
+                                }
+                          }
                           role={soldOut ? undefined : "button"}
                           tabIndex={soldOut ? undefined : 0}
+                          whileHover={soldOut || reduced || coarse ? undefined : { y: -4 }}
+                          whileTap={soldOut || reduced ? undefined : { scale: 0.985 }}
+                          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
                           onKeyDown={
                             soldOut
                               ? undefined
@@ -1446,7 +1489,11 @@ function OrderInner() {
                                 <>
                                   <button
                                     type="button"
-                                    onClick={() => removeItem(menuItem.id)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      removeItem(menuItem.id);
+                                    }}
                                     aria-label={`Remove ${menuItem.name}`}
                                     disabled={!inCart}
                                     hidden={!inCart}
@@ -1456,7 +1503,11 @@ function OrderInner() {
                                   <span key={qtyOf(cart, menuItem.id)}>{inCart ? qtyOf(cart, menuItem.id) : ""}</span>
                                   <button
                                     type="button"
-                                    onClick={(e) => addItem(menuItem, e.currentTarget.closest("article") as HTMLElement)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      addItem(menuItem, e.currentTarget.closest("article") as HTMLElement);
+                                    }}
                                     aria-label={`Add ${menuItem.name}`}
                                   >
                                     +
@@ -1732,10 +1783,8 @@ function OrderInner() {
               <button
                 type="button"
                 className={styles.place}
-                onClick={() => {
-                  pushLine(modItem, toMods(modItem.modifiers || [], modSel), null, modQty);
-                  setModItem(null);
-                }}
+                disabled={modBusy}
+                onClick={() => confirmModAdd(false)}
               >
                 Add to cart · {currency}{" "}
                 {lineUnitPrice(modItem.price, toMods(modItem.modifiers || [], modSel)) * modQty}
@@ -1743,11 +1792,8 @@ function OrderInner() {
               <button
                 type="button"
                 className={styles.placeGhost}
-                onClick={() => {
-                  pushLine(modItem, toMods(modItem.modifiers || [], modSel), null, modQty);
-                  setModItem(null);
-                  setSheetOpen(true);
-                }}
+                disabled={modBusy}
+                onClick={() => confirmModAdd(true)}
               >
                 Add &amp; go to checkout
               </button>
