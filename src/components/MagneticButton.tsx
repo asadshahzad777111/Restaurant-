@@ -35,28 +35,37 @@ export default function MagneticButton({
   const fine = useFinePointer();
   const reduced = usePrefersReducedMotion();
   const enabled = fine && !reduced;
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
 
-  // Re-zero if the pointer mode changes mid-interaction.
+  // Direct DOM style mutation (rAF-coalesced) — a mousemove storm never
+  // re-renders React; only the transform on this span changes.
+  const raf = useRef(0);
   useEffect(() => {
-    if (!enabled) setOffset({ x: 0, y: 0 });
-  }, [enabled]);
+    return () => cancelAnimationFrame(raf.current);
+  }, []);
 
   const onMove = useCallback(
     (e: React.MouseEvent) => {
       const el = ref.current;
       if (!el || !enabled) return;
-      const r = el.getBoundingClientRect();
-      const dx = e.clientX - (r.left + r.width / 2);
-      const dy = e.clientY - (r.top + r.height / 2);
-      // Clamp to strength px so the button never wanders far from its slot.
-      const clamp = (v: number) => Math.max(-strength, Math.min(strength, v));
-      setOffset({ x: clamp(dx * 0.22), y: clamp(dy * 0.22) });
+      cancelAnimationFrame(raf.current);
+      raf.current = requestAnimationFrame(() => {
+        const r = el.getBoundingClientRect();
+        const dx = e.clientX - (r.left + r.width / 2);
+        const dy = e.clientY - (r.top + r.height / 2);
+        // Clamp to strength px so the button never wanders far from its slot.
+        const clamp = (v: number) => Math.max(-strength, Math.min(strength, v));
+        el.style.transform = `translate3d(${clamp(dx * 0.22)}px, ${clamp(dy * 0.22)}px, 0)`;
+      });
     },
     [enabled, strength],
   );
 
-  const onLeave = useCallback(() => setOffset({ x: 0, y: 0 }), []);
+  const onLeave = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    cancelAnimationFrame(raf.current);
+    el.style.transform = "translate3d(0, 0, 0)";
+  }, []);
 
   return (
     <span
@@ -68,7 +77,7 @@ export default function MagneticButton({
         enabled
           ? {
               display: block ? "block" : "inline-block",
-              transform: `translate3d(${offset.x}px, ${offset.y}px, 0)`,
+              transform: "translate3d(0, 0, 0)",
               transition: "transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
               willChange: "transform",
             }

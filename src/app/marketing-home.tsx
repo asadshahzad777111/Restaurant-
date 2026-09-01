@@ -348,6 +348,14 @@ export function MarketingHome() {
   const cardBY = useTransform(par.scrollYProgress, [0, 1], coarse ? [0, -28] : [0, -64]);
   const cardFade = useTransform(par.scrollYProgress, [0, 1], [1, 0.35]);
 
+  // Gallery "how it works" stills — scoped scroll-linked parallax (GPU,
+  // no React re-render per scroll frame). Disabled under reduced motion.
+  const galleryRef = useRef<HTMLElement>(null);
+  const galleryPar = useParallax<HTMLElement>(galleryRef, {}, !reduced);
+  const stillPhoneY = useTransform(galleryPar.scrollYProgress, [0, 1], coarse ? [-4, 10] : [-8, 18]);
+  const stillPassY = useTransform(galleryPar.scrollYProgress, [0, 1], coarse ? [-6, 6] : [-12, 14]);
+  const stillTicketY = useTransform(galleryPar.scrollYProgress, [0, 1], coarse ? [-2, 12] : [-4, 22]);
+
   useEffect(() => {
     void fetch("/api/leads")
       .then((r) => r.json())
@@ -372,67 +380,94 @@ export function MarketingHome() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Next-level: scroll progress + sticky nav elevation
-  const [progress, setProgress] = useState(0);
+  // Next-level: scroll progress + sticky nav elevation.
+  // Only threshold booleans live in React state; the progress bar width and
+  // the scroll-spy highlight are written straight to the DOM via refs so a
+  // scroll frame never re-renders. The scroll-spy uses the classic
+  // "straddles the marker line" test (top <= 45% viewport && bottom > 45%),
+  // which stays correct while the Product Tour is GSAP-pinned (position:fixed)
+  // and after anchor jumps. Rects are read only in the rAF tick and only
+  // toggle when the active section actually changes.
   const [scrolled, setScrolled] = useState(false);
   const [showTop, setShowTop] = useState(false);
-  const [scrollY, setScrollY] = useState(0);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const lastActiveRef = useRef<string | null>(null);
   useEffect(() => {
     let raf = 0;
     const onScroll = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
+        const y = window.scrollY;
         const max = document.documentElement.scrollHeight - window.innerHeight;
-        setProgress(max > 0 ? Math.min(1, window.scrollY / max) : 0);
-        setScrolled(window.scrollY > 10);
-        setShowTop(window.scrollY > 700);
-        setScrollY(window.scrollY);
+        if (progressRef.current) {
+          progressRef.current.style.width = `${(max > 0 ? Math.min(1, y / max) : 0) * 100}%`;
+        }
+        setScrolled(y > 10);
+        setShowTop(y > 700);
+        // Scroll-spy — only 8 rect reads, only on the rAF tick, guarded by change.
+        const marker = window.innerHeight * 0.45;
+        let current: string | null = null;
+        for (const item of NAV) {
+          const el = document.getElementById(item.href.slice(1));
+          if (!el) continue;
+          const r = el.getBoundingClientRect();
+          if (r.top <= marker && r.bottom > marker) current = item.href;
+        }
+        if (current !== lastActiveRef.current) {
+          lastActiveRef.current = current;
+          const links = document.querySelectorAll<HTMLAnchorElement>(`[data-nav-spy]`);
+          for (const link of links) {
+            link.classList.toggle(styles.navLinkActive, link.getAttribute("href") === current);
+          }
+        }
       });
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
     return () => {
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
       cancelAnimationFrame(raf);
     };
   }, []);
 
-  // Scroll-spy: highlight the nav link for the section in view
-  const [activeSection, setActiveSection] = useState("");
+  // Cancel any in-flight mouse-glow rAFs on unmount.
   useEffect(() => {
-    const ids = NAV.map((n) => n.href.slice(1));
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) if (e.isIntersecting) setActiveSection(`#${e.target.id}`);
-      },
-      { rootMargin: "-45% 0px -50% 0px" },
-    );
-    ids.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
-    return () => observer.disconnect();
+    return () => {
+      cancelAnimationFrame(glowRaf.current);
+      cancelAnimationFrame(plansRaf.current);
+    };
   }, []);
 
-  // Next-level: soft mouse-follow glow (fine pointers only)
+  // Next-level: soft mouse-follow glow (fine pointers only) — rAF-throttled
+  // so a mousemove storm never triggers per-event style recalcs.
   const glowRef = useRef<HTMLDivElement>(null);
+  const glowRaf = useRef(0);
   const onMouseMove = useCallback((e: React.MouseEvent) => {
-    const el = glowRef.current;
-    if (!el) return;
-    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    el.style.setProperty("--mx", `${e.clientX - r.left}px`);
-    el.style.setProperty("--my", `${e.clientY - r.top}px`);
+    cancelAnimationFrame(glowRaf.current);
+    glowRaf.current = requestAnimationFrame(() => {
+      const el = glowRef.current;
+      if (!el) return;
+      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+      el.style.setProperty("--my", `${e.clientY - r.top}px`);
+    });
   }, []);
 
   // Dim, slower trailing glow on the Plans section (fine pointers only).
   const plansRef = useRef<HTMLElement>(null);
   const plansGlowRef = useRef<HTMLDivElement>(null);
+  const plansRaf = useRef(0);
   const onPlansMove = useCallback((e: React.MouseEvent) => {
-    const el = plansGlowRef.current;
-    if (!el) return;
-    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    el.style.setProperty("--px", `${e.clientX - r.left - 150}px`);
-    el.style.setProperty("--py", `${e.clientY - r.top - 150}px`);
+    cancelAnimationFrame(plansRaf.current);
+    plansRaf.current = requestAnimationFrame(() => {
+      const el = plansGlowRef.current;
+      if (!el) return;
+      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      el.style.setProperty("--px", `${e.clientX - r.left - 150}px`);
+      el.style.setProperty("--py", `${e.clientY - r.top - 150}px`);
+    });
   }, []);
 
   // Hide the WhatsApp float while the contact section is on screen
@@ -480,7 +515,7 @@ export function MarketingHome() {
       onMouseMove={onMouseMove}
     >
       <div ref={glowRef} className={styles.mouseGlow} aria-hidden />
-      <div className={styles.scrollProgress} style={{ width: `${progress * 100}%` }} aria-hidden />
+      <div ref={progressRef} className={styles.scrollProgress} style={{ width: "0%" }} aria-hidden />
       <header className={scrolled ? `${styles.nav} ${styles.navScrolled}` : styles.nav}>
         <div className={styles.navInner}>
           <Link href="/" className={styles.navBrand} onClick={closeMenu} aria-label="ORDO home">
@@ -496,11 +531,7 @@ export function MarketingHome() {
 
           <nav className={styles.navCenter} aria-label="Primary">
             {NAV.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className={activeSection === item.href ? styles.navLinkActive : undefined}
-              >
+              <a key={item.href} href={item.href} data-nav-spy>
                 {item.label}
               </a>
             ))}
@@ -724,7 +755,7 @@ export function MarketingHome() {
         </div>
       </div>
 
-      <section className={styles.gallery} aria-label="How ORDO works">
+      <section className={styles.gallery} aria-label="How ORDO works" ref={galleryRef}>
         <div className={styles.wrap}>
           <div className={styles.sdaHeader}>
             <p className={styles.kicker}>{t("galleryKicker")}</p>
@@ -742,7 +773,7 @@ export function MarketingHome() {
             <motion.div
               className={`${styles.still} ${styles.stillPhone}`}
               variants={item}
-              style={reduced ? undefined : { y: Math.min(18, Math.max(-10, (scrollY - 280) * 0.04)) }}
+              style={reduced ? undefined : { y: stillPhoneY, willChange: "transform" }}
             >
               <div className={styles.phoneFrame}>
                 <div className={styles.phoneHeader}>
@@ -778,7 +809,7 @@ export function MarketingHome() {
             <motion.div
               className={`${styles.still} ${styles.stillPass}`}
               variants={item}
-              style={reduced ? undefined : { y: Math.min(10, Math.max(-16, (scrollY - 320) * 0.03)) }}
+              style={reduced ? undefined : { y: stillPassY, willChange: "transform" }}
             >
               <div className={styles.rail}>
                 <article>
@@ -804,7 +835,7 @@ export function MarketingHome() {
             <motion.div
               className={`${styles.still} ${styles.stillTicket}`}
               variants={item}
-              style={reduced ? undefined : { y: Math.min(22, Math.max(-8, (scrollY - 360) * 0.05)) }}
+              style={reduced ? undefined : { y: stillTicketY, willChange: "transform" }}
             >
               <div className={styles.ticketCard}>
                 <div className={styles.ticketShop}>KARAHI HOUSE</div>

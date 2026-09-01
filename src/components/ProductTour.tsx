@@ -63,24 +63,12 @@ export default function ProductTour({
       const step = cards[0].offsetWidth + gap;
       const totalX = -(step * (cards.length - 1));
 
-      const active = {
-        scale: 1.05,
-        opacity: 1,
-        boxShadow:
-          "0 0 0 3px rgba(255,133,0,0.22), 0 24px 60px -20px rgba(255,133,0,0.5)",
-      };
-      const quiet = {
-        scale: 1,
-        opacity: 1,
-        boxShadow:
-          "0 0 0 0 rgba(255,133,0,0), 0 24px 60px -20px rgba(255,133,0,0)",
-      };
-      const passed = {
-        scale: 0.85,
-        opacity: 0.6,
-        boxShadow:
-          "0 0 0 0 rgba(255,133,0,0), 0 24px 60px -20px rgba(255,133,0,0)",
-      };
+      // Perf: cards tween scale/opacity only (GPU compositing). The orange
+      // glow lives on a .cardGlow overlay whose opacity crossfades — never
+      // box-shadow per frame (that would force paint on every scrub tick).
+      const active = { scale: 1.05, opacity: 1 };
+      const quiet = { scale: 1, opacity: 1 };
+      const passed = { scale: 0.85, opacity: 0.6 };
 
       const tl = gsap.timeline({
         defaults: { ease: "none" },
@@ -101,22 +89,34 @@ export default function ProductTour({
       // Per-card states keyed into the same timeline (n cards → n−1 steps,
       // each one step long so scrub pacing matches the track travel).
       cards.forEach((cardEl, i) => {
+        const glow = cardEl.querySelector<HTMLElement>("[data-glow]");
+        const glowOn = { opacity: 1, duration: 1 };
+        const glowOff = { opacity: 0, duration: 1 };
         if (i === 0) {
           gsap.set(cardEl, active);
-          if (cards.length > 1) tl.to(cardEl, { ...passed, duration: 1 }, 0);
+          gsap.set(glow, { opacity: 1 });
+          if (cards.length > 1) {
+            tl.to(cardEl, { ...passed, duration: 1 }, 0);
+            if (glow) tl.to(glow, glowOff, 0);
+          }
         } else if (i === cards.length - 1) {
           tl.fromTo(cardEl, quiet, { ...active, duration: 1 }, i - 1);
+          if (glow) tl.fromTo(glow, { opacity: 0 }, glowOn, i - 1);
         } else {
           tl.fromTo(cardEl, quiet, { ...active, duration: 1 }, i - 1);
           tl.to(cardEl, { ...passed, duration: 1 }, i);
+          if (glow) {
+            tl.fromTo(glow, { opacity: 0 }, glowOn, i - 1);
+            tl.to(glow, glowOff, i);
+          }
         }
       });
 
       // Progress rail: the dot of the active card lights up.
       dotRefs.current.forEach((dot, i) => {
         if (!dot) return;
-        const dim = { scale: 1, opacity: 0.35, backgroundColor: "var(--m-muted)" };
-        const lit = { scale: 1.25, opacity: 1, backgroundColor: "var(--m-orange)" };
+        const dim = { scale: 1, opacity: 0.35 };
+        const lit = { scale: 1.25, opacity: 1 };
         if (i === 0) {
           gsap.set(dot, lit);
           if (cards.length > 1) tl.to(dot, { ...dim, duration: 1 }, 0);
@@ -128,15 +128,24 @@ export default function ProductTour({
         }
       });
 
-      // Background wash: faint role tint shifts as each card becomes active.
+      // Background wash: four role-tint layers crossfade by opacity only —
+      // no per-frame backgroundColor paint.
       if (!isMobile) {
-        tint.style.opacity = "1";
-        tl.fromTo(
-          tint,
-          { backgroundColor: TINTS[0] },
-          { backgroundColor: TINTS[TINTS.length - 1], duration: cards.length - 1 },
-          0,
+        const tints = Array.from(
+          section.querySelectorAll<HTMLElement>("[data-tint]"),
         );
+        tint.style.opacity = "1";
+        tints.forEach((layer, i) => {
+          if (i === 0) {
+            gsap.set(layer, { opacity: 1 });
+            if (tints.length > 1) tl.to(layer, { opacity: 0, duration: 1 }, 0);
+          } else if (i === tints.length - 1) {
+            tl.fromTo(layer, { opacity: 0 }, { opacity: 1, duration: 1 }, i - 1);
+          } else {
+            tl.fromTo(layer, { opacity: 0 }, { opacity: 1, duration: 1 }, i - 1);
+            tl.to(layer, { opacity: 0, duration: 1 }, i);
+          }
+        });
       }
     };
 
@@ -180,10 +189,20 @@ export default function ProductTour({
           </div>
         ) : (
           <div className={styles.stage} aria-label="Product tour — scroll to explore">
-            <div className={styles.tourTint} ref={tintRef} aria-hidden />
+            <div className={styles.tourTint} ref={tintRef} aria-hidden>
+              {TINTS.map((c, i) => (
+                <div
+                  key={i}
+                  data-tint
+                  className={styles.tourTintLayer}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
             <div className={styles.track} ref={trackRef}>
               {steps.map((s, i) => (
                 <article key={s.title} className={styles.card}>
+                  <div className={styles.cardGlow} data-glow aria-hidden />
                   <TiltCard max={6} className={styles.cardInner}>
                     <span className={styles.cardNo}>0{i + 1}</span>
                     <h3>{s.title}</h3>

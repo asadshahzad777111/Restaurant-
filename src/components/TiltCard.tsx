@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { useFinePointer, usePrefersReducedMotion } from "@/lib/motion";
 
 interface TiltCardProps {
@@ -27,21 +27,34 @@ export default function TiltCard({ children, max = 6, className }: TiltCardProps
   const fine = useFinePointer();
   const reduced = usePrefersReducedMotion();
   const enabled = fine && !reduced;
-  const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
+  const raf = useRef(0);
+  useEffect(() => {
+    return () => cancelAnimationFrame(raf.current);
+  }, []);
 
   const onMove = useCallback(
     (e: React.MouseEvent) => {
       const el = ref.current;
       if (!el || !enabled) return;
-      const r = el.getBoundingClientRect();
-      const px = (e.clientX - r.left) / r.width - 0.5; // -0.5 … 0.5
-      const py = (e.clientY - r.top) / r.height - 0.5;
-      setTilt({ rx: -py * max * 2, ry: px * max * 2 });
+      cancelAnimationFrame(raf.current);
+      raf.current = requestAnimationFrame(() => {
+        const r = el.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width - 0.5; // -0.5 … 0.5
+        const py = (e.clientY - r.top) / r.height - 0.5;
+        const rx = -py * max * 2;
+        const ry = px * max * 2;
+        el.style.transform = `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
+      });
     },
     [enabled, max],
   );
 
-  const onLeave = useCallback(() => setTilt({ rx: 0, ry: 0 }), []);
+  const onLeave = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    cancelAnimationFrame(raf.current);
+    el.style.transform = "perspective(900px) rotateX(0deg) rotateY(0deg)";
+  }, []);
 
   return (
     <div
@@ -52,7 +65,7 @@ export default function TiltCard({ children, max = 6, className }: TiltCardProps
       style={{
         transformStyle: "preserve-3d",
         transform: enabled
-          ? `perspective(900px) rotateX(${tilt.rx.toFixed(2)}deg) rotateY(${tilt.ry.toFixed(2)}deg)`
+          ? "perspective(900px) rotateX(0deg) rotateY(0deg)"
           : undefined,
         transition: "transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)",
         willChange: "transform",

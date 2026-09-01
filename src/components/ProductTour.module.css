@@ -54,14 +54,20 @@
   background: color-mix(in srgb, var(--m-bg) 62%, transparent);
 }
 
-/* Role-tinted wash behind the cards — GSAP shifts its background color. */
+/* Role-tinted wash behind the cards — GSAP crossfades layer opacities. */
 .tourTint {
   position: absolute;
   inset: 0;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.6s ease;
-  will-change: background-color;
+}
+
+.tourTintLayer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  will-change: opacity;
 }
 
 .track {
@@ -73,15 +79,25 @@
   will-change: transform;
 }
 
-/* GSAP animates this wrapper (scale/opacity/glow) — the visible face is .cardInner. */
+/* GSAP animates this wrapper (scale/opacity) — the visible face is .cardInner. */
 .card {
   flex: 0 0 var(--tour-card-w);
   width: var(--tour-card-w);
-  /* Same two-shadow structure as the GSAP active state, so scrub interpolates cleanly. */
-  box-shadow:
-    0 0 0 0 rgba(255, 133, 0, 0),
-    0 24px 60px -20px rgba(255, 133, 0, 0);
+  position: relative;
   will-change: transform;
+}
+
+/* Orange glow overlay — opacity-only tween (GPU), never box-shadow per frame. */
+.cardGlow {
+  position: absolute;
+  inset: 0;
+  border-radius: 1.15rem;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow:
+    0 0 0 3px rgba(255, 133, 0, 0.22),
+    0 24px 60px -20px rgba(255, 133, 0, 0.5);
+  will-change: opacity;
 }
 
 /* Tilt face — 3D hover tilt lives here, composes with the GSAP wrapper above. */
