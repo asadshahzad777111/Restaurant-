@@ -57,13 +57,16 @@ export function shouldPrintGst(shop?: { printGstOnBill?: boolean } | null): bool
 /** 58mm QR caption — short so it does not wrap. Same copy on ESC/POS and HTML. */
 export const RECEIPT_QR_CAPTION = ["Scan to order", "Cash - Pickup - Delivery"] as const;
 
-/** Print the uploaded shop logo on the bill only when the admin ticks Settings. Off by default. */
+/**
+ * Print the uploaded shop logo whenever one exists.
+ * The Settings checkbox defaults ON when a logo is present; it is not a gate —
+ * shops that uploaded a logo but never found the tick still get it on the 58mm bill.
+ */
 export function shouldPrintLogoOnBill(tenant?: {
   shop?: { printLogoOnBill?: boolean } | null;
   branding?: { logoUrl?: string } | null;
 } | null): boolean {
-  if (tenant?.shop?.printLogoOnBill !== true) return false;
-  return Boolean(String(tenant.branding?.logoUrl || "").trim());
+  return Boolean(String(tenant?.branding?.logoUrl || "").trim());
 }
 
 export function receiptLogoUrl(tenant?: {
@@ -80,11 +83,19 @@ export function sanitizeReceiptLogoUrl(raw?: string | null): string | null {
   if (s.startsWith("/") && !s.startsWith("//")) return s.slice(0, 500);
   try {
     const u = new URL(s);
-    if (u.protocol === "https:" || u.protocol === "http:") return s.slice(0, 500);
+    if (u.protocol === "https:" || u.protocol === "http:") return s.slice(0, 2000);
   } catch {
     /* ignore */
   }
   return null;
+}
+
+/** Pre-baked GS v 0 payload — laptop rasterizes so the Staff APK need not fetch the image. */
+export function sanitizeLogoEscPosBase64(raw?: string | null): string | null {
+  const s = String(raw || "").replace(/\s/g, "");
+  if (!s || s.length > 80_000) return null;
+  if (!/^[A-Za-z0-9+/]+=*$/.test(s)) return null;
+  return s;
 }
 
 export function printedGrandTotal(order: Order, printGst: boolean): number {

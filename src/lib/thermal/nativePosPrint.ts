@@ -146,8 +146,23 @@ export async function connectPrinter(address: string) {
   return plugin.connect({ address });
 }
 
-async function logoBytes(opts?: { logoRaster?: ArrayLike<number> | null; logoUrl?: string | null }) {
+async function logoBytes(opts?: {
+  logoRaster?: ArrayLike<number> | null;
+  logoUrl?: string | null;
+  logoEscPosBase64?: string | null;
+}) {
   if (opts?.logoRaster && opts.logoRaster.length) return Array.from(opts.logoRaster);
+  const baked = String(opts?.logoEscPosBase64 || "").replace(/\s/g, "");
+  if (baked) {
+    try {
+      const bin = atob(baked);
+      const out = new Array(bin.length);
+      for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      if (out.length) return out;
+    } catch {
+      /* fall through to URL raster */
+    }
+  }
   const url = String(opts?.logoUrl || "").trim();
   if (!url) return null;
   try {
@@ -160,7 +175,13 @@ async function logoBytes(opts?: { logoRaster?: ArrayLike<number> | null; logoUrl
 
 export async function nativePrintText(
   text: string,
-  opts?: { address?: string; qrUrl?: string | null; logoRaster?: ArrayLike<number> | null; logoUrl?: string | null },
+  opts?: {
+    address?: string;
+    qrUrl?: string | null;
+    logoRaster?: ArrayLike<number> | null;
+    logoUrl?: string | null;
+    logoEscPosBase64?: string | null;
+  },
 ): Promise<NativePrintResult> {
   if (!isNativeStaffApp()) return { ok: false, reason: "not_native" };
   const plugin = getPlugin();
@@ -203,7 +224,12 @@ export async function nativePrintText(
 /** Prefer native Bluetooth when in Staff APK + saved printer; else caller falls back to HTML print. */
 export async function tryNativeThermalPrint(
   receiptText: string,
-  opts?: { qrUrl?: string | null; logoRaster?: ArrayLike<number> | null; logoUrl?: string | null },
+  opts?: {
+    qrUrl?: string | null;
+    logoRaster?: ArrayLike<number> | null;
+    logoUrl?: string | null;
+    logoEscPosBase64?: string | null;
+  },
 ): Promise<NativePrintResult> {
   if (!isNativeStaffApp()) return { ok: false, reason: "not_native" };
   const saved = await getSavedPrinter();
@@ -213,5 +239,6 @@ export async function tryNativeThermalPrint(
     qrUrl: opts?.qrUrl,
     logoRaster: opts?.logoRaster,
     logoUrl: opts?.logoUrl,
+    logoEscPosBase64: opts?.logoEscPosBase64,
   });
 }

@@ -67,6 +67,7 @@ function usePrintBridgeState(): PrintBridgeHook {
             address: printer.address,
             qrUrl: job.kind === "bill" ? job.qrUrl || null : null,
             logoUrl: job.kind === "bill" ? job.logoUrl || null : null,
+            logoEscPosBase64: job.kind === "bill" ? job.logoEscPosBase64 || null : null,
           });
           await printApi.ack(job.id, {
             status: out.ok ? "done" : "failed",

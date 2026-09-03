@@ -54,3 +54,13 @@ The POS header and print dialog use a **live green / red lamp** (SSE + 1s poll f
 ## Auto-print
 
 Guest **pickup** (takeaway) and **delivery** orders enqueue a customer bill on create (name, phone, location if entered, items, totals). Dining/table stays pay-at-counter; staff **Charge & print** still prints (local or Android). Isolated by `tenantId`.
+
+## Logo on the 58mm bill
+
+An uploaded Settings logo **always** prints at the top of the customer bill
+(fixed 336×128-dot contain box on 384-dot paper, 1-bit threshold). Jobs carry
+an **absolute** logo URL (`https://ordo.asfins.com/api/media/proxy?url=…` or
+`/api/media/…`) and, when the laptop can rasterize, **logoEscPosBase64** (GS v 0
+bytes) so the Staff APK does not have to fetch the image. The proxy streams R2
+or local logos through the app origin because a raw R2 URL would taint the
+canvas and the logo would silently never print.

@@ -2,7 +2,7 @@ import type { Order, TenantState } from "./tenant-types";
 import { tryNativeThermalPrint } from "./thermal/nativePosPrint";
 import { qrPrintImgMarkup, RECEIPT_QR_PRINT_MM } from "./qr-byte";
 import { buildSlipEscPos, bytesToBase64 } from "./escpos-receipt";
-import { rasterizeLogoForEscPos } from "./receipt-logo";
+import { rasterizeLogoForEscPos, sameOriginLogoUrl } from "./receipt-logo";
 import {
   billKindLine,
   billStamp,
@@ -55,7 +55,7 @@ html, body {
   background: #fff;
 }
 .shop { text-align: center; margin-bottom: 2px; }
-.logo { display: block; width: 48mm; max-width: 48mm; max-height: 22mm; height: auto; margin: 0 auto 3px; object-fit: contain; }
+.logo { display: block; width: 51mm; max-width: 51mm; height: 19mm; max-height: 19mm; margin: 0 auto 3px; object-fit: contain; object-position: center; }
 .name {
   display: block;
   font-size: 14px;
@@ -131,7 +131,11 @@ function itemRows(order: Order, withPrices: boolean) {
 
 export function customerReceiptHtml(tenant: TenantState, order: Order) {
   const logoSrc = receiptLogoUrl(tenant);
-  const logo = logoSrc ? `<img class="logo" src="${escapeHtml(logoSrc)}" alt="" />` : "";
+  // Same-origin proxy URL: R2 logos must not be cross-origin inside the print
+  // iframe (paint + canvas issues) — local /api/media URLs pass through as-is.
+  const logo = logoSrc
+    ? `<img class="logo" src="${escapeHtml(sameOriginLogoUrl(logoSrc))}" alt="" />`
+    : "";
   const stamp = billStamp(order.createdAt);
   const f = order.fees;
   const phone = printableShopPhone(tenant.shop.phone);
@@ -419,7 +423,8 @@ export async function printCustomerReceipt(tenant: TenantState, order: Order) {
   }
   const qrUrl = guestOrderPageUrl(tenant.code);
   const text = customerReceiptText(tenant, order);
-  const logoUrl = receiptLogoUrl(tenant);
+  const rawLogo = receiptLogoUrl(tenant);
+  const logoUrl = rawLogo ? sameOriginLogoUrl(rawLogo) : null;
   let logoRaster: number[] | null = null;
   if (logoUrl) {
     try {

@@ -17,8 +17,9 @@ import path from "path";
 import { useMongo } from "./env";
 import { getDb } from "./mongo";
 import { customerReceiptText, kitchenTicketText } from "./print";
+import { sameOriginLogoUrl } from "./receipt-logo";
 import type { Order, TenantState } from "./tenant-types";
-import { guestOrderPageUrl, receiptLogoUrl, sanitizeGuestOrderQrUrl, sanitizeReceiptLogoUrl } from "./receipt-layout";
+import { guestOrderPageUrl, receiptLogoUrl, sanitizeGuestOrderQrUrl, sanitizeLogoEscPosBase64, sanitizeReceiptLogoUrl } from "./receipt-layout";
 
 export type PrintJobKind = "bill" | "kitchen";
 export type PrintJobStatus = "queued" | "printing" | "done" | "failed";
@@ -31,8 +32,10 @@ export type PrintJob = {
   html?: string;
   /** Guest order URL for this kitchen — Staff APK prints a compact QR under the bill. */
   qrUrl?: string | null;
-  /** Shop logo URL when Settings "Print logo on bill" is on. */
+  /** Same-origin (or absolute) shop logo URL for Staff APK canvas raster. */
   logoUrl?: string | null;
+  /** Pre-rasterized GS v 0 bytes (base64) so the phone does not have to fetch the image. */
+  logoEscPosBase64?: string | null;
   orderId?: string | null;
   orderRef?: string | null;
   createdAt: string;
@@ -269,6 +272,7 @@ export async function createPrintJob(
     html?: string;
     qrUrl?: string | null;
     logoUrl?: string | null;
+    logoEscPosBase64?: string | null;
     orderId?: string | null;
     orderRef?: string | null;
   },
@@ -283,6 +287,7 @@ export async function createPrintJob(
     html: typeof input.html === "string" ? input.html : undefined,
     qrUrl: sanitizeGuestOrderQrUrl(typeof input.qrUrl === "string" ? input.qrUrl : null),
     logoUrl: sanitizeReceiptLogoUrl(typeof input.logoUrl === "string" ? input.logoUrl : null),
+    logoEscPosBase64: sanitizeLogoEscPosBase64(typeof input.logoEscPosBase64 === "string" ? input.logoEscPosBase64 : null),
     orderId: input.orderId ?? null,
     orderRef: input.orderRef ?? null,
     createdAt: new Date().toISOString(),
@@ -343,6 +348,7 @@ export async function listQueuedPrintJobs(tenantId: string): Promise<PrintJob[]>
       html: typeof d.html === "string" ? d.html : undefined,
       qrUrl: typeof d.qrUrl === "string" ? d.qrUrl : null,
       logoUrl: typeof d.logoUrl === "string" ? d.logoUrl : null,
+      logoEscPosBase64: typeof d.logoEscPosBase64 === "string" ? d.logoEscPosBase64 : null,
       orderId: (d.orderId as string) ?? null,
       orderRef: (d.orderRef as string) ?? null,
       createdAt: String(d.createdAt),
@@ -393,6 +399,7 @@ export async function updatePrintJob(
       html: d.html,
       qrUrl: d.qrUrl ?? null,
       logoUrl: d.logoUrl ?? null,
+      logoEscPosBase64: d.logoEscPosBase64 ?? null,
       orderId: d.orderId ?? null,
       orderRef: d.orderRef ?? null,
       createdAt: String(d.createdAt),
@@ -424,11 +431,15 @@ export async function enqueueOrderSlip(
 ): Promise<PrintJob | null> {
   assertTenantId(tenantId);
   const text = kind === "kitchen" ? kitchenTicketText(tenant, order) : customerReceiptText(tenant, order);
+  const logo = receiptLogoUrl(tenant);
   return createPrintJob(tenantId, {
     kind,
     text,
     qrUrl: kind === "bill" ? guestOrderPageUrl(tenant.code) : null,
-    logoUrl: kind === "bill" ? receiptLogoUrl(tenant) : null,
+    // Absolute proxy URL so the Staff APK can fetch even if the relative path
+    // would resolve against a Capacitor origin. Prefer embedding raster bytes
+    // from the browser enqueue path (logoEscPosBase64).
+    logoUrl: kind === "bill" && logo ? sameOriginLogoUrl(logo) : null,
     orderId: order.id,
     orderRef: `#${order.number}`,
   });

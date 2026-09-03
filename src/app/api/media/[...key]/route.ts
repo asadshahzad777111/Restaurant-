@@ -15,6 +15,8 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ key: strin
     headers: {
       "Content-Type": found.contentType,
       "Cache-Control": "public, max-age=86400, immutable",
+      "Access-Control-Allow-Origin": "*",
+      "Cross-Origin-Resource-Policy": "cross-origin",
     },
   });
 }

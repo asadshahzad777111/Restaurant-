@@ -116,7 +116,7 @@ Staff side:
   required) → prints 58mm customer bill automatically.
 - **Receipt layout** (`src/lib/print.ts`) — AsFix-style 58mm slip:
   - Paper 58mm; printable content ~48mm / ~32 monospace columns.
-  - Header: centered logo (≤42% width, tick-on-print via `shop.printLogoOnBill`), uppercase
+  - Header: centered logo in a fixed 336×128-dot box when `branding.logoUrl` is set, uppercase
     shop name, address, phone.
   - Meta: Bill #, date, time, type (dining/takeaway/delivery/counter + table), payment method,
     guest name/phone.

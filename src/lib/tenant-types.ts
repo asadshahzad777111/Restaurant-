@@ -48,7 +48,10 @@ export interface TenantShop {
    * There is no dedicated FBR page — fields stay inside Settings when allowed.
    */
   fbrEnabled?: boolean;
-  /** Print branding logo on the 58mm customer bill. Off by default — only when Settings is ticked and a logo is uploaded. */
+  /**
+   * Settings checkbox for "Print logo on bill". Defaults ON whenever a logo URL
+   * exists. Print itself keys off branding.logoUrl — an uploaded logo always prints.
+   */
   printLogoOnBill?: boolean;
   /** Print GST/Tax on the 58mm bill. Off by default — tax is not invented or printed until ticked. */
   printGstOnBill?: boolean;
@@ -200,6 +203,8 @@ export interface Order {
   discount?: number;
   /** Promo code used (Phase 3) — audit + fraud checks. */
   promoCode?: string;
+  /** Rider carrying this delivery (Phase 2) — set on offer accept. */
+  riderId?: string;
   cancelReason?: string;
 }
 

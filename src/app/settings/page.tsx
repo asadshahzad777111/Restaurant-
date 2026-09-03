@@ -81,7 +81,9 @@ export default function SettingsPage() {
       serviceChargePercent: tenant.shop.serviceChargePercent || 0,
       taxRate: tenant.shop.taxRate || 0,
     });
-    setPrintLogoOnBill(tenant.shop.printLogoOnBill === true);
+    setPrintLogoOnBill(
+      Boolean(String(tenant.branding.logoUrl || "").trim()) || tenant.shop.printLogoOnBill === true,
+    );
     setPrintGstOnBill(tenant.shop.printGstOnBill === true);
     setEmailOnOrder(tenant.shop.emailOnOrder === true);
     setFbrEnabled(Boolean(tenant.shop.fbrEnabled));
@@ -166,7 +168,7 @@ export default function SettingsPage() {
         shop: {
           address: branding.address,
           phone: branding.phone,
-          printLogoOnBill,
+          printLogoOnBill: Boolean(branding.logoUrl.trim()) ? true : printLogoOnBill,
           deliveryEnabled: Boolean(branding.deliveryEnabled),
         },
       }),
@@ -381,7 +383,10 @@ export default function SettingsPage() {
                     try {
                       const saved = await uploadTenantMedia(token, "logo", file);
                       setBranding((b) => ({ ...b, logoUrl: saved.url }));
-                      setMsg(`Logo uploaded (${saved.storage})`);
+                      // Uploading a logo almost always means "print it on the bill" —
+                      // auto-tick so a fresh upload actually prints (no silent skip).
+                      setPrintLogoOnBill(true);
+                      setMsg(`Logo uploaded (${saved.storage}) — it will print on every bill`);
                     } catch (err) {
                       setMsg(err instanceof Error ? err.message : "Logo upload failed");
                     }
@@ -395,13 +400,15 @@ export default function SettingsPage() {
               <label className={styles.rowCheck}>
                 <input
                   type="checkbox"
-                  checked={printLogoOnBill}
+                  checked={printLogoOnBill || Boolean(branding.logoUrl)}
                   onChange={(e) => setPrintLogoOnBill(e.target.checked)}
+                  disabled={Boolean(branding.logoUrl)}
                 />
                 Print logo on bill
               </label>
               <p className={styles.muted} style={{ margin: 0 }}>
-                Off by default. Tick this after you upload a logo — it prints at the top of the 58mm bill.
+                Uploaded logos always print at a fixed size on the 58mm bill (top, above the shop name).
+                Clear the logo URL if you do not want it on the slip.
               </p>
               <textarea
                 value={branding.receiptFooter}
