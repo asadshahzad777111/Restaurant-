@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useStore } from "@/lib/store";
 import { uploadTenantMedia } from "@/lib/media-client";
@@ -55,8 +55,16 @@ export default function SettingsPage() {
     { id: "backup", label: "Backup & Data", icon: "🗄️" },
   ] as const;
 
+  // Hydrate the form fields from the tenant EXACTLY ONCE. Background order
+  // polling (StaffAlerts merges new orders into the store every ~3s, which
+  // swaps the tenant object reference) must never clobber what the admin is
+  // typing or just uploaded — otherwise a freshly uploaded logo URL in local
+  // state gets reset to the tenant's still-unsaved (empty) value and the
+  // preview image disappears.
+  const hydratedRef = useRef(false);
   useEffect(() => {
-    if (!tenant) return;
+    if (!tenant || hydratedRef.current) return;
+    hydratedRef.current = true;
     setBranding({
       name: tenant.branding.name,
       logoUrl: tenant.branding.logoUrl,
@@ -80,9 +88,10 @@ export default function SettingsPage() {
     setEmailDraft(user?.email || "");
     setArchiveOn(tenant.shop.archiveOrders !== false);
     setArchiveDays(tenant.shop.archiveRetentionDays || 90);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenant, user]);
 
-  // Load archived-order count once when the card is on screen.
+  // Load archived-order count once (it is refreshed again after "Archive now").
   useEffect(() => {
     let cancelled = false;
     if (!tenant) return;
@@ -95,7 +104,8 @@ export default function SettingsPage() {
     return () => {
       cancelled = true;
     };
-  }, [tenant, token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function saveArchive(e: React.FormEvent) {
     e.preventDefault();
