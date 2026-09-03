@@ -1,0 +1,6 @@
+# Generated VIP demos
+agency/output/
+agency/.venv/
+agency/**/__pycache__/
+agency/**/*.pyc
+agency/screenshots/

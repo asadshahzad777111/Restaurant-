@@ -44,6 +44,11 @@ next-env.d.ts
 # file-backed store
 .data/
 
+# Local MoA agency outputs / venv
+agency/output/
+agency/.venv/
+agency/**/__pycache__/
+
 # local gradle / APK build caches
 .gradle-home/
 .tmp-build/

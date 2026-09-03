@@ -56,3 +56,7 @@ If R2 env vars are set, files go to R2; otherwise they are stored under `.data/m
 
 ## Architecture
 See `docs/MULTI-TENANT-SAAS.md`.
+
+## Local MoA agency (Apple Silicon / $0 demos)
+Offline Mixture-of-Agents scaffold for VIP demo sites + visual QA + n8n preview outreach:  
+[`agency/README.md`](agency/README.md) · evaluation [`docs/LOCAL-MOA-ARCHITECTURE.md`](docs/LOCAL-MOA-ARCHITECTURE.md).

@@ -1,0 +1,48 @@
+# Recommended free open-weight pairing for Apple Silicon MoA.
+# Rule: at most one "heavy" role loaded at a time.
+
+ollama_host: "${OLLAMA_HOST:http://127.0.0.1:11434}"
+openai_compatible_base: "${MOA_OPENAI_BASE:}"  # optional MLX / LM Studio override
+
+roles:
+  coder:
+    model: qwen2.5-coder:32b
+    heavy: true
+    approx_gb_q4: 22
+    resident: true
+    purpose: "Plan + generate Next.js/Tailwind/Framer demos + self-critique"
+
+  planner:
+    model: deepseek-r1:32b
+    heavy: true
+    approx_gb_q4: 22
+    resident: false
+    purpose: "Hard planning only — unload coder first"
+
+  vision:
+    model: qwen2.5vl:7b
+    heavy: false
+    approx_gb_q4: 6
+    resident: false
+    purpose: "Screenshot layout / responsiveness QA"
+
+  auditor:
+    model: qwen2.5-coder:32b
+    heavy: true
+    approx_gb_q4: 22
+    resident: false
+    purpose: "Prefer same coder + critique prompt; swap to llama3.3:70b only if needed"
+    fallback_model: llama3.3:70b
+    fallback_approx_gb_q4: 42
+
+  images:
+    engine: comfyui
+    model: flux1-schnell-gguf
+    heavy: true
+    approx_gb_q4: 10
+    resident: false
+    purpose: "Product / hero stills — never parallel with 70B"
+
+system_reserve_gb: 12
+browser_reserve_gb: 8
+n8n_reserve_gb: 2

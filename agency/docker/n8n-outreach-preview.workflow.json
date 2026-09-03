@@ -1,0 +1,36 @@
+{
+  "name": "ORDO MoA Outreach Preview",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ordo-moa-outreach",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [260, 300],
+      "webhookId": "ordo-moa-outreach"
+    },
+    {
+      "parameters": {
+        "jsCode": "const p = $input.first().json;\nif (!p.mode || p.mode !== 'preview_only') {\n  throw new Error('Refusing non-preview outreach');\n}\nreturn [{\n  json: {\n    preview: true,\n    business: p.business_name,\n    channel_hint: p.whatsapp || p.phone || p.email,\n    demo_path: p.demo_path,\n    message: `Assalam o Alaikum — we built a free VIP demo for ${p.business_name}. Review before any send.`\n  }\n}];"
+      },
+      "name": "Preview Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Preview Guard", "type": "main", "index": 0 }]]
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ordo-local-moa"
+  }
+}

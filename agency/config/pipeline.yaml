@@ -1,0 +1,18 @@
+max_vision_fix_loops: 3
+output_root: output
+template_dir: templates/vip-demo
+screenshots_dir: screenshots
+deploy:
+  provider: cloudflare_pages  # or vercel
+  # Set token via env; never commit secrets
+  # CLOUDFLARE_API_TOKEN / VERCEL_TOKEN
+outreach:
+  n8n_webhook_url: "${N8N_WEBHOOK_URL:http://127.0.0.1:5678/webhook/ordo-moa-outreach}"
+  mode: preview_only  # never auto-blast WhatsApp/SMS
+playwright:
+  viewport_width: 1440
+  viewport_height: 900
+  mobile_width: 390
+  mobile_height: 844
+  full_page: true
+dry_run_default: true
