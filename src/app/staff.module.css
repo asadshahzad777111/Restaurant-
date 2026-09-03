@@ -700,6 +700,78 @@
   min-width: 0;
 }
 
+/* --- Settings page: section tabs --- */
+.settingsTabs {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin: 0 0 0.25rem;
+}
+
+.settingsTab {
+  border: 1px solid #e8e4de;
+  background: #fff;
+  color: #6b625a;
+  border-radius: 999px;
+  padding: 0.5rem 0.95rem;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.settingsTab:hover {
+  color: var(--staff-text);
+  border-color: #d9cfc2;
+  transform: translateY(-1px);
+}
+
+.settingsTabActive {
+  background: var(--staff-accent, #ff8500);
+  border-color: var(--staff-accent, #ff8500);
+  color: #fff;
+}
+
+.settingsTabActive:hover {
+  color: #fff;
+  border-color: var(--staff-accent, #ff8500);
+}
+
+/* Scrollable tab row on small screens */
+@media (max-width: 700px) {
+  .settingsTabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.3rem;
+    margin-right: -1rem;
+    margin-left: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .settingsTab {
+    scroll-snap-align: start;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+}
+
+/* Settings section heading inside a group */
+.settingsGroupTitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--staff-muted, #8a8176);
+}
+
 @media (max-width: 1100px) {
   .kitchenBoard {
     grid-template-columns: 1fr 1fr;

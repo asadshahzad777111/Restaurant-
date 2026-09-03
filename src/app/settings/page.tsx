@@ -43,6 +43,17 @@ export default function SettingsPage() {
   const [archiveDays, setArchiveDays] = useState(90);
   const [archivedCount, setArchivedCount] = useState<number | null>(null);
   const [archiveMsg, setArchiveMsg] = useState("");
+  const [settingsTab, setSettingsTab] = useState<
+    "branding" | "payments" | "access" | "app" | "backup"
+  >("branding");
+
+  const SETTINGS_TABS = [
+    { id: "branding", label: "Branding & Receipts", icon: "🎨" },
+    { id: "payments", label: "Payments & Fees", icon: "💳" },
+    { id: "access", label: "Access & Security", icon: "🔐" },
+    { id: "app", label: "Staff App & QR", icon: "📱" },
+    { id: "backup", label: "Backup & Data", icon: "🗄️" },
+  ] as const;
 
   useEffect(() => {
     if (!tenant) return;
@@ -314,403 +325,444 @@ export default function SettingsPage() {
           </div>
         )}
 
-        <form className={styles.form} onSubmit={saveBranding}>
-          <h3 style={{ margin: 0 }}>Branding</h3>
-          <input
-            value={branding.name}
-            onChange={(e) => setBranding({ ...branding, name: e.target.value })}
-            placeholder="Restaurant name"
-          />
-          <input
-            value={branding.logoUrl}
-            onChange={(e) => setBranding({ ...branding, logoUrl: e.target.value })}
-            placeholder="Logo URL"
-          />
-          <label className={styles.muted}>
-            Or upload logo (R2 when configured, otherwise local file-store)
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                e.target.value = "";
-                if (!file) return;
-                setMsg("Uploading logo…");
-                try {
-                  const saved = await uploadTenantMedia(token, "logo", file);
-                  setBranding((b) => ({ ...b, logoUrl: saved.url }));
-                  setMsg(`Logo uploaded (${saved.storage})`);
-                } catch (err) {
-                  setMsg(err instanceof Error ? err.message : "Logo upload failed");
-                }
-              }}
-            />
-          </label>
-          {branding.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={branding.logoUrl} alt="" style={{ maxWidth: 120, maxHeight: 80, objectFit: "contain" }} />
-          ) : null}
-          <label className={styles.rowCheck}>
-            <input
-              type="checkbox"
-              checked={printLogoOnBill}
-              onChange={(e) => setPrintLogoOnBill(e.target.checked)}
-            />
-            Print logo on bill
-          </label>
-          <p className={styles.muted} style={{ margin: 0 }}>
-            Off by default. Tick this after you upload a logo — it prints at the top of the 58mm bill.
-          </p>
-          <textarea
-            value={branding.receiptFooter}
-            onChange={(e) => setBranding({ ...branding, receiptFooter: e.target.value })}
-            placeholder="Receipt footer (English or Urdu)"
-            rows={2}
-          />
-          <input
-            value={branding.address}
-            onChange={(e) => setBranding({ ...branding, address: e.target.value })}
-            placeholder="Shop address (prints on 58mm bill)"
-          />
-          <input
-            value={branding.phone}
-            onChange={(e) => setBranding({ ...branding, phone: e.target.value })}
-            placeholder="Shop phone (prints on 58mm header if filled — not a placeholder)"
-          />
-          <button type="submit" className={styles.btn}>
-            Save branding
-          </button>
-        </form>
-
-        <form className={styles.form} onSubmit={saveAppToggles}>
-          <h3 style={{ margin: 0 }}>📱 Mobile App (per restaurant)</h3>
-          {planAllows(planId, "apk") ? (
-            <label className={styles.rowCheck}>
-              <input
-                type="checkbox"
-                checked={branding.allowApk}
-                onChange={(e) => {
-                  setBranding({ ...branding, allowApk: e.target.checked });
-                }}
-              />
-              Allow this kitchen&apos;s Staff APK download (Android team app)
-            </label>
-          ) : (
-            <p className={styles.muted} style={{ margin: 0 }}>
-              Staff Android app is a <strong>Pro</strong> feature (₨1,999/mo). Upgrade to publish
-              a Staff APK for this kitchen. Guests always order on the web.
-            </p>
-          )}
-          <label className={styles.rowCheck}>
-            <input
-              type="checkbox"
-              checked={branding.scanOrderQr}
-              onChange={(e) => setBranding({ ...branding, scanOrderQr: e.target.checked })}
-            />
-            Print "Scan to order" QR on customer receipt (59mm)
-          </label>
-          <label className={styles.rowCheck}>
-            <input
-              type="checkbox"
-              checked={branding.deliveryEnabled}
-              onChange={(e) => setBranding({ ...branding, deliveryEnabled: e.target.checked })}
-            />
-            Enable Delivery option for customers
-          </label>
-          {tenant && (
-            <div className={styles.row}>
-              <a className={styles.btn} href="/tables?printQr=1">🪑 Print table QR</a>
-            </div>
-          )}
-          {branding.allowApk && planAllows(planId, "apk") && tenant && (
-            <div className={styles.apkLinks}>
-              <a className={styles.btn} href={`/apk/install/${tenant.code}/staff`} download>🧑‍🍳 Staff APK</a>
-              <span className={styles.muted}>
-                Staff APK for this kitchen only. Guests use table QR, scanner, or web menu.
-              </span>
-            </div>
-          )}
-          <button type="submit" className={styles.btn}>
-            Save
-          </button>
-        </form>
-
-        <form className={styles.form} onSubmit={saveFees}>
-          <h3 style={{ margin: 0 }}>Fees (per tenant)</h3>
-          <label className={styles.muted}>Delivery fee (PKR)</label>
-          <input
-            type="number"
-            value={fees.deliveryFee}
-            onChange={(e) => setFees({ ...fees, deliveryFee: Number(e.target.value) })}
-          />
-          <label className={styles.muted}>Packing fee</label>
-          <input
-            type="number"
-            value={fees.packingFee}
-            onChange={(e) => setFees({ ...fees, packingFee: Number(e.target.value) })}
-          />
-          <label className={styles.muted}>Service charge %</label>
-          <input
-            type="number"
-            value={fees.serviceChargePercent}
-            onChange={(e) => setFees({ ...fees, serviceChargePercent: Number(e.target.value) })}
-          />
-          <label className={styles.muted}>GST / tax %</label>
-          <input
-            type="number"
-            value={fees.taxRate}
-            onChange={(e) => setFees({ ...fees, taxRate: Number(e.target.value) })}
-          />
-          <label className={styles.rowCheck}>
-            <input
-              type="checkbox"
-              checked={printGstOnBill}
-              onChange={(e) => setPrintGstOnBill(e.target.checked)}
-            />
-            Print GST on bill
-          </label>
-          <p className={styles.muted} style={{ margin: 0 }}>
-            Off by default. GST/Tax is not printed (and not added) until this is ticked.
-          </p>
-          <label className={styles.rowCheck}>
-            <input
-              type="checkbox"
-              checked={emailOnOrder}
-              onChange={(e) => setEmailOnOrder(e.target.checked)}
-            />
-            Email me on every new order (optional)
-          </label>
-          <p className={styles.muted} style={{ margin: 0 }}>
-            Off by default to save email quota — new orders still show in the app and can alert you on
-            WhatsApp. Tick this only if you want a copy of every order in your inbox. Welcome /
-            password-reset emails are always sent.
-          </p>
-          <button type="submit" className={styles.btn}>
-            Save settings
-          </button>
-        </form>
-
-        <AdminPaymentsCard />
-
-        <AdminSpecialOfferCard />
-
-        {platformFeatures?.fbrOptional && (
-          <div className={styles.card}>
-            <h3 style={{ marginTop: 0 }}>Optional · FBR fields</h3>
-            <p className={styles.muted}>
-              Super enabled this option platform-wide. There is no separate FBR page — turn fields on only
-              if this kitchen needs them. Off by default.
-            </p>
+        {/* Section tabs — groups replace the old single long scroll. */}
+        <div className={styles.settingsTabs} role="tablist" aria-label="Settings sections">
+          {SETTINGS_TABS.map((t) => (
             <button
+              key={t.id}
               type="button"
-              className={fbrEnabled ? styles.btn : styles.btnGhost}
-              onClick={() => void saveFbrOptIn(!fbrEnabled)}
+              role="tab"
+              aria-selected={settingsTab === t.id}
+              className={settingsTab === t.id ? styles.settingsTabActive : styles.settingsTab}
+              onClick={() => setSettingsTab(t.id)}
             >
-              {fbrEnabled ? "FBR fields ON for this kitchen" : "Enable FBR fields (experimental)"}
+              {t.icon} {t.label}
             </button>
+          ))}
+        </div>
+
+        {msg && <p className={styles.muted} style={{ margin: 0 }}>{msg}</p>}
+
+        {/* ── Branding & Receipts ─────────────────────────────── */}
+        {settingsTab === "branding" && (
+          <div className={styles.stack}>
+            <form className={styles.form} onSubmit={saveBranding}>
+              <h3 style={{ margin: 0 }}>🎨 Branding</h3>
+              <input
+                value={branding.name}
+                onChange={(e) => setBranding({ ...branding, name: e.target.value })}
+                placeholder="Restaurant name"
+              />
+              <input
+                value={branding.logoUrl}
+                onChange={(e) => setBranding({ ...branding, logoUrl: e.target.value })}
+                placeholder="Logo URL"
+              />
+              <label className={styles.muted}>
+                Or upload logo (R2 when configured, otherwise local file-store)
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (!file) return;
+                    setMsg("Uploading logo…");
+                    try {
+                      const saved = await uploadTenantMedia(token, "logo", file);
+                      setBranding((b) => ({ ...b, logoUrl: saved.url }));
+                      setMsg(`Logo uploaded (${saved.storage})`);
+                    } catch (err) {
+                      setMsg(err instanceof Error ? err.message : "Logo upload failed");
+                    }
+                  }}
+                />
+              </label>
+              {branding.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={branding.logoUrl} alt="" style={{ maxWidth: 120, maxHeight: 80, objectFit: "contain" }} />
+              ) : null}
+              <label className={styles.rowCheck}>
+                <input
+                  type="checkbox"
+                  checked={printLogoOnBill}
+                  onChange={(e) => setPrintLogoOnBill(e.target.checked)}
+                />
+                Print logo on bill
+              </label>
+              <p className={styles.muted} style={{ margin: 0 }}>
+                Off by default. Tick this after you upload a logo — it prints at the top of the 58mm bill.
+              </p>
+              <textarea
+                value={branding.receiptFooter}
+                onChange={(e) => setBranding({ ...branding, receiptFooter: e.target.value })}
+                placeholder="Receipt footer (English or Urdu)"
+                rows={2}
+              />
+              <input
+                value={branding.address}
+                onChange={(e) => setBranding({ ...branding, address: e.target.value })}
+                placeholder="Shop address (prints on 58mm bill)"
+              />
+              <input
+                value={branding.phone}
+                onChange={(e) => setBranding({ ...branding, phone: e.target.value })}
+                placeholder="Shop phone (prints on 58mm header if filled — not a placeholder)"
+              />
+              <button type="submit" className={styles.btn}>
+                Save branding
+              </button>
+            </form>
+
+            <AdminSpecialOfferCard />
+
+            <AdminThermalPrinterCard />
           </div>
         )}
 
-        <form className={styles.form} onSubmit={changePassword}>
-          <h3 style={{ margin: 0 }}>Change password</h3>
-          <input
-            type="password"
-            autoComplete="current-password"
-            placeholder="Current password"
-            value={pw.current}
-            onChange={(e) => setPw({ ...pw, current: e.target.value })}
-          />
-          <input
-            type="password"
-            autoComplete="new-password"
-            placeholder="New password (min 6)"
-            value={pw.next}
-            onChange={(e) => setPw({ ...pw, next: e.target.value })}
-          />
-          <button type="submit" className={styles.btn}>
-            Update password
-          </button>
-        </form>
+        {/* ── Payments & Fees ─────────────────────────────────── */}
+        {settingsTab === "payments" && (
+          <div className={styles.stack}>
+            <form className={styles.form} onSubmit={saveFees}>
+              <h3 style={{ margin: 0 }}>💳 Fees (per tenant)</h3>
+              <label className={styles.muted}>Delivery fee (PKR)</label>
+              <input
+                type="number"
+                value={fees.deliveryFee}
+                onChange={(e) => setFees({ ...fees, deliveryFee: Number(e.target.value) })}
+              />
+              <label className={styles.muted}>Packing fee</label>
+              <input
+                type="number"
+                value={fees.packingFee}
+                onChange={(e) => setFees({ ...fees, packingFee: Number(e.target.value) })}
+              />
+              <label className={styles.muted}>Service charge %</label>
+              <input
+                type="number"
+                value={fees.serviceChargePercent}
+                onChange={(e) => setFees({ ...fees, serviceChargePercent: Number(e.target.value) })}
+              />
+              <label className={styles.muted}>GST / tax %</label>
+              <input
+                type="number"
+                value={fees.taxRate}
+                onChange={(e) => setFees({ ...fees, taxRate: Number(e.target.value) })}
+              />
+              <label className={styles.rowCheck}>
+                <input
+                  type="checkbox"
+                  checked={printGstOnBill}
+                  onChange={(e) => setPrintGstOnBill(e.target.checked)}
+                />
+                Print GST on bill
+              </label>
+              <p className={styles.muted} style={{ margin: 0 }}>
+                Off by default. GST/Tax is not printed (and not added) until this is ticked.
+              </p>
+              <label className={styles.rowCheck}>
+                <input
+                  type="checkbox"
+                  checked={emailOnOrder}
+                  onChange={(e) => setEmailOnOrder(e.target.checked)}
+                />
+                Email me on every new order (optional)
+              </label>
+              <p className={styles.muted} style={{ margin: 0 }}>
+                Off by default to save email quota — new orders still show in the app and can alert you on
+                WhatsApp. Tick this only if you want a copy of every order in your inbox. Welcome /
+                password-reset emails are always sent.
+              </p>
+              <button type="submit" className={styles.btn}>
+                Save settings
+              </button>
+            </form>
 
-        <form className={styles.form} onSubmit={(e) => void savePin(e)}>
-          <h3 style={{ margin: 0 }}>🔢 Quick PIN login</h3>
-          <p className={styles.muted}>
-            Set a 4–6 digit PIN to sign in fast without an email. You still use your password to change it.
-          </p>
-          <input
-            type="password"
-            autoComplete="current-password"
-            placeholder="Your password (to verify)"
-            value={pinDraft.password}
-            onChange={(e) => setPinDraft({ ...pinDraft, password: e.target.value })}
-          />
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="New PIN (4–6 digits) — leave empty to remove"
-            value={pinDraft.pin}
-            onChange={(e) => setPinDraft({ ...pinDraft, pin: e.target.value.replace(/\D/g, "").slice(0, 6) })}
-          />
-          <div className={styles.row}>
-            <button type="submit" className={styles.btn}>
-              Save PIN
-            </button>
-          </div>
-          {pinMsg && <p className={styles.muted}>{pinMsg}</p>}
-        </form>
+            <AdminPaymentsCard />
 
-        <form className={styles.form} onSubmit={(e) => void saveArchive(e)}>
-          <h3 style={{ margin: 0 }}>🗄️ Order archive</h3>
-          <p className={styles.muted}>
-            Old completed / cancelled orders move out of your kitchen document into the archive so the
-            free-plan database stays fast and under its size limit. Nothing is deleted — history stays
-            downloadable.
-          </p>
-          <label className={styles.rowCheck}>
-            <input
-              type="checkbox"
-              checked={archiveOn}
-              onChange={(e) => setArchiveOn(e.target.checked)}
-            />
-            Auto-archive old orders
-          </label>
-          <label className={styles.rowCheck} style={{ display: "grid", gap: "0.35rem", marginTop: "0.4rem" }}>
-            <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>Keep inside (days)</span>
-            <input
-              type="number"
-              min={7}
-              max={365}
-              value={archiveDays}
-              onChange={(e) => setArchiveDays(Number(e.target.value))}
-              disabled={!archiveOn}
-              style={{ maxWidth: 140 }}
-            />
-          </label>
-          <div className={styles.row}>
-            <button type="submit" className={styles.btn}>
-              Save archive settings
-            </button>
-            <button type="button" className={styles.btnGhost} onClick={() => void archiveNow()}>
-              Archive now
-            </button>
-          </div>
-          {archiveMsg && <p className={styles.muted}>{archiveMsg}</p>}
-          {archivedCount !== null && (
-            <p className={styles.muted}>
-              Archived so far: <strong>{archivedCount}</strong> order(s)
-            </p>
-          )}
-        </form>
-
-        <form className={styles.form} onSubmit={(e) => void changeEmail(e)}>
-          <h3 style={{ margin: 0 }}>Gmail / login email</h3>
-          <p className={styles.muted}>
-            Save your Gmail here so you can Sign in with Google on Staff login (with this kitchen’s code).
-          </p>
-          <input
-            type="email"
-            placeholder="you@gmail.com"
-            value={emailDraft}
-            onChange={(e) => setEmailDraft(e.target.value)}
-          />
-          <button type="submit" className={styles.btn}>
-            Save email
-          </button>
-        </form>
-
-        <div className={styles.card}>
-          <h3 style={{ marginTop: 0 }}>Backup / export</h3>
-          <p className={styles.muted}>Localhost safety — download menu & orders.</p>
-          <div className={styles.row}>
-            <button type="button" className={styles.btnGhost} onClick={() => void exportData("menu", "json")}>
-              Menu JSON
-            </button>
-            <button type="button" className={styles.btnGhost} onClick={() => void exportData("menu", "csv")}>
-              Menu CSV
-            </button>
-            <button type="button" className={styles.btnGhost} onClick={() => void exportData("orders", "json")}>
-              Orders JSON (30d)
-            </button>
-            <button type="button" className={styles.btnGhost} onClick={() => void exportData("orders", "csv")}>
-              Orders CSV (30d)
-            </button>
-            <button
-              type="button"
-              className={styles.btnGhost}
-              onClick={() => void exportData("orders", "json", true)}
-            >
-              Orders + archive JSON
-            </button>
-          </div>
-          <p className={styles.muted} style={{ marginTop: "0.6rem", marginBottom: 0 }}>
-            "Orders + archive" includes the archived history too — that's your full record.
-          </p>
-        </div>
-
-        <div className={styles.card}>
-          <h3 style={{ marginTop: 0 }}>QR / guest links</h3>
-          <p className={styles.muted}>
-            Table tents and every 58mm bill QR open this kitchen only:
-          </p>
-          <code>
-            {origin}/guest
-          </code>
-          <br />
-          <code>
-            {origin}/scan
-          </code>
-          <br />
-          <code>
-            {origin}/order?tenant={tenant?.code}
-          </code>
-          <br />
-          <code>
-            {origin}/order?tenant={tenant?.code}&table=3
-          </code>
-        </div>
-
-        <AdminApkCard />
-
-        <AdminIosInstallCard />
-
-        <AdminThermalPrinterCard />
-
-        <div className={styles.card}>
-          <h3 style={{ marginTop: 0 }}>Staff on this kitchen</h3>
-          <p className={styles.muted}>Users belong to {tenant?.code} only — never another restaurant.</p>
-          <ul className={styles.mobileCards}>
-            {(tenant?.users ?? []).map((u) => (
-              <li key={u.id} className={styles.mobileCard}>
-                <strong>{u.username}</strong>
+            {platformFeatures?.fbrOptional && (
+              <div className={styles.card}>
+                <h3 style={{ marginTop: 0 }}>Optional · FBR fields</h3>
                 <p className={styles.muted}>
-                  {u.roleLabel} · {u.active ? "active" : "off"}
+                  Super enabled this option platform-wide. There is no separate FBR page — turn fields on only
+                  if this kitchen needs them. Off by default.
                 </p>
-              </li>
-            ))}
-          </ul>
-          <div className={`${styles.tableScroll} ${styles.tableScrollDesktop}`}>
-            <table className={`${styles.table} ${styles.tableDesktop}`}>
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(tenant?.users ?? []).map((u) => (
-                  <tr key={u.id}>
-                    <td>{u.username}</td>
-                    <td>{u.roleLabel}</td>
-                    <td>{u.active ? "active" : "off"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                <button
+                  type="button"
+                  className={fbrEnabled ? styles.btn : styles.btnGhost}
+                  onClick={() => void saveFbrOptIn(!fbrEnabled)}
+                >
+                  {fbrEnabled ? "FBR fields ON for this kitchen" : "Enable FBR fields (experimental)"}
+                </button>
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
-        {msg && <p className={styles.muted}>{msg}</p>}
+        {/* ── Access & Security ───────────────────────────────── */}
+        {settingsTab === "access" && (
+          <div className={styles.stack}>
+            <form className={styles.form} onSubmit={changePassword}>
+              <h3 style={{ margin: 0 }}>🔐 Change password</h3>
+              <input
+                type="password"
+                autoComplete="current-password"
+                placeholder="Current password"
+                value={pw.current}
+                onChange={(e) => setPw({ ...pw, current: e.target.value })}
+              />
+              <input
+                type="password"
+                autoComplete="new-password"
+                placeholder="New password (min 6)"
+                value={pw.next}
+                onChange={(e) => setPw({ ...pw, next: e.target.value })}
+              />
+              <button type="submit" className={styles.btn}>
+                Update password
+              </button>
+            </form>
+
+            <form className={styles.form} onSubmit={(e) => void savePin(e)}>
+              <h3 style={{ margin: 0 }}>🔢 Quick PIN login</h3>
+              <p className={styles.muted}>
+                Set a 4–6 digit PIN to sign in fast without an email. You still use your password to change it.
+              </p>
+              <input
+                type="password"
+                autoComplete="current-password"
+                placeholder="Your password (to verify)"
+                value={pinDraft.password}
+                onChange={(e) => setPinDraft({ ...pinDraft, password: e.target.value })}
+              />
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="New PIN (4–6 digits) — leave empty to remove"
+                value={pinDraft.pin}
+                onChange={(e) => setPinDraft({ ...pinDraft, pin: e.target.value.replace(/\D/g, "").slice(0, 6) })}
+              />
+              <div className={styles.row}>
+                <button type="submit" className={styles.btn}>
+                  Save PIN
+                </button>
+              </div>
+              {pinMsg && <p className={styles.muted}>{pinMsg}</p>}
+            </form>
+
+            <form className={styles.form} onSubmit={(e) => void changeEmail(e)}>
+              <h3 style={{ margin: 0 }}>📧 Gmail / login email</h3>
+              <p className={styles.muted}>
+                Save your Gmail here so you can Sign in with Google on Staff login (with this kitchen’s code).
+              </p>
+              <input
+                type="email"
+                placeholder="you@gmail.com"
+                value={emailDraft}
+                onChange={(e) => setEmailDraft(e.target.value)}
+              />
+              <button type="submit" className={styles.btn}>
+                Save email
+              </button>
+            </form>
+
+            <div className={styles.card}>
+              <h3 style={{ marginTop: 0 }}>Staff on this kitchen</h3>
+              <p className={styles.muted}>Users belong to {tenant?.code} only — never another restaurant.</p>
+              <ul className={styles.mobileCards}>
+                {(tenant?.users ?? []).map((u) => (
+                  <li key={u.id} className={styles.mobileCard}>
+                    <strong>{u.username}</strong>
+                    <p className={styles.muted}>
+                      {u.roleLabel} · {u.active ? "active" : "off"}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              <div className={`${styles.tableScroll} ${styles.tableScrollDesktop}`}>
+                <table className={`${styles.table} ${styles.tableDesktop}`}>
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(tenant?.users ?? []).map((u) => (
+                      <tr key={u.id}>
+                        <td>{u.username}</td>
+                        <td>{u.roleLabel}</td>
+                        <td>{u.active ? "active" : "off"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Staff App & QR ──────────────────────────────────── */}
+        {settingsTab === "app" && (
+          <div className={styles.stack}>
+            <form className={styles.form} onSubmit={saveAppToggles}>
+              <h3 style={{ margin: 0 }}>📱 Mobile App (per restaurant)</h3>
+              {planAllows(planId, "apk") ? (
+                <label className={styles.rowCheck}>
+                  <input
+                    type="checkbox"
+                    checked={branding.allowApk}
+                    onChange={(e) => {
+                      setBranding({ ...branding, allowApk: e.target.checked });
+                    }}
+                  />
+                  Allow this kitchen&apos;s Staff APK download (Android team app)
+                </label>
+              ) : (
+                <p className={styles.muted} style={{ margin: 0 }}>
+                  Staff Android app is a <strong>Pro</strong> feature (₨1,999/mo). Upgrade to publish
+                  a Staff APK for this kitchen. Guests always order on the web.
+                </p>
+              )}
+              <label className={styles.rowCheck}>
+                <input
+                  type="checkbox"
+                  checked={branding.scanOrderQr}
+                  onChange={(e) => setBranding({ ...branding, scanOrderQr: e.target.checked })}
+                />
+                Print "Scan to order" QR on customer receipt (59mm)
+              </label>
+              <label className={styles.rowCheck}>
+                <input
+                  type="checkbox"
+                  checked={branding.deliveryEnabled}
+                  onChange={(e) => setBranding({ ...branding, deliveryEnabled: e.target.checked })}
+                />
+                Enable Delivery option for customers
+              </label>
+              {tenant && (
+                <div className={styles.row}>
+                  <a className={styles.btn} href="/tables?printQr=1">🪑 Print table QR</a>
+                </div>
+              )}
+              {branding.allowApk && planAllows(planId, "apk") && tenant && (
+                <div className={styles.apkLinks}>
+                  <a className={styles.btn} href={`/apk/install/${tenant.code}/staff`} download>🧑‍🍳 Staff APK</a>
+                  <span className={styles.muted}>
+                    Staff APK for this kitchen only. Guests use table QR, scanner, or web menu.
+                  </span>
+                </div>
+              )}
+              <button type="submit" className={styles.btn}>
+                Save
+              </button>
+            </form>
+
+            <div className={styles.card}>
+              <h3 style={{ marginTop: 0 }}>QR / guest links</h3>
+              <p className={styles.muted}>
+                Table tents and every 58mm bill QR open this kitchen only:
+              </p>
+              <code>
+                {origin}/guest
+              </code>
+              <br />
+              <code>
+                {origin}/scan
+              </code>
+              <br />
+              <code>
+                {origin}/order?tenant={tenant?.code}
+              </code>
+              <br />
+              <code>
+                {origin}/order?tenant={tenant?.code}&table=3
+              </code>
+            </div>
+
+            <AdminApkCard />
+
+            <AdminIosInstallCard />
+          </div>
+        )}
+
+        {/* ── Backup & Data ───────────────────────────────────── */}
+        {settingsTab === "backup" && (
+          <div className={styles.stack}>
+            <form className={styles.form} onSubmit={(e) => void saveArchive(e)}>
+              <h3 style={{ margin: 0 }}>🗄️ Order archive</h3>
+              <p className={styles.muted}>
+                Old completed / cancelled orders move out of your kitchen document into the archive so the
+                free-plan database stays fast and under its size limit. Nothing is deleted — history stays
+                downloadable.
+              </p>
+              <label className={styles.rowCheck}>
+                <input
+                  type="checkbox"
+                  checked={archiveOn}
+                  onChange={(e) => setArchiveOn(e.target.checked)}
+                />
+                Auto-archive old orders
+              </label>
+              <label className={styles.rowCheck} style={{ display: "grid", gap: "0.35rem", marginTop: "0.4rem" }}>
+                <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>Keep inside (days)</span>
+                <input
+                  type="number"
+                  min={7}
+                  max={365}
+                  value={archiveDays}
+                  onChange={(e) => setArchiveDays(Number(e.target.value))}
+                  disabled={!archiveOn}
+                  style={{ maxWidth: 140 }}
+                />
+              </label>
+              <div className={styles.row}>
+                <button type="submit" className={styles.btn}>
+                  Save archive settings
+                </button>
+                <button type="button" className={styles.btnGhost} onClick={() => void archiveNow()}>
+                  Archive now
+                </button>
+              </div>
+              {archiveMsg && <p className={styles.muted}>{archiveMsg}</p>}
+              {archivedCount !== null && (
+                <p className={styles.muted}>
+                  Archived so far: <strong>{archivedCount}</strong> order(s)
+                </p>
+              )}
+            </form>
+
+            <div className={styles.card}>
+              <h3 style={{ marginTop: 0 }}>Backup / export</h3>
+              <p className={styles.muted}>Localhost safety — download menu & orders.</p>
+              <div className={styles.row}>
+                <button type="button" className={styles.btnGhost} onClick={() => void exportData("menu", "json")}>
+                  Menu JSON
+                </button>
+                <button type="button" className={styles.btnGhost} onClick={() => void exportData("menu", "csv")}>
+                  Menu CSV
+                </button>
+                <button type="button" className={styles.btnGhost} onClick={() => void exportData("orders", "json")}>
+                  Orders JSON (30d)
+                </button>
+                <button type="button" className={styles.btnGhost} onClick={() => void exportData("orders", "csv")}>
+                  Orders CSV (30d)
+                </button>
+                <button
+                  type="button"
+                  className={styles.btnGhost}
+                  onClick={() => void exportData("orders", "json", true)}
+                >
+                  Orders + archive JSON
+                </button>
+              </div>
+              <p className={styles.muted} style={{ marginTop: "0.6rem", marginBottom: 0 }}>
+                "Orders + archive" includes the archived history too — that's your full record.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </AppShell>
   );
