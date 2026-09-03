@@ -10,8 +10,15 @@ export const RECEIPT_PAPER_DOTS = 384;
  */
 export const LOGO_BOX_W = 336;
 export const LOGO_BOX_H = 128;
-/** Darker than 128 so light-gray marks still burn in on cheap thermal heads. */
-const THRESHOLD = 168;
+/**
+ * Luminance cut: pixels lighter than this stay paper-white (no heat).
+ * 212 sits in the 200–220 band — JPEG “white” (~240–255) is never ink,
+ * while burger browns / red type still are. Yellow/gold need saturation
+ * (pure yellow luminance is ~226, above this cut).
+ */
+const LIGHT_CUTOFF = 212;
+/** HSV saturation: yellow, gold, orange, red fills print black even when light. */
+const SAT_INK = 0.22;
 
 export function fitLogoInBox(iw: number, ih: number): {
   dw: number;
@@ -32,6 +39,10 @@ export function fitLogoInBox(iw: number, ih: number): {
   };
 }
 
+/**
+ * GS v 0 (ESC/POS `1D 76 30 m`). m = 0 (normal density).
+ * Bit 1 = heat / black on POS-58 / Zijiang — same polarity as the QR raster.
+ */
 export function wrapLogoGsV0(width: number, height: number, bits: number[]): number[] {
   const byteW = Math.ceil(width / 8);
   return [
@@ -143,38 +154,33 @@ async function loadLogoImage(url: string): Promise<HTMLImageElement> {
   return decodeImage(src);
 }
 
+/**
+ * Composite onto white, then mark ink. Never invert a whole bitmap —
+ * that turned white JPEG squares + letterbox into a solid black brick.
+ */
+export function logoPixelIsInk(r: number, g: number, b: number, a = 255): boolean {
+  const t = Math.max(0, Math.min(1, a / 255));
+  const cr = 255 * (1 - t) + r * t;
+  const cg = 255 * (1 - t) + g * t;
+  const cb = 255 * (1 - t) + b * t;
+  const lum = 0.299 * cr + 0.587 * cg + 0.114 * cb;
+  const max = Math.max(cr, cg, cb);
+  const min = Math.min(cr, cg, cb);
+  const sat = max <= 1 ? 0 : (max - min) / max;
+  return lum < LIGHT_CUTOFF || sat >= SAT_INK;
+}
+
 function thresholdBits(
   data: Uint8ClampedArray,
   canvasW: number,
   height: number,
 ): number[] {
   const byteW = canvasW >> 3;
-  const n = canvasW * height;
-  const gray = new Float32Array(n);
-  let opaqueSum = 0;
-  let opaqueCount = 0;
-  for (let i = 0; i < n; i++) {
-    const o = i * 4;
-    const a = data[o + 3] / 255;
-    const g = 0.299 * data[o] + 0.587 * data[o + 1] + 0.114 * data[o + 2];
-    gray[i] = 255 * (1 - a) + g * a;
-    if (data[o + 3] > 128) {
-      opaqueSum += g;
-      opaqueCount++;
-    }
-  }
-  // White / light logos on transparent backgrounds would print as nothing.
-  const invert = opaqueCount > 16 && opaqueSum / opaqueCount > 200;
-  if (invert) {
-    for (let i = 0; i < n; i++) {
-      const a = data[i * 4 + 3];
-      if (a > 128) gray[i] = 255 - gray[i];
-    }
-  }
   const bits = new Array(byteW * height).fill(0);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < canvasW; x++) {
-      if (gray[y * canvasW + x] < THRESHOLD) {
+      const o = (y * canvasW + x) * 4;
+      if (logoPixelIsInk(data[o], data[o + 1], data[o + 2], data[o + 3])) {
         bits[y * byteW + (x >> 3)] |= 0x80 >> (x & 7);
       }
     }
@@ -183,8 +189,8 @@ function thresholdBits(
 }
 
 /**
- * 1-bit GS v 0, centered in a fixed 384×128 box (contain + letterbox).
- * Threshold — not dither — so cheap 58mm heads print a crisp mark.
+ * 1-bit GS v 0, centered in a fixed 384×128 box (contain + white letterbox).
+ * Hard threshold — not Floyd–Steinberg — so cheap 58mm heads print a crisp mark.
  */
 export async function rasterizeLogoForEscPos(url: string): Promise<number[] | null> {
   if (typeof document === "undefined") return null;
@@ -201,9 +207,9 @@ export async function rasterizeLogoForEscPos(url: string): Promise<number[] | nu
     const canvas = document.createElement("canvas");
     canvas.width = canvasW;
     canvas.height = canvasH;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return null;
-    ctx.fillStyle = "#fff";
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvasW, canvasH);
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(img, ox, oy, dw, dh);
