@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useInView, useTransform } from "framer-motion";
 import { controlUrl } from "@/lib/urls";
-import { useCountUp } from "@/lib/use-count-up";
 import { useLang } from "@/lib/lang-context";
 import { useParallax } from "@/lib/use-parallax";
 import {
@@ -25,17 +24,38 @@ import ProductTour from "@/components/ProductTour";
 /** Animated plan price — counts up when the card scrolls into view. */
 function PlanPrice({ amount, prefix = "₨" }: { amount: number; prefix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.5 });
-  const val = useCountUp(inView ? amount : 0, 900);
+  const inView = useInView(ref, { once: true, amount: 0.4 });
+  const reduced = usePrefersReducedMotion();
+  const ranRef = useRef(false);
+  // SSR/no-JS/crawler-safe: markup always carries the real amount. The
+  // count-up runs once via textContent (no React re-render per frame) when
+  // the card actually scrolls into view.
+  useEffect(() => {
+    const el = ref.current;
+    if (!inView || reduced || ranRef.current || !el) return;
+    ranRef.current = true;
+    let raf = 0;
+    const start = performance.now();
+    const duration = 900;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const v = Math.round(amount * eased);
+      el.textContent = `${prefix}${v.toLocaleString()}`;
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, amount, prefix, reduced]);
   return (
     <span ref={ref}>
       {prefix}
-      {val.toLocaleString()}
+      {amount.toLocaleString()}
     </span>
   );
 }
 
-/** Real-facts counter — counts up when scrolled into view. */
+/** Real-facts counter — counts up when scrolled into view (trigger once). */
 function FactCounter({
   value,
   prefix = "",
@@ -47,11 +67,30 @@ function FactCounter({
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.6 });
-  const val = useCountUp(inView ? value : 0, 1000);
+  const reduced = usePrefersReducedMotion();
+  const ranRef = useRef(false);
+  // See PlanPrice: real value stays in the SSR markup; animation writes textContent.
+  useEffect(() => {
+    const el = ref.current;
+    if (!inView || reduced || ranRef.current || !el) return;
+    ranRef.current = true;
+    let raf = 0;
+    const start = performance.now();
+    const duration = 1000;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const v = Math.round(value * eased);
+      el.textContent = `${prefix}${v}${suffix}`;
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, value, prefix, suffix, reduced]);
   return (
     <span ref={ref}>
       {prefix}
-      {val}
+      {value}
       {suffix}
     </span>
   );
