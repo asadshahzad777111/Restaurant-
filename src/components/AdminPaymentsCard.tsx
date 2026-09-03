@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import { defaultTenantPayments, normalizeTenantPayments } from "@/lib/payments";
 import type { PaymentAccount, TenantPayments } from "@/lib/tenant-types";
@@ -31,9 +31,15 @@ export function AdminPaymentsCard() {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // Hydrate once. Background order polling swaps the tenant reference every
+  // few seconds; re-reading on every change would wipe account numbers the
+  // admin is typing.
+  const hydratedRef = useRef(false);
   useEffect(() => {
-    if (!tenant) return;
+    if (!tenant || hydratedRef.current) return;
+    hydratedRef.current = true;
     setPayments(normalizeTenantPayments(tenant.payments));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenant]);
 
   function patchRail(key: RailKey, patch: Partial<PaymentAccount>) {

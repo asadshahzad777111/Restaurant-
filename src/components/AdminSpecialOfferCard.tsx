@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import { uploadTenantMedia } from "@/lib/media-client";
 import { defaultSpecialOffer, normalizeSpecialOffer } from "@/lib/payments";
@@ -13,9 +13,15 @@ export function AdminSpecialOfferCard() {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // Hydrate once. Background order polling swaps the tenant reference every
+  // few seconds; re-reading on every change would wipe text the admin is
+  // typing in Title / Body / Image URL.
+  const hydratedRef = useRef(false);
   useEffect(() => {
-    if (!tenant) return;
+    if (!tenant || hydratedRef.current) return;
+    hydratedRef.current = true;
     setOffer(normalizeSpecialOffer(tenant.specialOffer));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenant]);
 
   async function save(e: React.FormEvent) {
