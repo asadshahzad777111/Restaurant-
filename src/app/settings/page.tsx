@@ -7,6 +7,7 @@ import { uploadTenantMedia } from "@/lib/media-client";
 import { AdminApkCard } from "@/components/AdminApkCard";
 import { AdminIosInstallCard } from "@/components/AdminIosInstallCard";
 import { BillLayoutDesigner } from "@/components/BillLayoutDesigner";
+import { AdminThermalPrinterCard } from "@/components/AdminThermalPrinterCard";
 import { AdminPaymentsCard } from "@/components/AdminPaymentsCard";
 import { AdminSpecialOfferCard } from "@/components/AdminSpecialOfferCard";
 import { planAllows } from "@/lib/plans";
