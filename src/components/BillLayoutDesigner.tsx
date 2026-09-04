@@ -79,10 +79,12 @@ export function BillLayoutDesigner() {
           void save();
         }}
       >
-        <h3 style={{ margin: 0 }}>🧾 Bill layout</h3>
+        <h3 style={{ margin: 0 }} id="bill-layout">
+          🖨️ Printer / Bill layout
+        </h3>
         <p className={styles.muted} style={{ margin: 0 }}>
           Exact {paperW}mm page ({paperDotsFor(paperW)} dots, {paperColsFor(paperW)} columns). Logo and QR stay
-          centered. Save once — this kitchen only.
+          centered. Save once — this kitchen only. Pair the Bluetooth printer in the Printer card on this page.
         </p>
 
         <div className={styles.billPaperRow} role="radiogroup" aria-label="Paper width">

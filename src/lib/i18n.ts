@@ -17,7 +17,7 @@ export const dict = {
   dayClose: { en: "Day close", ur: "Din band" },
   sales: { en: "Sales & Profit", ur: "Sales & Profit" },
   settings: { en: "Settings", ur: "Settings" },
-  printer: { en: "Printer", ur: "Printer" },
+  printer: { en: "Printer / Bill layout", ur: "Printer / Bill layout" },
 
   // shell
   logout: { en: "Log out", ur: "Log out" },

@@ -48,13 +48,20 @@ export default function SettingsPage() {
   >("branding");
 
   const SETTINGS_TABS = [
-    { id: "branding", label: "Branding & Receipts", icon: "🎨" },
-    { id: "receipt", label: "Bill layout", icon: "🧾" },
+    { id: "branding", label: "Branding", icon: "🎨" },
+    { id: "receipt", label: "Printer / Bill layout", icon: "🖨️" },
     { id: "payments", label: "Payments & Fees", icon: "💳" },
     { id: "access", label: "Access & Security", icon: "🔐" },
     { id: "app", label: "Staff App & QR", icon: "📱" },
     { id: "backup", label: "Backup & Data", icon: "🗄️" },
   ] as const;
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("tab") || "";
+    if (q === "printer" || q === "receipt" || q === "bill" || q === "bill-layout") {
+      setSettingsTab("receipt");
+    }
+  }, []);
 
   // Hydrate the form fields from the tenant EXACTLY ONCE. Background order
   // polling (StaffAlerts merges new orders into the store every ~3s, which
@@ -346,7 +353,7 @@ export default function SettingsPage() {
               type="button"
               role="tab"
               aria-selected={settingsTab === t.id}
-              className={settingsTab === t.id ? styles.settingsTabActive : styles.settingsTab}
+              className={`${styles.settingsTab}${settingsTab === t.id ? ` ${styles.settingsTabActive}` : ""}`}
               onClick={() => setSettingsTab(t.id)}
             >
               {t.icon} {t.label}
@@ -359,6 +366,17 @@ export default function SettingsPage() {
         {/* ── Branding & Receipts ─────────────────────────────── */}
         {settingsTab === "branding" && (
           <div className={styles.stack}>
+            <div className={styles.settingsJump}>
+              <div>
+                <strong>🖨️ Printer / Bill layout</strong>
+                <p className={styles.muted} style={{ margin: "0.25rem 0 0" }}>
+                  Paper 58/80mm, logo size, field order, and Bluetooth printer — not on this Branding tab.
+                </p>
+              </div>
+              <button type="button" className={styles.btn} onClick={() => setSettingsTab("receipt")}>
+                Open Printer / Bill layout
+              </button>
+            </div>
             <form className={styles.form} onSubmit={saveBranding}>
               <h3 style={{ margin: 0 }}>🎨 Branding</h3>
               <input
@@ -408,8 +426,11 @@ export default function SettingsPage() {
                 Print logo on bill
               </label>
               <p className={styles.muted} style={{ margin: 0 }}>
-                Uploaded logos print on the bill. Size, paper (58/80mm), and field order are in Bill layout.
-                Clear the logo URL if you do not want it on the slip.
+                Uploaded logos print on the bill. Size, paper (58/80mm), and field order are in{" "}
+                <button type="button" className={styles.linkBtn} onClick={() => setSettingsTab("receipt")}>
+                  Printer / Bill layout
+                </button>
+                . Clear the logo URL if you do not want it on the slip.
               </p>
               <textarea
                 value={branding.receiptFooter}
@@ -433,12 +454,15 @@ export default function SettingsPage() {
             </form>
 
             <AdminSpecialOfferCard />
-
-            <AdminThermalPrinterCard />
           </div>
         )}
 
-        {settingsTab === "receipt" && <BillLayoutDesigner />}
+        {settingsTab === "receipt" && (
+          <div className={styles.stack} id="printer">
+            <BillLayoutDesigner />
+            <AdminThermalPrinterCard />
+          </div>
+        )}
 
         {/* ── Payments & Fees ─────────────────────────────────── */}
         {settingsTab === "payments" && (

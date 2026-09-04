@@ -1,16 +1,34 @@
 "use client";
 
 import { AppShell } from "@/components/AppShell";
+import { BillLayoutDesigner } from "@/components/BillLayoutDesigner";
 import { PosPrinterPanel } from "@/components/PosPrinterPanel";
 import { PrintBridgeBar } from "@/components/PrintBridgeBar";
+import { useStore } from "@/lib/store";
 import styles from "../staff.module.css";
 
 export default function PrinterPage() {
+  const { user } = useStore();
+  const canEditLayout = user?.role === "admin" || user?.permissions?.includes("settings");
+
   return (
-    <AppShell title="Printer">
+    <AppShell title="Printer / Bill layout">
       <div className={styles.page}>
         <PrintBridgeBar />
         <PosPrinterPanel />
+        {canEditLayout ? (
+          <div style={{ marginTop: "1rem" }}>
+            <BillLayoutDesigner />
+          </div>
+        ) : (
+          <div className={styles.card} style={{ marginTop: "1rem" }}>
+            <h3 style={{ marginTop: 0 }}>🖨️ Bill layout</h3>
+            <p className={styles.muted} style={{ marginBottom: 0 }}>
+              Paper size (58/80mm), logo size, and bill fields: ask the restaurant admin —{" "}
+              <strong>Settings → Printer / Bill layout</strong>.
+            </p>
+          </div>
+        )}
         <div className={styles.card} style={{ marginTop: "1rem" }}>
           <h3 style={{ marginTop: 0 }}>How to print (AsFix POS style)</h3>
           <ol className={styles.muted} style={{ marginBottom: 0, paddingLeft: "1.2rem" }}>

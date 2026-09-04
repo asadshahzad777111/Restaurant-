@@ -741,25 +741,43 @@
   border-color: var(--staff-accent, #ff8500);
 }
 
-/* Scrollable tab row on small screens */
+/* Keep every settings section visible — do not hide Printer behind a swipe. */
 @media (max-width: 700px) {
   .settingsTabs {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 0.3rem;
-    margin-right: -1rem;
-    margin-left: -1rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
+    flex-wrap: wrap;
+    overflow: visible;
+    padding-bottom: 0.15rem;
   }
 
-  .settingsTab {
-    scroll-snap-align: start;
+  .settingsTab,
+  .settingsTabActive {
     flex: 0 0 auto;
     white-space: nowrap;
   }
+}
+
+.settingsJump {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  border: 2px solid var(--staff-accent, #ff8500);
+  background: #fff8f0;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+}
+
+.linkBtn {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--staff-accent, #ff8500);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
 /* Settings section heading inside a group */

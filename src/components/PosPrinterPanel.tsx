@@ -110,10 +110,20 @@ export function PosPrinterPanel({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className={styles.card} id="thermal">
-      <h3 style={{ marginTop: 0 }}>Printer</h3>
+      <h3 style={{ marginTop: 0 }}>🖨️ Printer</h3>
       <p className={styles.muted} style={{ marginTop: 0 }}>
-        Same flow as AsFix POS: <strong>Printer</strong> → pick device → <strong>Print</strong>.
-        {native ? " Staff APK · Bluetooth thermal." : " Browser will show a print dialog until you use Staff APK."}
+        {compact ? (
+          <>
+            Same flow: <strong>Printer</strong> → pick → <strong>Print</strong>.
+            {native ? " Staff APK · Bluetooth thermal." : " Browser print until Staff APK."}
+          </>
+        ) : (
+          <>
+            Pair Bluetooth here. Paper size, logo, and bill fields are in <strong>Printer / Bill layout</strong> on this
+            page (and Settings). Same flow as AsFix POS: <strong>Printer</strong> → pick device → <strong>Print</strong>.
+            {native ? " Staff APK · Bluetooth thermal." : " Browser will show a print dialog until you use Staff APK."}
+          </>
+        )}
       </p>
       <p>
         {saved ? (

@@ -45,7 +45,7 @@ const ACTIONS: {
   note: string;
 }[] = [
   { href: "/pos", label: "POS / counter", emoji: "🛒", perm: "pos", note: "New bill" },
-  { href: "/printer", label: "Printer", emoji: "🖨️", perm: "pos", note: "Thermal print" },
+  { href: "/printer", label: "Printer / Bill layout", emoji: "🖨️", perm: "pos", note: "58/80mm · thermal" },
   { href: "/kitchen", label: "Kitchen", emoji: "🍳", perm: "kitchen", note: "Live tickets" },
   { href: "/orders", label: "Orders / billing", emoji: "🧾", perm: "orders", note: "Queue + pay" },
   { href: "/tables", label: "Tables", emoji: "🪑", perm: "pos", note: "Floor map" },
