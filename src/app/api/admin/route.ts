@@ -14,6 +14,7 @@ import {
 } from "@/lib/db";
 import { AuthError, hasPermission, requireTenantSession } from "@/lib/session";
 import type { DiningTable, MenuItem, StockItem, TenantUser } from "@/lib/tenant-types";
+import { sanitizeBillLayout } from "@/lib/bill-layout";
 
 export const runtime = "nodejs";
 
@@ -91,7 +92,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ tenant: await readTenantStaffView(tenantId) });
     }
 
-    if (action === "branding" || action === "fees") {
+    if (action === "branding" || action === "fees" || action === "billLayout") {
       if (!(await hasPermission(session, "settings"))) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
@@ -102,7 +103,11 @@ export async function PUT(req: NextRequest) {
         }
         body.branding = { ...body.branding, name };
       }
-      await updateBranding(tenantId, body.branding ?? {}, body.shop);
+      const shop = { ...(body.shop || {}) };
+      if (action === "billLayout" || shop.billLayout) {
+        shop.billLayout = sanitizeBillLayout(shop.billLayout ?? body.billLayout);
+      }
+      await updateBranding(tenantId, body.branding ?? {}, shop);
       return NextResponse.json({ tenant: await readTenantStaffView(tenantId) });
     }
 

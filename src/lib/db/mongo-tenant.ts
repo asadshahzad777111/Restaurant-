@@ -18,6 +18,7 @@ import { getDb } from "../mongo";
 import { ensureMongoBootstrap } from "./mongo-platform";
 import { normalizeSpecialOffer, normalizeTenantPayments } from "../payments";
 import { printableShopPhone } from "../receipt-layout";
+import { sanitizeBillLayout } from "../bill-layout";
 import { itemOrderCounts, itemRatings } from "../ratings";
 
 type TenantDoc = TenantState & { _id: string };
@@ -40,6 +41,7 @@ function normalize(raw: TenantState): TenantState {
       printLogoOnBill: Boolean(String(raw.branding?.logoUrl || "").trim())
         ? true
         : raw.shop?.printLogoOnBill === true,
+      billLayout: sanitizeBillLayout(raw.shop?.billLayout),
     },
     payments: normalizeTenantPayments(raw.payments),
     specialOffer: normalizeSpecialOffer(raw.specialOffer),

@@ -150,6 +150,8 @@ async function logoBytes(opts?: {
   logoRaster?: ArrayLike<number> | null;
   logoUrl?: string | null;
   logoEscPosBase64?: string | null;
+  logoDots?: number;
+  paperDots?: number;
 }) {
   if (opts?.logoRaster && opts.logoRaster.length) return Array.from(opts.logoRaster);
   const baked = String(opts?.logoEscPosBase64 || "").replace(/\s/g, "");
@@ -167,22 +169,26 @@ async function logoBytes(opts?: {
   if (!url) return null;
   try {
     const { rasterizeLogoForEscPos } = await import("../receipt-logo");
-    return await rasterizeLogoForEscPos(url);
+    const box = Math.max(120, Number(opts?.logoDots) || 320);
+    const paper = Math.max(96, Number(opts?.paperDots) || 384);
+    return await rasterizeLogoForEscPos(url, { boxW: box, boxH: box, paperDots: paper });
   } catch {
     return null;
   }
 }
 
-export async function nativePrintText(
-  text: string,
-  opts?: {
-    address?: string;
-    qrUrl?: string | null;
-    logoRaster?: ArrayLike<number> | null;
-    logoUrl?: string | null;
-    logoEscPosBase64?: string | null;
-  },
-): Promise<NativePrintResult> {
+type NativePrintOpts = {
+  address?: string;
+  qrUrl?: string | null;
+  logoRaster?: ArrayLike<number> | null;
+  logoUrl?: string | null;
+  logoEscPosBase64?: string | null;
+  paperDots?: number;
+  qrDots?: number;
+  logoDots?: number;
+};
+
+export async function nativePrintText(text: string, opts?: NativePrintOpts): Promise<NativePrintResult> {
   if (!isNativeStaffApp()) return { ok: false, reason: "not_native" };
   const plugin = getPlugin();
   if (!plugin) return { ok: false, reason: "no_plugin", message: "Rebuild Staff APK with thermal plugin" };
@@ -191,12 +197,14 @@ export async function nativePrintText(
   if (!address) return { ok: false, reason: "no_printer", message: "Tap Printer, then Use this" };
   const qrUrl = opts?.qrUrl?.trim() || "";
   const logoRaster = await logoBytes(opts);
-  const padded = `\n\n\n${String(text || "").replace(/^\n+/, "")}`;
+  const paperDots = Math.max(96, Number(opts?.paperDots) || 384);
+  const qrDots = Math.max(80, Number(opts?.qrDots) || 240);
+  const padded = `\n\n\n${String(text || "").replace(/^\n+/, "").replace(/<<ORDO_LOGO>>|<<ORDO_QR>>/g, "")}`;
   try {
     await requestThermalPrintPermissions();
     await plugin.connect({ address });
     if (plugin.printEscPos) {
-      const bytes = buildSlipEscPos(text, qrUrl || null, logoRaster);
+      const bytes = buildSlipEscPos(text, qrUrl || null, logoRaster, { paperDots, qrDots });
       await plugin.printEscPos({ dataBase64: bytesToBase64(bytes), address });
       return { ok: true };
     }
@@ -205,7 +213,7 @@ export async function nativePrintText(
   } catch (err) {
     try {
       if (plugin.printEscPos) {
-        const bytes = buildSlipEscPos(text, qrUrl || null, logoRaster);
+        const bytes = buildSlipEscPos(text, qrUrl || null, logoRaster, { paperDots, qrDots });
         await plugin.printEscPos({ dataBase64: bytesToBase64(bytes), address });
         return { ok: true };
       }
@@ -224,12 +232,7 @@ export async function nativePrintText(
 /** Prefer native Bluetooth when in Staff APK + saved printer; else caller falls back to HTML print. */
 export async function tryNativeThermalPrint(
   receiptText: string,
-  opts?: {
-    qrUrl?: string | null;
-    logoRaster?: ArrayLike<number> | null;
-    logoUrl?: string | null;
-    logoEscPosBase64?: string | null;
-  },
+  opts?: NativePrintOpts,
 ): Promise<NativePrintResult> {
   if (!isNativeStaffApp()) return { ok: false, reason: "not_native" };
   const saved = await getSavedPrinter();
@@ -240,5 +243,8 @@ export async function tryNativeThermalPrint(
     logoRaster: opts?.logoRaster,
     logoUrl: opts?.logoUrl,
     logoEscPosBase64: opts?.logoEscPosBase64,
+    paperDots: opts?.paperDots,
+    qrDots: opts?.qrDots,
+    logoDots: opts?.logoDots,
   });
 }

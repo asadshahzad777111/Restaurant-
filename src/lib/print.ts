@@ -1,20 +1,15 @@
 import type { Order, TenantState } from "./tenant-types";
 import { tryNativeThermalPrint } from "./thermal/nativePosPrint";
-import { qrPrintImgMarkup, RECEIPT_QR_PRINT_MM } from "./qr-byte";
+import { RECEIPT_QR_PRINT_MM } from "./qr-byte";
 import { buildSlipEscPos, bytesToBase64 } from "./escpos-receipt";
 import { rasterizeLogoForEscPos, sameOriginLogoUrl } from "./receipt-logo";
+import { customerBillHtml, customerBillText } from "./bill-render";
+import { paperDotsFor, resolveBillLayout, type BillLayout } from "./bill-layout";
 import {
-  billKindLine,
   billStamp,
-  customReceiptFooter,
   guestOrderPageUrl,
   kitchenServiceLine,
-  printableShopAddress,
-  printableShopPhone,
-  printedGrandTotal,
-  RECEIPT_QR_CAPTION,
   receiptLogoUrl,
-  shouldPrintGst,
 } from "./receipt-layout";
 
 const SLIP_MM = 58;
@@ -55,7 +50,7 @@ html, body {
   background: #fff;
 }
 .shop { text-align: center; margin-bottom: 2px; }
-.logo { display: block; width: 51mm; max-width: 51mm; height: 19mm; max-height: 19mm; margin: 0 auto 3px; object-fit: contain; object-position: center; }
+.logo { display: block; width: 42mm; max-width: 42mm; height: 42mm; max-height: 42mm; margin: 0 auto 3px; object-fit: contain; object-position: center; }
 .name {
   display: block;
   font-size: 14px;
@@ -129,65 +124,8 @@ function itemRows(order: Order, withPrices: boolean) {
     .join("");
 }
 
-export function customerReceiptHtml(tenant: TenantState, order: Order) {
-  const logoSrc = receiptLogoUrl(tenant);
-  // Same-origin proxy URL: R2 logos must not be cross-origin inside the print
-  // iframe (paint + canvas issues) — local /api/media URLs pass through as-is.
-  const logo = logoSrc
-    ? `<img class="logo" src="${escapeHtml(sameOriginLogoUrl(logoSrc))}" alt="" />`
-    : "";
-  const stamp = billStamp(order.createdAt);
-  const f = order.fees;
-  const phone = printableShopPhone(tenant.shop.phone);
-  const address = printableShopAddress(tenant.shop.address);
-  const printGst = shouldPrintGst(tenant.shop);
-  const extraFooter = customReceiptFooter(tenant.branding.receiptFooter);
-  const qrUrl = guestOrderPageUrl(tenant.code);
-  const extras = [
-    f.packingFee ? `<span>Packing</span><strong>${amount(f.packingFee)}</strong>` : "",
-    f.deliveryFee ? `<span>Delivery</span><strong>${amount(f.deliveryFee)}</strong>` : "",
-    f.serviceCharge ? `<span>Service</span><strong>${amount(f.serviceCharge)}</strong>` : "",
-    printGst && f.tax ? `<span>GST/Tax</span><strong>${amount(f.tax)}</strong>` : "",
-    order.discount ? `<span>Discount</span><strong>-${amount(order.discount)}</strong>` : "",
-  ]
-    .filter(Boolean)
-    .join("");
-
-  return `<!doctype html><html><head><meta charset="utf-8"/>
-<meta name="viewport" content="width=${SLIP_MM}, initial-scale=1"/>
-<title>Bill #${order.number}</title>
-<style>${slipCss}</style></head><body>
-<main class="slip">
-  <div class="shop">
-    ${logo}
-    <strong class="name">${escapeHtml(tenant.branding.name)}</strong>
-    ${address ? `<p>${escapeHtml(address)}</p>` : ""}
-    ${phone ? `<p>${escapeHtml(phone)}</p>` : ""}
-  </div>
-  <hr class="rule"/>
-  <div class="meta">
-    <div class="cols"><span>Bill #${order.number}</span><span>${escapeHtml(stamp.line)}</span></div>
-    <span>${escapeHtml(billKindLine(order))}</span>
-    ${order.customerName ? `<span>Guest: ${escapeHtml(order.customerName)}</span>` : ""}
-    ${order.customerPhone ? `<span>Ph: ${escapeHtml(order.customerPhone)}</span>` : ""}
-    ${order.deliveryAddress ? `<span>Loc: ${escapeHtml(order.deliveryAddress)}</span>` : ""}
-  </div>
-  <hr class="rule"/>
-  <div class="cols"><span>Item</span><span>Total</span></div>
-  ${itemRows(order, true) || `<div class="item"><span class="title">No items</span></div>`}
-  <hr class="rule"/>
-  ${extras ? `<div class="totals">${extras}</div>` : ""}
-  <div class="grand"><span>TOTAL</span><b>${escapeHtml(tenant.shop.currency)} ${amount(printedGrandTotal(order, printGst))}</b></div>
-  ${order.note ? `<p class="center">NOTE: ${escapeHtml(order.note)}</p>` : ""}
-  <hr class="rule"/>
-  <p class="thanks">Thank you</p>
-  <p class="visit">Visit again</p>
-  ${extraFooter ? `<p class="center">${escapeHtml(extraFooter)}</p>` : ""}
-  ${tenant.branding.scanOrderQr !== false
-    ? `<div class="qr">${qrPrintImgMarkup(qrUrl, RECEIPT_QR_PRINT_MM)}<p class="qr-cap">${escapeHtml(RECEIPT_QR_CAPTION[0])}</p><p class="qr-cap">${escapeHtml(RECEIPT_QR_CAPTION[1])}</p></div>`
-    : ""}
-</main>
-</body></html>`;
+export function customerReceiptHtml(tenant: TenantState, order: Order, draft?: BillLayout) {
+  return customerBillHtml(tenant, order, draft);
 }
 
 export function kitchenTicketHtml(tenant: TenantState, order: Order) {
@@ -219,56 +157,8 @@ export function kitchenTicketHtml(tenant: TenantState, order: Order) {
 }
 
 /** 32-col plain text for a future native ESC/POS plugin — public spec, no vendor secrets. */
-export function customerReceiptText(tenant: TenantState, order: Order) {
-  const col = 32;
-  const line = (left: string, right: string) => {
-    const gap = Math.max(1, col - left.length - right.length);
-    return `${left}${" ".repeat(gap)}${right}`;
-  };
-  const rule = "-".repeat(col);
-  const stamp = billStamp(order.createdAt);
-  const f = order.fees;
-  const phone = printableShopPhone(tenant.shop.phone);
-  const address = printableShopAddress(tenant.shop.address);
-  const printGst = shouldPrintGst(tenant.shop);
-  const extraFooter = customReceiptFooter(tenant.branding.receiptFooter);
-  const items = (order.lines || []).flatMap((l) => {
-    const rows = [l.name.slice(0, col), line(`${l.qty} x ${amount(l.unitPrice)}`, amount(l.unitPrice * l.qty))];
-    for (const m of l.modifiers || []) rows.push(` + ${m.optionName}`.slice(0, col));
-    if (l.lineNote) rows.push(` ${l.lineNote}`.slice(0, col));
-    return rows;
-  });
-  const extras = [
-    f.packingFee ? line("Packing", amount(f.packingFee)) : "",
-    f.deliveryFee ? line("Delivery", amount(f.deliveryFee)) : "",
-    f.serviceCharge ? line("Service", amount(f.serviceCharge)) : "",
-    printGst && f.tax ? line("GST/Tax", amount(f.tax)) : "",
-    order.discount ? line("Discount", `-${amount(order.discount)}`) : "",
-  ].filter(Boolean);
-  const body = [
-    tenant.branding.name.toUpperCase(),
-    address,
-    phone,
-    rule,
-    line(`Bill #${order.number}`, stamp.line),
-    billKindLine(order),
-    ...(order.customerName ? [`Guest: ${order.customerName}`] : []),
-    ...(order.customerPhone ? [`Ph: ${order.customerPhone}`] : []),
-    ...(order.deliveryAddress ? [`Loc: ${order.deliveryAddress}`] : []),
-    rule,
-    ...items,
-    rule,
-    ...extras,
-    line("TOTAL", `${tenant.shop.currency} ${amount(printedGrandTotal(order, printGst))}`),
-    ...(order.note ? [`NOTE: ${order.note}`] : []),
-    rule,
-    "Thank you",
-    "Visit again",
-    extraFooter,
-  ]
-    .filter((row) => row && String(row).trim())
-    .join("\n");
-  return `\n\n\n${body}\n\n`;
+export function customerReceiptText(tenant: TenantState, order: Order, draft?: BillLayout) {
+  return customerBillText(tenant, order, draft);
 }
 
 /** Kitchen ticket plain text for Bluetooth ESC/POS. */
@@ -314,17 +204,17 @@ function lockPageToContent(doc: Document, widthMm = SLIP_MM) {
  * Isolated iframe print — 58mm HTML layout. No Windows kernel driver.
  * Optional local COM bridge (127.0.0.1:9100) only if staff opted in via localStorage.
  */
-export function printHtml(html: string): Promise<boolean> {
+export function printHtml(html: string, widthMm = SLIP_MM): Promise<boolean> {
   if (typeof document === "undefined") return Promise.resolve(false);
   return new Promise((resolve) => {
     const existing = document.getElementById("ordo-thermal-print");
     existing?.remove();
     const iframe = document.createElement("iframe");
     iframe.id = "ordo-thermal-print";
-    iframe.title = "58mm receipt";
+    iframe.title = `${widthMm}mm receipt`;
     iframe.setAttribute("aria-hidden", "true");
     iframe.style.cssText =
-      "position:fixed;width:58mm;height:900px;border:0;left:-9999px;top:0;opacity:0;pointer-events:none;";
+      `position:fixed;width:${widthMm}mm;height:900px;border:0;left:-9999px;top:0;opacity:0;pointer-events:none;`;
     document.body.appendChild(iframe);
     const doc = iframe.contentDocument;
     const win = iframe.contentWindow;
@@ -353,7 +243,7 @@ export function printHtml(html: string): Promise<boolean> {
     const trigger = () => {
       if (done) return;
       try {
-        lockPageToContent(doc);
+        lockPageToContent(doc, widthMm);
         win.focus();
         win.print();
         /* Chrome print() is typically blocking until the dialog closes. */
@@ -421,23 +311,36 @@ export async function printCustomerReceipt(tenant: TenantState, order: Order) {
   } catch {
     /* ignore */
   }
-  const qrUrl = guestOrderPageUrl(tenant.code);
+  const layout = resolveBillLayout(tenant.shop);
+  const paperDots = paperDotsFor(layout.paperMm);
+  const qrUrl = tenant.branding.scanOrderQr !== false ? guestOrderPageUrl(tenant.code) : null;
   const text = customerReceiptText(tenant, order);
   const rawLogo = receiptLogoUrl(tenant);
   const logoUrl = rawLogo ? sameOriginLogoUrl(rawLogo) : null;
   let logoRaster: number[] | null = null;
   if (logoUrl) {
     try {
-      logoRaster = await rasterizeLogoForEscPos(logoUrl);
+      logoRaster = await rasterizeLogoForEscPos(logoUrl, {
+        boxW: layout.logoDots,
+        boxH: layout.logoDots,
+        paperDots,
+      });
     } catch {
       logoRaster = null;
     }
   }
-  const native = await tryNativeThermalPrint(text, { qrUrl, logoRaster, logoUrl });
+  const native = await tryNativeThermalPrint(text, {
+    qrUrl,
+    logoRaster,
+    logoUrl,
+    paperDots,
+    qrDots: layout.qrDots,
+    logoDots: layout.logoDots,
+  });
   if (native.ok) return true;
   const bridged = await tryOptInBridge(text, qrUrl, logoRaster);
   if (bridged) return true;
-  return printHtml(customerReceiptHtml(tenant, order));
+  return printHtml(customerReceiptHtml(tenant, order), layout.paperMm);
 }
 
 export async function printTestSlip(tenant: TenantState) {

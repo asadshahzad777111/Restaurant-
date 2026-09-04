@@ -6,7 +6,7 @@ import { useStore } from "@/lib/store";
 import { uploadTenantMedia } from "@/lib/media-client";
 import { AdminApkCard } from "@/components/AdminApkCard";
 import { AdminIosInstallCard } from "@/components/AdminIosInstallCard";
-import { AdminThermalPrinterCard } from "@/components/AdminThermalPrinterCard";
+import { BillLayoutDesigner } from "@/components/BillLayoutDesigner";
 import { AdminPaymentsCard } from "@/components/AdminPaymentsCard";
 import { AdminSpecialOfferCard } from "@/components/AdminSpecialOfferCard";
 import { planAllows } from "@/lib/plans";
@@ -44,11 +44,12 @@ export default function SettingsPage() {
   const [archivedCount, setArchivedCount] = useState<number | null>(null);
   const [archiveMsg, setArchiveMsg] = useState("");
   const [settingsTab, setSettingsTab] = useState<
-    "branding" | "payments" | "access" | "app" | "backup"
+    "branding" | "receipt" | "payments" | "access" | "app" | "backup"
   >("branding");
 
   const SETTINGS_TABS = [
     { id: "branding", label: "Branding & Receipts", icon: "🎨" },
+    { id: "receipt", label: "Bill layout", icon: "🧾" },
     { id: "payments", label: "Payments & Fees", icon: "💳" },
     { id: "access", label: "Access & Security", icon: "🔐" },
     { id: "app", label: "Staff App & QR", icon: "📱" },
@@ -407,7 +408,7 @@ export default function SettingsPage() {
                 Print logo on bill
               </label>
               <p className={styles.muted} style={{ margin: 0 }}>
-                Uploaded logos always print at a fixed size on the 58mm bill (top, above the shop name).
+                Uploaded logos print on the bill. Size, paper (58/80mm), and field order are in Bill layout.
                 Clear the logo URL if you do not want it on the slip.
               </p>
               <textarea
@@ -436,6 +437,8 @@ export default function SettingsPage() {
             <AdminThermalPrinterCard />
           </div>
         )}
+
+        {settingsTab === "receipt" && <BillLayoutDesigner />}
 
         {/* ── Payments & Fees ─────────────────────────────────── */}
         {settingsTab === "payments" && (

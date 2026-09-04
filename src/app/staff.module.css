@@ -1447,6 +1447,99 @@ textarea:focus-visible {
   border-radius: 6px;
 }
 
+/* Bill layout designer — exact 58/80mm preview */
+.billDesigner {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+@media (min-width: 920px) {
+  .billDesigner {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+.billPaperRow {
+  display: flex;
+  gap: 0.5rem;
+}
+.billPaper,
+.billPaperOn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #e8e4de;
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  background: #fff;
+}
+.billPaperOn {
+  background: var(--staff-accent, #ff8500);
+  border-color: var(--staff-accent, #ff8500);
+  color: #fff;
+}
+.billBlockList {
+  display: grid;
+  gap: 0.35rem;
+  max-height: 22rem;
+  overflow: auto;
+  padding: 0.2rem 0;
+}
+.billBlockRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 0.3rem;
+  align-items: center;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid #f0ebe4;
+  border-radius: 8px;
+  background: #fdfaf6;
+}
+.billMini {
+  border: 1px solid #ddd6cc;
+  background: #fff;
+  border-radius: 6px;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.billMini:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.billActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.billPreviewWrap {
+  min-width: 0;
+  overflow-x: auto;
+}
+.billPreviewFrame {
+  margin: 0 auto;
+  background: #fff;
+  border: 1px dashed #c4b8a8;
+  box-shadow: 0 0 0 10px #f4efe8;
+  overflow: hidden;
+}
+.billPreviewFrameIframe {
+  display: block;
+  width: 100%;
+  height: 560px;
+  border: 0;
+  background: #fff;
+}
+.billDesigner .form input[type="range"] {
+  width: 100%;
+  padding: 0.35rem 0;
+  border: 0;
+  background: transparent;
+}
+
 /* CSS-only animations respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .stockCritical,

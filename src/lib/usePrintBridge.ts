@@ -68,6 +68,9 @@ function usePrintBridgeState(): PrintBridgeHook {
             qrUrl: job.kind === "bill" ? job.qrUrl || null : null,
             logoUrl: job.kind === "bill" ? job.logoUrl || null : null,
             logoEscPosBase64: job.kind === "bill" ? job.logoEscPosBase64 || null : null,
+            paperDots: job.kind === "bill" ? (job.paperMm === 80 ? 576 : 384) : undefined,
+            logoDots: job.kind === "bill" ? job.logoDots || undefined : undefined,
+            qrDots: job.kind === "bill" ? job.qrDots || undefined : undefined,
           });
           await printApi.ack(job.id, {
             status: out.ok ? "done" : "failed",

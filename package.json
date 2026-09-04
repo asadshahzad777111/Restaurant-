@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "test:receipt-logo": "node --experimental-strip-types --test scripts/test-receipt-logo.ts scripts/test-bill-layout.ts",
+    "build": "node --experimental-strip-types --test scripts/test-receipt-logo.ts scripts/test-bill-layout.ts && next build",
     "start": "next start",
     "lint": "next lint"
   },

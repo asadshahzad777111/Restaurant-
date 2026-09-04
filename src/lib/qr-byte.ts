@@ -328,22 +328,28 @@ export const RECEIPT_PAPER_DOTS = 384;
 export const RECEIPT_QR_TARGET_DOTS = 240;
 export const RECEIPT_QR_PRINT_MM = 42;
 
-/** Module scale so the raster QR lands around 160–200 dots, flush left. */
-export function qrScaleFor58mm(matrixModules: number, quiet = 2): number {
+/** Module scale so the raster QR lands near `targetDots`, then centered on the slip. */
+export function qrScaleForTarget(matrixModules: number, targetDots: number, paperDots = RECEIPT_PAPER_DOTS, quiet = 1): number {
   const cells = matrixModules + quiet * 2;
-  let best = 6;
+  const cap = Math.max(64, paperDots);
+  const want = Math.max(80, Math.min(cap, Number(targetDots) || RECEIPT_QR_TARGET_DOTS));
+  let best = 4;
   let bestScore = Infinity;
-  for (let s = 5; s <= 10; s++) {
+  for (let s = 3; s <= 14; s++) {
     const dim = cells * s;
-    if (dim > RECEIPT_PAPER_DOTS) continue;
-    const inRange = dim >= 190 && dim <= 270;
-    const score = Math.abs(dim - RECEIPT_QR_TARGET_DOTS) + (inRange ? 0 : 80);
+    if (dim > cap) continue;
+    const score = Math.abs(dim - want);
     if (score < bestScore) {
       bestScore = score;
       best = s;
     }
   }
   return best;
+}
+
+/** Module scale so the raster QR lands around 160–200 dots, flush left. */
+export function qrScaleFor58mm(matrixModules: number, quiet = 2): number {
+  return qrScaleForTarget(matrixModules, RECEIPT_QR_TARGET_DOTS, RECEIPT_PAPER_DOTS, quiet);
 }
 
 export function qrRasterDotSize(text: string, quiet = 2): number {
@@ -398,9 +404,10 @@ export function qrBmpDataUrl(text: string, scale = 4): string {
   return `data:image/bmp;base64,${btoa(bin)}`;
 }
 
-export function qrPrintImgMarkup(text: string, mm = RECEIPT_QR_PRINT_MM): string {
+export function qrPrintImgMarkup(text: string, mm = RECEIPT_QR_PRINT_MM, paperDots = RECEIPT_PAPER_DOTS): string {
   const n = encodeQrMatrix(text).length;
-  const src = qrBmpDataUrl(text, qrScaleFor58mm(n));
+  const target = Math.round(mm * 8);
+  const src = qrBmpDataUrl(text, qrScaleForTarget(n, target, paperDots, 1));
   return `<img class="qr-img" alt="" width="${mm}mm" height="${mm}mm" src="${src}"/>`;
 }
 
@@ -418,14 +425,25 @@ export function qrSvgMarkup(text: string, mm = 22): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dim} ${dim}" width="${mm}mm" height="${mm}mm" shape-rendering="crispEdges" aria-hidden="true"><rect width="${dim}" height="${dim}" fill="#fff"/>${dark}</svg>`;
 }
 
-/** ESC/POS raster (GS v 0) — centred on 384-dot 58mm, scaled bigger. */
-export function qrEscPosRaster(text: string, scale?: number, quiet = 1): number[] {
+/** ESC/POS raster sized to `targetDots`, centered on `paperDots` (384 or 576). */
+export function qrEscPosRasterSized(text: string, targetDots: number, paperDots = RECEIPT_PAPER_DOTS): number[] {
+  const n = encodeQrMatrix(text).length;
+  const s = qrScaleForTarget(n, targetDots, paperDots, 1);
+  return qrEscPosRaster(text, s, 1, paperDots);
+}
+export function qrEscPosRaster(
+  text: string,
+  scale?: number,
+  quiet = 1,
+  paperDots = RECEIPT_PAPER_DOTS,
+): number[] {
   const m = encodeQrMatrix(text);
   const n = m.length;
-  const s = scale && scale > 0 ? scale : qrScaleFor58mm(n, quiet);
+  const paper = Math.max(96, Number(paperDots) || RECEIPT_PAPER_DOTS);
+  const s = scale && scale > 0 ? scale : qrScaleForTarget(n, RECEIPT_QR_TARGET_DOTS, paper, quiet);
   const dim = (n + quiet * 2) * s;
   const byteW = Math.ceil(dim / 8);
-  const rowBytes = RECEIPT_PAPER_DOTS >> 3; // 48 bytes = full 384-dot width
+  const rowBytes = paper >> 3;
   const leftPad = Math.max(0, Math.floor((rowBytes - byteW) / 2));
   const out = new Array(rowBytes * dim).fill(0);
   for (let y = 0; y < dim; y++) {
@@ -434,7 +452,7 @@ export function qrEscPosRaster(text: string, scale?: number, quiet = 1): number[
     for (let x = 0; x < dim; x++) {
       const mx = Math.floor(x / s) - quiet;
       const on = mx >= 0 && my >= 0 && mx < n && my < n && m[my][mx];
-      if (on) out[dst + (x >> 3)] |= 0x80 >> (x & 7);
+      if (on && x < paper) out[dst + (x >> 3)] |= 0x80 >> (x & 7);
     }
   }
   return [

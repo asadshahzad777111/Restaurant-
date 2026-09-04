@@ -20,6 +20,9 @@ export async function POST(req: NextRequest) {
       qrUrl: typeof body.qrUrl === "string" ? body.qrUrl : undefined,
       logoUrl: typeof body.logoUrl === "string" ? body.logoUrl : undefined,
       logoEscPosBase64: typeof body.logoEscPosBase64 === "string" ? body.logoEscPosBase64 : undefined,
+      paperMm: body.paperMm === 80 ? 80 : body.paperMm === 58 ? 58 : undefined,
+      logoDots: typeof body.logoDots === "number" ? body.logoDots : undefined,
+      qrDots: typeof body.qrDots === "number" ? body.qrDots : undefined,
       orderId: (body.orderId as string) ?? (body.order_id as string) ?? null,
       orderRef: (body.orderRef as string) ?? (body.order_ref as string) ?? null,
     });

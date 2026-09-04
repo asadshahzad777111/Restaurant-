@@ -9,6 +9,7 @@ import type {
 import type { Rider } from "./rider-types";
 import type { DispatchOffer } from "./rider-types";
 import type { Promo, PromoUsage } from "./promo";
+import type { BillLayout } from "./bill-layout";
 
 export interface TenantBranding {
   name: string;
@@ -55,6 +56,8 @@ export interface TenantShop {
   printLogoOnBill?: boolean;
   /** Print GST/Tax on the 58mm bill. Off by default — tax is not invented or printed until ticked. */
   printGstOnBill?: boolean;
+  /** Per-kitchen 58/80mm bill layout (blocks, logo/QR size). Never shared across Super restaurants. */
+  billLayout?: BillLayout;
   /**
    * Send the "new order" email to the restaurant Admin. Default true, but a
    * free-plan kitchen can turn this off to save Resend quota (order alerts
